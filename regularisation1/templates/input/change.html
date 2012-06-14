@@ -1,0 +1,124 @@
+<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML//EN">
+<html> <head>
+<title></title>
+<script type="text/javascript">
+
+var iTimeoutId = null;
+
+String.prototype.reverse=function(){return this.split("").reverse().join("");}
+
+function determineClick()
+{
+  //alert("Single click received");
+  if (iTimeoutId == null || !iTimeoutId)
+  {
+    iTimeoutId = setTimeout("selectNew()", 500);
+  }
+  else
+  {
+    //alert("double clicked");
+    window.clearTimeout(iTimeoutId);
+    iTimeoutId = null;
+    selectToken();
+  }
+}
+
+function selectToken()
+{
+    // var txt = document.getElementByName("reg_area");
+    var content = document.regularization.reg_area.value;
+    var txt = document.regularization.reg_area;
+    var startPos = txt.selectionStart;
+    var endPos = txt.selectionEnd;
+    //alert(startPos + " " + endPos);
+    //alert(content.substring(startPost,endPos));
+    var reg_word = "";
+    var i = 0;
+    for(i=startPos; i<endPos; i++)
+    {
+	reg_word = reg_word + content[i];
+    }
+    //alert(reg_word);
+    document.regularization.reg_this.value = reg_word;
+}
+
+function selectNew()
+{
+  iTimeoutId = null;
+  //alert("selectNew");
+  var content = document.regularization.reg_area.value;
+  var txt = document.regularization.reg_area;
+  var pos = txt.selectionStart;
+  var right_word = content[pos];
+  var i = pos+1;
+  //alert(pos + " " + content[pos] + " " + i);
+  var keepSearching=true;
+  // search to the right
+  while(keepSearching)
+  {
+    if(content[i] != " ")
+    {
+      right_word = right_word + content[i];
+      //alert(content[i] + " " + pos);
+    }
+    else
+    {
+      keepSearching=false;
+      //right_word = right_word + content[pos];
+    }
+    i++;
+  }
+  keepSearching=true;
+  i = pos-1;
+  var left_word = "";
+  // search to the left
+  while(keepSearching && i != 0)
+  {
+    if(content[i] != " ")
+    {
+      left_word = left_word + content[i];
+    }
+    else
+    {
+      keepSearching=false;
+    }
+    i--;
+  }
+  //alert(left_word + " " + right_word);
+  var reg_word = left_word.reverse() + right_word;
+  //alert(reg_word);
+
+  document.regularization.reg_to.value = reg_word
+
+}
+
+
+</script>
+</head>
+
+<body>
+<h1>Regularization: Make Modifications</h1>
+Double click on the word you want regularized, single click or type in the
+word you want it regularized to.  Select
+combination of Witnesses and Place.  Click OK when
+finished. (Regularization is off; Standard Segmentation)
+
+<form action="." method="POST" name="regularization">
+        <table>
+            {{ form.as_table }}
+        </table>
+	<input name="ok" type="submit" value="Ok">
+	<input name="edit_reg" type="submit" value="Edit Reg..">
+	<input name="reg_on" type="submit" value="Reg. On">
+	<input name="recollate" type="submit"
+        value="Recollate">
+	<input name="back" type="submit" value="Back">
+	<input name="next" type="submit" value="Next">
+	<input name="view" type="submit" value="View Originals">
+	<input name="done" type="submit" value="DONE">
+    </form>
+
+
+
+
+</body> </html>
