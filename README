@@ -1,0 +1,12 @@
+SETUP:
+ - need postgresql server running locally
+ - python manage.py syncdb <- create db tables
+ - python manage.py runserver
+
+urls:
+
+Birmingham bible texts:
+http://127.0.0.1:8000/regularization/bible/0/00/
+
+Collation/Regularization:
+http://127.0.0.1:8000/regularization/
