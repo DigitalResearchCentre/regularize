@@ -2,9 +2,9 @@ from django import forms
 # import django_tables2 as tables
 
 REGULARIZATION_CHOICES = (
-    ('all_places', 'All witnesses, all places'),
     ('this_block', 'All witnesses, this block'),
     ('this_word', 'All witnesses, this word'),
+    ('all_places', 'All witnesses, all places'),
     ('other', 'Other ...'),
 )
 
@@ -27,13 +27,12 @@ class WitnessInputForm(forms.Form):
         
 class RegularizationForm(forms.Form):
     reg_area = forms.CharField(\
-                                widget=forms.TextInput(attrs={'size':'100',\
+                                widget=forms.Textarea(attrs={'size':'5000',\
                                     'onclick': "determineClick();",}),\
                                     #'ondblclick': "selectToken();",}),\
                                     #'onclick': "selectNew();",}),\
                                 required=False,\
                                 label = 'Collation')
-                                #w idget=forms.Select(attrs = {'onclick': "alert('foo !');",}))
     reg_this = forms.CharField(\
                                 widget=forms.TextInput(attrs={'size':'100'}),\
                                 required=False,\

@@ -114,7 +114,7 @@ TEMPLATE_DIRS = (
     # Put strings here, like "/home/html/django_templates" or "C:/www/django/templates".
     # Always use forward slashes, even on Windows.
     # Don't forget to use absolute paths, not relative paths.
-    "/Users/erin/Dropbox/DRC/regularisation/regularisation1/templates"
+    "/Users/erin/Documents/DRC/JSONCR/regularisation1/templates"
 )
 
 INSTALLED_APPS = (
@@ -126,6 +126,8 @@ INSTALLED_APPS = (
     'django.contrib.staticfiles',
     'input',
     'django_tables2',
+    'birmingham',
+    'sampleJSON',
     # Uncomment the next line to enable the admin:
     # 'django.contrib.admin',
     # Uncomment the next line to enable admin documentation:

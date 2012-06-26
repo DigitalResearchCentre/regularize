@@ -135,7 +135,7 @@ def regularization(request):
             w.save() #must save before can add to manytomanyfield of witness
             for token in data['tokens']:
                 if token != None:
-                    print token['t']
+                    # print token['t']
                     content = content + token['t'] + " "
                     # t = Token(content=token['t'], position=pos,\
                     #           witnessId=data['witness'])
@@ -168,7 +168,7 @@ def regularization(request):
                 
         # change pages - to modifications page
         # redirect to page in urls.py
-        return HttpResponseRedirect('/regularization/change/0/')
+        return HttpResponseRedirect('/regularization/change/000/')
 
     return render_to_response('input/regularisation.html', {'form': form})
 
@@ -191,6 +191,12 @@ def change(request, pos):
             # goto the next token/variant for regularization
             # TODO:: warning when at end of token list
             position = int(pos) + 1
+            if position < 10:
+                position = '00' + str(position)
+            elif position < 100:
+                position = '0' + str(position)
+            else:
+                position = str(position)
             return HttpResponseRedirect(reverse('change', args=(position,)))
 
         submit = request.POST.get('back', None)
@@ -199,6 +205,12 @@ def change(request, pos):
             # TODO: 
             if int(pos) != 0:
                 position = int(pos) - 1
+                if position < 10:
+                    position = '00' + str(position)
+                elif position < 100:
+                    position = '0' + str(position)
+                else:
+                    position = str(position)
                 return HttpResponseRedirect(reverse('change', args=(position,)))
 
         submit = request.POST.get('ok', None)
@@ -241,7 +253,7 @@ def change(request, pos):
     # find the distinct tokens for particular position
     tokens = Token.objects.filter(position=pos).distinct('content')
     allTokens = Token.objects.filter(position=pos)
-    # print tokens
+    print tokens
 
     # build the token content for the regularization area
     content = ""
@@ -269,7 +281,7 @@ def show_original(request):
     if request.method == 'POST':
         submit = request.POST.get('done', None)
         if submit:
-            return HttpResponseRedirect('/regularization/change/0/')
+            return HttpResponseRedirect('/regularization/change/000/')
 
     # find the number of position in
     maxPos = 0

@@ -1,9 +1,13 @@
 <!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML//EN">
 <html> <head>
 <title></title>
+<script src="http://code.jquery.com/jquery-1.7.2.min.js"></script>
 <script type="text/javascript">
 
 var iTimeoutId = null;
+var regOn = false;
+var allWitnesses;
+var newRules;
 
 String.prototype.reverse=function(){return this.split("").reverse().join("");}
 
@@ -39,7 +43,23 @@ function selectToken()
 	reg_word = reg_word + content[i];
     }
     //alert(reg_word);
-    document.regularization.reg_this.value = reg_word;
+
+    // make sure word clicked is not a witness
+    var isWitness = false;
+    for (var i in allWitnesses.witnesses)
+    {
+      //alert(allWitnesses.witnesses[i].id);
+      if(allWitnesses.witnesses[i].id == reg_word || reg_word == "/"
+         || reg_word == "")
+      {
+        // alert(allWitnesses.witnesses[i].id);
+         isWitness = true;
+      }
+    }
+    if (isWitness == false)
+    {
+      document.regularization.reg_this.value = reg_word;
+    }
 }
 
 function selectNew()
@@ -88,28 +108,88 @@ function selectNew()
   var reg_word = left_word.reverse() + right_word;
   //alert(reg_word);
 
-  document.regularization.reg_to.value = reg_word
+  // make sure word clicked is not a witness
+    var isWitness = false;
+    for (var i in allWitnesses.witnesses)
+    {
+      //alert(allWitnesses.witnesses[i].id);
+      if(allWitnesses.witnesses[i].id == reg_word || reg_word == "/"
+         || reg_word == "")
+      {
+        // alert(allWitnesses.witnesses[i].id);
+         isWitness = true;
+      }
+    }
+    if (isWitness == false)
+    {
+      document.regularization.reg_to.value = reg_word;
+    }
+}
+
+function addrule()
+{
+
+  
+  alert("HEEEERE");
 
 }
 
+function regularize_onoff()
+{
+  //alert("onOff");
+  if (regOn == false)
+  {
+     regOn = true;
+     document.getElementById('reg_on').innerHTML = "Regularization is on!";
+     alert(regOn);
+  }
+  else
+  {
+     regOn = false;
+     document.getElementById('reg_on').innerHTML = "Regularization is off!";
+     alert(regOn);
+  }
+
+}
+
+function load()
+{
+  //alert("load");
+  $.getJSON("http://127.0.0.1:8000/regularization/sample/getWitnesses/",
+function(jdata) {
+
+  // save the witnesses to a global variable
+  allWitnesses = jdata;
+})
+.error(function() { alert("error"); });
+
+  //initialize new rules
+  newRules = { rules: [] };
+
+}
 
 </script>
 </head>
 
-<body>
+<body onload="load()">
 <h1>Regularization: Make Modifications</h1>
 Double click on the word you want regularized, single click or type in the
 word you want it regularized to.  Select
 combination of Witnesses and Place.  Click OK when
-finished. (Regularization is off; Standard Segmentation)
+finished.
+<label for="reg_on" id="reg_on">Regularization is off! (Showing
+originals)
+</label>
 
 <form action="." method="POST" name="regularization">
         <table>
             {{ form.as_table }}
         </table>
-	<input name="ok" type="submit" value="Ok">
-	<input name="edit_reg" type="submit" value="Edit Reg..">
-	<input name="reg_on" type="submit" value="Reg. On">
+	<input name="ok" type="button" value="Add Rule"
+	onclick="addrule()">
+	<input name="edit_reg" type="submit" value="Edit Reg.">
+	<input name="reg_on" type="button" value="Reg. On"
+	onclick="regularize_onoff()">
 	<input name="recollate" type="submit"
         value="Recollate">
 	<input name="back" type="submit" value="Back">

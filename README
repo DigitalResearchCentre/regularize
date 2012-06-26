@@ -3,6 +3,12 @@ SETUP:
  - python manage.py syncdb <- create db tables
  - python manage.py runserver
 
+ - need collatex engine running locally
+ - OR change:
+   - input.views line 18 and 99 
+   - birmingham.views line 170
+   - to: http://gregor.middell.net/collatex/api/collate
+
 urls:
 
 Birmingham bible texts:
