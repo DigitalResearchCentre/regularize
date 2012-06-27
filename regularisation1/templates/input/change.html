@@ -8,6 +8,7 @@ var iTimeoutId = null;
 var regOn = false;
 var allWitnesses;
 var newRules;
+var witnessList;
 
 String.prototype.reverse=function(){return this.split("").reverse().join("");}
 
@@ -46,13 +47,13 @@ function selectToken()
 
     // make sure word clicked is not a witness
     var isWitness = false;
-    for (var i in allWitnesses.witnesses)
+    for (var index in allWitnesses.witnesses)
     {
-      //alert(allWitnesses.witnesses[i].id);
-      if(allWitnesses.witnesses[i].id == reg_word || reg_word == "/"
+      //alert(allWitnesses.witnesses[index].id);
+      if(allWitnesses.witnesses[index].id == reg_word || reg_word == "/"
          || reg_word == "")
       {
-        // alert(allWitnesses.witnesses[i].id);
+        // alert(allWitnesses.witnesses[index].id);
          isWitness = true;
       }
     }
@@ -60,6 +61,38 @@ function selectToken()
     {
       document.regularization.reg_this.value = reg_word;
     }
+
+  // find the witnesses for the chosen text
+  // alert(i);
+  i++;
+  keepSearching=true;
+  witnessList = [];
+  var witness = "";
+  while(keepSearching)
+  {
+    //alert(content[i]);
+    var string = content[i] + content[i+1];
+    //alert(string);
+    if(string == " /")
+    {
+       //alert("if");
+       keepSearching = false;
+       witnessList.push(witness);
+       witness = "";
+    }
+    else if (content[i] == " ")
+    {
+       //alert("elseif");
+       //alert("adding" + witness);
+       witnessList.push(witness);
+       witness = "";
+    }
+    else
+    {
+       witness = witness + content[i];
+    }
+    i++;
+  }
 }
 
 function selectNew()
@@ -70,6 +103,7 @@ function selectNew()
   var txt = document.regularization.reg_area;
   var pos = txt.selectionStart;
   var right_word = content[pos];
+
   var i = pos+1;
   //alert(pos + " " + content[pos] + " " + i);
   var keepSearching=true;
@@ -88,11 +122,12 @@ function selectNew()
     }
     i++;
   }
+
   keepSearching=true;
   i = pos-1;
   var left_word = "";
   // search to the left
-  while(keepSearching && i != 0)
+  while(keepSearching && i != -1)
   {
     if(content[i] != " ")
     {
@@ -124,14 +159,42 @@ function selectNew()
     {
       document.regularization.reg_to.value = reg_word;
     }
+  
 }
 
 function addrule()
 {
+  reg_word = document.regularization.reg_this.value;
+  reg_to = document.regularization.reg_to.value;
+  choice = document.regularization.reg_choices.value;
+  //alert(reg_word + " " + reg_to + " " + choice);
 
-  
-  alert("HEEEERE");
+  if (reg_word != "" || reg_word != " " || reg_to != "" ||
+      reg_word != " ")
+  {
+    //alert("add rule");
+    for( var i in witnessList )
+    {
+       if (witnessList[i] != "")
+       {
+         //alert(witnessList[i]);
+         newRules.rules.push({
+           "_id" : i,
+           "appliesTo" : witnessList[i],
+           "condition" : "",
+           "action" : "regularize(reg_word, reg_to)",
+           "user" : "",
+           "scope" : choice,
+           "regularization_type" : "",
+           "description" : "",
+           "token" : reg_word,
+           "lemma" : ""
+         });
+       }
+    }
+  }
 
+  alert("rule added");
 }
 
 function regularize_onoff()
