@@ -9,6 +9,7 @@ var regOn = false;
 var allWitnesses;
 var newRules;
 var witnessList;
+var allTokens;
 
 String.prototype.reverse=function(){return this.split("").reverse().join("");}
 
@@ -172,30 +173,80 @@ function addrule()
   if (reg_word != "" || reg_word != " " || reg_to != "" ||
       reg_word != " ")
   {
-    //alert("add rule");
-    for( var i in witnessList )
-    {
-       if (witnessList[i] != "")
-       {
-         //alert(witnessList[i]);
-         newRules.rules.push({
-           "_id" : i,
-           "appliesTo" : witnessList[i],
-           "condition" : "",
-           "action" : "regularize(reg_word, reg_to)",
-           "user" : "",
-           "scope" : choice,
-           "regularization_type" : "",
-           "description" : "",
-           "token" : reg_word,
-           "lemma" : ""
-         });
-       }
-    }
+       alert("add rule");
+         // anywhere reg_word is found change to reg_to
+         if(choice == "all_places")
+         {
+           alert("all_places");
+           newRules.rules.push({
+             "_id" : "",
+             "appliesTo" : "",
+             "condition" : "",
+             "action" : "regularize(reg_word, reg_to)",
+             "user" : "",
+             "scope" : choice,
+             "regularization_type" : "",
+             "description" : "",
+             "token" : reg_word,
+             "lemma" : ""
+           });
+         }
+         // everytime the system sees reg_word in this
+         // section of text (ex: first line of Canterbury Tales)
+         // TODO: need to change applies to once load different lines
+         else if(choice == "this_block")
+         {
+           alert("this_block");
+             newRules.rules.push({
+             "_id" : "",
+             "appliesTo" : "",
+             "condition" : "",
+             "action" : "regularize(reg_word, reg_to)",
+             "user" : "",
+             "scope" : choice,
+             "regularization_type" : "",
+             "description" : "",
+             "token" : reg_word,
+             "lemma" : ""
+           });
+         }
+         // every time reg_word is seen in this context change to
+         //  reg_to
+         // TODO: need to change appliesTo once load different lines
+         else if (choice == "this_word")
+         {
+            //var context = getContext(reg_word);
+            //alert(context);
+            alert("this_word");
+            newRules.rules.push({
+             "_id" : "",
+             "appliesTo" : "",
+             "condition" : "",
+             "action" : "regularize(reg_word, reg_to)",
+             "user" : "",
+             "scope" : choice,
+             "regularization_type" : "",
+             "description" : "",
+             "token" : reg_word,
+             "lemma" : ""
+           });
+         }
+         else
+         {
+           alert("other");
+         }
   }
 
   alert("rule added");
 }
+
+//function getContext(reg_word)
+//{
+
+  //alert("getContext");
+
+  //return "";
+//}
 
 function regularize_onoff()
 {
@@ -228,6 +279,14 @@ function(jdata) {
 
   //initialize new rules
   newRules = { rules: [] };
+
+  $.getJSON("http://127.0.0.1:8000/regularization/sample/getTokens/",
+function(jdata) {
+
+  // save the tokens to a global variable
+  allTokens = jdata;
+})
+.error(function() { alert("error"); });
 
 }
 
