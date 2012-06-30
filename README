@@ -18,3 +18,6 @@ Collation/Regularization:
 http://127.0.0.1:8000/regularization/
 
 http://127.0.0.1:8000/regularization/sample/
+
+Javascript Interface:
+http://127.0.0.1:8000/regularization/interface/
