@@ -1,0 +1,493 @@
+<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML//EN">
+<html> <head>
+<title></title>
+<script src="http://code.jquery.com/jquery-1.7.2.min.js"></script>
+<script type="text/javascript">
+
+var iTimeoutId = null;
+var regOn = false;
+var allWitnesses;
+var newRules;
+var allTokens;
+var tokenClicked;
+var currentPosition;
+var boxPos;
+
+function determineClick(token)
+{
+  tokenClicked = token;
+  //alert(tokenClicked);
+  //alert("Single click received");
+  if (iTimeoutId == null || !iTimeoutId)
+  {
+    iTimeoutId = setTimeout("selectNew()", 500);
+  }
+  else
+  {
+    //alert("double clicked");
+    window.clearTimeout(iTimeoutId);
+    iTimeoutId = null;
+    selectToken();
+  }
+}
+
+function selectToken()
+{
+    //alert("selectToken");
+    var content = "";
+    if(tokenClicked == 'token1Text')
+    {
+      content = document.regularization.token1Text.value;
+      //alert(content);
+    }
+    else if(tokenClicked == 'token2Text')
+    {
+      content = document.regularization.token2Text.value;
+      //alert(content);
+    }
+    else if(tokenClicked == 'token3Text')
+    {
+      content = document.regularization.token3Text.value;
+      //alert(content);
+    }
+    else if(tokenClicked == 'token4Text')
+    {
+      content = document.regularization.token4Text.value;
+      //alert(content);
+    }
+    else if(tokenClicked == 'token5Text')
+    {
+      content = document.regularization.token5Text.value;
+      //alert(content);
+    }
+    else if(tokenClicked == 'token6Text')
+    {
+      content = document.regularization.token6Text.value;
+      //alert(content);
+    }
+    else if(tokenClicked == 'token7Text')
+    {
+      content = document.regularization.token7Text.value;
+      //alert(content);
+    }
+    else if(tokenClicked == 'token8Text')
+    {
+      content = document.regularization.token8Text.value;
+      //alert(content);
+    }
+    else if(tokenClicked == 'token9Text')
+    {
+      content = document.regularization.token9Text.value;
+      //alert(content);
+    }
+    else if(tokenClicked == 'token10Text')
+    {
+      content = document.regularization.token10Text.value;
+      //alert(content);
+    }
+    else if(tokenClicked == 'token11Text')
+    {
+      content = document.regularization.token11Text.value;
+      //alert(content);
+    }
+
+    document.regularization.reg_this.value = content;
+}
+
+
+function selectNew()
+{
+   //alert("selectNew()");
+
+  var content = "";
+    if(tokenClicked == 'token1Text')
+    {
+      content = document.regularization.token1Text.value;
+      //alert(content);
+    }
+    else if(tokenClicked == 'token2Text')
+    {
+      content = document.regularization.token2Text.value;
+      //alert(content);
+    }
+    else if(tokenClicked == 'token3Text')
+    {
+      content = document.regularization.token3Text.value;
+      //alert(content);
+    }
+    else if(tokenClicked == 'token4Text')
+    {
+      content = document.regularization.token4Text.value;
+      //alert(content);
+    }
+    else if(tokenClicked == 'token5Text')
+    {
+      content = document.regularization.token5Text.value;
+      //alert(content);
+    }
+    else if(tokenClicked == 'token6Text')
+    {
+      content = document.regularization.token6Text.value;
+      //alert(content);
+    }
+    else if(tokenClicked == 'token7Text')
+    {
+      content = document.regularization.token7Text.value;
+      //alert(content);
+    }
+    else if(tokenClicked == 'token8Text')
+    {
+      content = document.regularization.token8Text.value;
+      //alert(content);
+    }
+    else if(tokenClicked == 'token9Text')
+    {
+      content = document.regularization.token9Text.value;
+      //alert(content);
+    }
+    else if(tokenClicked == 'token10Text')
+    {
+      content = document.regularization.token10Text.value;
+      //alert(content);
+    }
+    else if(tokenClicked == 'token11Text')
+    {
+      content = document.regularization.token11Text.value;
+      //alert(content);
+    }
+
+    document.regularization.reg_to.value = content;
+}
+
+function findDistinct(position)
+{
+  alert("findDistinct");
+  // adding witnesses to the label for the inputs
+  var line1 = ""; var line2 = ""; var line3 = ""; var line4 = "";
+  var line5 = "" ; var line6 = ""; var line7 = ""; var line8 = "";
+  var line9 = ""; var line10 = ""; var line11 = "";
+
+  for (var i in allTokens.alignment)
+  {
+    //alert(allTokens.alignment[i].witness);
+
+    token = allTokens.alignment[i].tokens[position].t;
+    //alert(token);
+
+    // fill structure that tells what data is in input fields, etc
+    if (token == document.regularization.token1Text.value)
+    {
+       //alert("line1");
+       line1 += allTokens.alignment[i].witness + " ";
+       boxPos.witness.push({
+          "id" : allTokens.alignment[i].witness,
+          "token" : token,
+          "position" : "1"
+       });
+    }
+    else if (token == document.regularization.token2Text.value)
+    {
+       // alert("line2");
+       line2 += allTokens.alignment[i].witness + " ";
+       boxPos.witness.push({
+          "id" : allTokens.alignment[i].witness,
+          "token" : token,
+          "position" : "2"
+       });
+    }
+    else if (token == document.regularization.token3Text.value)
+    {
+       // alert("line3");
+       line3 += allTokens.alignment[i].witness + " ";
+       boxPos.witness.push({
+          "id" : allTokens.alignment[i].witness,
+          "token" : token,
+          "position" : "3"
+       });
+    }
+    else if (token == document.regularization.token4Text.value)
+    {
+       // alert("line4");
+       line4 += allTokens.alignment[i].witness + " ";
+       boxPos.witness.push({
+          "id" : allTokens.alignment[i].witness,
+          "token" : token,
+          "position" : "4"
+       });
+    }
+    else if (token == document.regularization.token5Text.value)
+    {
+       // alert("line5");
+       line5 += allTokens.alignment[i].witness + " ";
+       boxPos.witness.push({
+          "id" : allTokens.alignment[i].witness,
+          "token" : token,
+          "position" : "5"
+       });
+    }
+    else if (token == document.regularization.token6Text.value)
+    {
+       // alert("line6");
+       line6 += allTokens.alignment[i].witness + " ";
+       boxPos.witness.push({
+          "id" : allTokens.alignment[i].witness,
+          "token" : token,
+          "position" : "6"
+       });
+    }
+    else if (token == document.regularization.token7Text.value)
+    {
+       // alert("line7");
+       line7 += allTokens.alignment[i].witness + " ";
+       boxPos.witness.push({
+          "id" : allTokens.alignment[i].witness,
+          "token" : token,
+          "position" : "7"
+       });
+    }
+    else if (token == document.regularization.token8Text.value)
+    {
+       // alert("line8");
+       line8 += allTokens.alignment[i].witness + " ";
+       boxPos.witness.push({
+          "id" : allTokens.alignment[i].witness,
+          "token" : token,
+          "position" : "8"
+       });
+    }
+    else if (token == document.regularization.token9Text.value)
+    {
+       // alert("line9");
+       line9 += allTokens.alignment[i].witness + " ";
+       boxPos.witness.push({
+          "id" : allTokens.alignment[i].witness,
+          "token" : token,
+          "position" : "9"
+       });
+    }
+    else if (token == document.regularization.token10Text.value)
+    {
+       //alert("line10");
+       line10 += allTokens.alignment[i].witness + " ";
+       boxPos.witness.push({
+          "id" : allTokens.alignment[i].witness,
+          "token" : token,
+          "position" : "10"
+       });
+    }
+    else if (token == document.regularization.token11Text.value)
+    {
+       //alert("line11");
+       line11 += allTokens.alignment[i].witness + " ";
+       boxPos.witness.push({
+          "id" : allTokens.alignment[i].witness,
+          "token" : token,
+          "position" : "11"
+       });
+    }
+    else
+    {
+       // Put the token into the input field
+       if(document.regularization.token1Text.value == "")
+       {
+          //alert("line1");
+          line1 += allTokens.alignment[i].witness + " ";
+          document.regularization.token1Text.value = token;
+          document.regularization.token1Text.style.visibility = "visible";
+       }
+       else if(document.regularization.token2Text.value == "")
+       {
+          //alert("line2");
+          line2 += allTokens.alignment[i].witness + " ";
+          document.regularization.token2Text.value = token;
+          document.regularization.token2Text.style.visibility = "visible";
+       }
+       else if(document.regularization.token3Text.value == "")
+       {
+          //alert("line3");
+          line3 += allTokens.alignment[i].witness + " ";
+          document.regularization.token3Text.value = token;
+          document.regularization.token3Text.style.visibility = "visible";
+       }
+       else if(document.regularization.token4Text.value == "")
+       {
+          // alert("line4");
+          line4 += allTokens.alignment[i].witness + " ";
+          document.regularization.token4Text.value = token;
+          document.regularization.token4Text.style.visibility = "visible";
+       }
+       else if(document.regularization.token5Text.value == "")
+       {
+         // alert("line5");
+          line5 += allTokens.alignment[i].witness + " ";
+          document.regularization.token5Text.value = token;
+          document.regularization.token5Text.style.visibility = "visible";
+       }
+       else if(document.regularization.token6Text.value == "")
+       {
+          //alert("line6");
+          line6 += allTokens.alignment[i].witness + " ";
+          document.regularization.token6Text.value = token;
+          document.regularization.token6Text.style.visibility = "visible";
+       }
+       else if(document.regularization.token7Text.value == "")
+       {
+          //alert("line7");
+          line7 += allTokens.alignment[i].witness + " ";
+          document.regularization.token7Text.value = token;
+          document.regularization.token7Text.style.visibility = "visible";
+       }
+       else if(document.regularization.token8Text.value == "")
+       {
+         // alert("line8");
+          line8 += allTokens.alignment[i].witness + " ";
+          document.regularization.token8Text.value = token;
+          document.regularization.token8Text.style.visibility = "visible";
+       }
+       else if(document.regularization.token9Text.value == "")
+       {
+         // alert("line9");
+          line9 += allTokens.alignment[i].witness + " ";
+          document.regularization.token9Text.value = token;
+          document.regularization.token9Text.style.visibility = "visible";
+       }
+       else if(document.regularization.token10Text.value == "")
+       {
+          // alert("line10");
+          line10 += allTokens.alignment[i].witness + " ";
+          document.regularization.token10Text.value = token;
+          document.regularization.token10Text.style.visibility = "visible";
+       }
+       else if(document.regularization.token11Text.value == "")
+       {
+          //alert("line11");
+          line11 += allTokens.alignment[i].witness + " ";
+          document.regularization.token11Text.value = token;
+          document.regularization.token11Text.style.visibility = "visible";
+       }
+    }
+  }
+
+  document.getElementById('token1').innerHTML = line1;
+  document.getElementById('token2').innerHTML = line2;
+  document.getElementById('token3').innerHTML = line3;
+  document.getElementById('token4').innerHTML = line4;
+  document.getElementById('token5').innerHTML = line5;
+  document.getElementById('token6').innerHTML = line6;
+  document.getElementById('token7').innerHTML = line7;
+  document.getElementById('token8').innerHTML = line8;
+  document.getElementById('token9').innerHTML = line9;
+  document.getElementById('token10').innerHTML = line10;
+  document.getElementById('token11').innerHTML = line11;
+
+  alert("after");
+}
+
+function load()
+{
+  //alert("load");
+  $.getJSON("http://127.0.0.1:8000/regularization/interface/getBaseWitnesses/",
+function(jdata) {
+
+  // save the witnesses to a global variable
+  allWitnesses = jdata;
+})
+.error(function() { alert("error"); });
+
+  //initialize new rules
+  newRules = { rules: [] };
+
+  //initialize structure to hold positions of tokens and witnesses
+ // in interface
+  boxPos = { witness: [] };
+
+  $.getJSON("http://127.0.0.1:8000/regularization/interface/getBaseTokens/",
+function(jdata) {
+
+  // save the tokens to a global variable
+  allTokens = jdata;
+
+  // put distinct tokens at position 0 into interface
+  currentPosition = 0;
+  findDistinct(0);
+})
+.error(function() { alert("error"); });
+
+}
+
+</script>
+</head>
+
+<body onload="load()">
+<h1>Regularization: Make Modifications</h1>
+Double click on the word you want regularized, single click or type in the
+word you want it regularized to.  Select
+combination of Witnesses and Place.  Click OK when
+finished.
+<label for="reg_on" id="reg_on">Regularization is off! (Showing
+originals)
+</label>
+
+<form action="." method="POST" name="regularization">
+       <br /><label id="token1"> </label>
+           <input type="text" name="token1Text" size="100"
+           onclick="determineClick('token1Text')"
+           style="visibility:hidden"/>
+        <br /><label id="token2"></label>
+           <input type="text" name="token2Text" size="100"
+            onclick="determineClick('token2Text')" style="visibility:hidden"/>
+       <br /><label id="token3"></label>
+           <input type="text" name="token3Text" size="100"
+           onclick="determineClick('token3Text')" style="visibility:hidden"/>
+       <br /><label id="token4"></label>
+           <input type="text" name="token4Text" size="100"
+           onclick="determineClick('token4Text')" style="visibility:hidden"/>
+       <br /><label id="token5"></label>
+           <input type="text" name="token5Text" size="100"
+           onclick="determineClick('token5Text')" style="visibility:hidden"/>
+       <br /><label id="token6"></label>
+           <input type="text" name="token6Text" size="100"
+           onclick="determineClick('token6Text')" style="visibility:hidden"/>
+       <br /><label id="token7"></label>
+           <input type="text" name="token7Text" size="100"
+           onclick="determineClick('token7Text')" style="visibility:hidden"/>
+       <br /><label id="token8"></label>
+           <input type="text" name="token8Text" size="100"
+           onclick="determineClick('token8Text')" style="visibility:hidden"/>
+       <br /><label id="token9"></label>
+           <input type="text" name="token9Text" size="100"
+           onclick="determineClick('token9Text')" style="visibility:hidden"/>
+       <br /><label id="token10"></label>
+           <input type="text" name="token10Text" size="100"
+           onclick="determineClick('token10Text')" style="visibility:hidden"/>
+       <br /><label id="token11"></label>
+           <input type="text" name="token11Text" size="100"
+           onclick="determineClick('token11Text')" style="visibility:hidden"/>
+           
+       <br /><label id="reg_this" name="reg_this">Regularize This:</label>
+           <input type="text" name="reg_this" size="100"/>
+       <br /><label id="reg_to">To This:</label>
+           <input type="text" name="reg_to" size="100"/>
+
+        <p>Regularize Choices:
+       <select>
+	  <option>All witnesses, this block</option>
+	  <option>All witnesses, this word</option>
+	  <option>All witnesses, all places</option>
+	  <option>Other ...</option>
+	</select></p>
+
+	<input name="ok" type="button" value="Add Rule"
+	onclick="addrule()">
+	<input name="edit_reg" type="button" value="Edit Reg.">
+	<input name="reg_on" type="button" value="Reg. On"
+	onclick="regularize_onoff()">
+	<input name="recollate" type="submit"
+        value="Recollate">
+	<input name="back" type="button" value="Back">
+	<input name="next" type="button" value="Next">
+	<input name="view" type="button" value="View Originals">
+	<input name="done" type="button" value="DONE">
+    </form>
+
+</body> </html>

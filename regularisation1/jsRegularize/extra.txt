@@ -1,0 +1,245 @@
+String.prototype.reverse=function(){return this.split("").reverse().join("");}
+
+function selectToken()
+{
+  //var content = document.regularization.reg_area.value;
+    //var txt = document.regularization.reg_area;
+    //var startPos = txt.selectionStart;
+    //var endPos = txt.selectionEnd;
+    //alert(startPos + " " + endPos);
+    //alert(content.substring(startPost,endPos));
+    //var reg_word = "";
+    //var i = 0;
+    //for(i=startPos; i<endPos; i++)
+    //{
+//	reg_word = reg_word + content[i];
+  //  }
+    //alert(reg_word);
+
+    // make sure word clicked is not a witness
+    //var isWitness = false;
+  //  for (var index in allWitnesses.witnesses)
+    //{
+      //alert(allWitnesses.witnesses[index].id);
+      //if(allWitnesses.witnesses[index].id == reg_word || reg_word == "/"
+        // || reg_word == "")
+     // {
+        // alert(allWitnesses.witnesses[index].id);
+         isWitness = true;
+      //}
+   // }
+   // if (isWitness == false)
+   // {
+     // document.regularization.reg_this.value = reg_word;
+   // }
+
+  // find the witnesses for the chosen text
+  // alert(i);
+ // i++;
+ // keepSearching=true;
+ // witnessList = [];
+ // var witness = "";
+ // while(keepSearching)
+ // {
+    //alert(content[i]);
+   // var string = content[i] + content[i+1];
+    //alert(string);
+  //  if(string == " /")
+  //  {
+       //alert("if");
+  //     keepSearching = false;
+  //     witnessList.push(witness);
+  //     witness = "";
+  //  }
+  //  else if (content[i] == " ")
+  //  {
+       //alert("elseif");
+       //alert("adding" + witness);
+  //     witnessList.push(witness);
+  //     witness = "";
+  //  }
+  //  else
+  //  {
+  //     witness = witness + content[i];
+  //  }
+  //  i++;
+  //}
+
+}
+
+
+function selectNew()
+{
+
+function selectNew()
+{
+  iTimeoutId = null;
+  alert("selectNew");
+  var content = document.regularization.reg_area.value;
+  var txt = document.regularization.reg_area;
+  var pos = txt.selectionStart;
+  var right_word = content[pos];
+
+  var i = pos+1;
+  //alert(pos + " " + content[pos] + " " + i);
+  var keepSearching=true;
+  // search to the right
+  while(keepSearching)
+  {
+    if(content[i] != " ")
+    {
+      right_word = right_word + content[i];
+      //alert(content[i] + " " + pos);
+    }
+    else
+    {
+      keepSearching=false;
+      //right_word = right_word + content[pos];
+    }
+    i++;
+  }
+
+  keepSearching=true;
+  i = pos-1;
+  var left_word = "";
+  // search to the left
+  while(keepSearching && i != -1)
+  {
+    if(content[i] != " ")
+    {
+      left_word = left_word + content[i];
+    }
+    else
+    {
+      keepSearching=false;
+    }
+    i--;
+  }
+  //alert(left_word + " " + right_word);
+  var reg_word = left_word.reverse() + right_word;
+  //alert(reg_word);
+
+  // make sure word clicked is not a witness
+    var isWitness = false;
+    for (var i in allWitnesses.witnesses)
+    {
+      //alert(allWitnesses.witnesses[i].id);
+      if(allWitnesses.witnesses[i].id == reg_word || reg_word == "/"
+         || reg_word == "")
+      {
+        // alert(allWitnesses.witnesses[i].id);
+         isWitness = true;
+      }
+    }
+    if (isWitness == false)
+    {
+      document.regularization.reg_to.value = reg_word;
+    }
+  
+}
+
+function addrule()
+{
+  reg_word = document.regularization.reg_this.value;
+  reg_to = document.regularization.reg_to.value;
+  choice = document.regularization.reg_choices.value;
+  //alert(reg_word + " " + reg_to + " " + choice);
+
+  if (reg_word != "" || reg_word != " " || reg_to != "" ||
+      reg_word != " ")
+  {
+       alert("add rule");
+         // anywhere reg_word is found change to reg_to
+         if(choice == "all_places")
+         {
+           alert("all_places");
+           var action = "regularize(" + reg_word + ", " + reg_to + ")";
+           newRules.rules.push({
+             "_id" : "",
+             "appliesTo" : "",
+             "condition" : "",
+             "action" : action,
+             "user" : "",
+             "scope" : choice,
+             "regularization_type" : "",
+             "description" : "",
+             "token" : reg_word,
+             "lemma" : ""
+           });
+         }
+         // everytime the system sees reg_word in this
+         // section of text (ex: first line of Canterbury Tales)
+         // TODO: need to change applies to once load different lines
+         else if(choice == "this_block")
+         {
+           alert("this_block");
+           var action = "regularize(" + reg_word + ", " + reg_to + ")";
+             newRules.rules.push({
+             "_id" : "",
+             "appliesTo" : "",
+             "condition" : "",
+             "action" : action,
+             "user" : "",
+             "scope" : choice,
+             "regularization_type" : "",
+             "description" : "",
+             "token" : reg_word,
+             "lemma" : ""
+           });
+         }
+         // every time reg_word is seen in this context change to
+         //  reg_to
+         // TODO: need to change appliesTo once load different lines
+         else if (choice == "this_word")
+         {
+            var context = getContext(reg_word);
+            alert(context);
+            alert("this_word");
+            var action = "regularize(" + reg_word + ", " + reg_to + ")";
+            newRules.rules.push({
+             "_id" : "",
+             "appliesTo" : "",
+             "condition" : "",
+             "action" : action,
+             "user" : "",
+             "scope" : choice,
+             "regularization_type" : "",
+             "description" : "",
+             "token" : reg_word,
+             "lemma" : ""
+           });
+         }
+         else
+         {
+           alert("other");
+         }
+  }
+
+  alert("rule added");
+}
+
+function getContext(reg_word)
+{
+
+  alert("getContext");
+
+  return "";
+}
+
+function regularize_onoff()
+{
+  //alert("onOff");
+  if (regOn == false)
+  {
+     regOn = true;
+     document.getElementById('reg_on').innerHTML = "Regularization is on!";
+     //alert(regOn);
+  }
+  else
+  {
+     regOn = false;
+     document.getElementById('reg_on').innerHTML = "Regularization is off!";
+     //alert(regOn);
+  }
+
+}
