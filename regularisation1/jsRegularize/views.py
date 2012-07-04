@@ -50,6 +50,8 @@ def getBaseTokens(request):
 
     send = httplib2.Http()
     response, content = send.request(url, 'POST', jdata, headers)
-    pprint.pprint(content)
+
+    jdata2 = json.loads(content)
+    pprint.pprint(jdata2)
     
     return HttpResponse(content, mimetype="application/json")

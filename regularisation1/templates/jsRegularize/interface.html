@@ -12,6 +12,7 @@ var allTokens;
 var tokenClicked;
 var currentPosition;
 var boxPos;
+var totalPos;
 
 function determineClick(token)
 {
@@ -161,7 +162,7 @@ function selectNew()
 
 function findDistinct(position)
 {
-  alert("findDistinct");
+  //alert("findDistinct");
   // adding witnesses to the label for the inputs
   var line1 = ""; var line2 = ""; var line3 = ""; var line4 = "";
   var line5 = "" ; var line6 = ""; var line7 = ""; var line8 = "";
@@ -171,9 +172,20 @@ function findDistinct(position)
   {
     //alert(allTokens.alignment[i].witness);
 
-    token = allTokens.alignment[i].tokens[position].t;
+    if(allTokens.alignment[i].tokens[position] == null)
+    {
+       token = "NONE";
+
+    }
+    else
+    {
+      token = allTokens.alignment[i].tokens[position].t;
+    }
     //alert(token);
 
+    // Wy not collated right
+    if (allTokens.alignment[i].witness != "Wy")
+    {
     // fill structure that tells what data is in input fields, etc
     if (token == document.regularization.token1Text.value)
     {
@@ -366,6 +378,7 @@ function findDistinct(position)
           document.regularization.token11Text.style.visibility = "visible";
        }
     }
+    }
   }
 
   document.getElementById('token1').innerHTML = line1;
@@ -380,7 +393,7 @@ function findDistinct(position)
   document.getElementById('token10').innerHTML = line10;
   document.getElementById('token11').innerHTML = line11;
 
-  alert("after");
+  //alert("after");
 }
 
 function load()
@@ -407,13 +420,155 @@ function(jdata) {
   // save the tokens to a global variable
   allTokens = jdata;
 
+  totalPos = 0;
+
+  // find how many positions are in tokens
+  for (var i in allTokens.alignment[0].tokens)
+  {
+     totalPos++;
+  }
+  //alert(totalPos);
+
   // put distinct tokens at position 0 into interface
-  currentPosition = 0;
+  currentPosition = 1;
   findDistinct(0);
 })
 .error(function() { alert("error"); });
 
 }
+
+function regularize_onoff()
+{
+  //alert("onOff");
+  if (regOn == false)
+  {
+     regOn = true;
+     document.getElementById('reg_on').innerHTML = "Regularization is on!";
+     //alert(regOn);
+  }
+  else
+  {
+     regOn = false;
+     string = "Regularization is off! (Showing originals)";
+     document.getElementById('reg_on').innerHTML = string;
+     //alert(regOn);
+  }
+
+}
+
+function addrule()
+{
+  alert("addrule");
+}
+
+function nextToken()
+{
+  //alert("next");
+ 
+  document.getElementById('token1').innerHTML = "";
+  document.getElementById('token2').innerHTML = "";
+  document.getElementById('token3').innerHTML = "";
+  document.getElementById('token4').innerHTML = "";
+  document.getElementById('token5').innerHTML = "";
+  document.getElementById('token6').innerHTML = "";
+  document.getElementById('token7').innerHTML = "";
+  document.getElementById('token8').innerHTML = "";
+  document.getElementById('token9').innerHTML = "";
+  document.getElementById('token10').innerHTML = "";
+  document.getElementById('token11').innerHTML = "";
+
+  document.regularization.token1Text.style.visibility = "hidden";
+  document.regularization.token2Text.style.visibility = "hidden";
+  document.regularization.token3Text.style.visibility = "hidden";
+  document.regularization.token4Text.style.visibility = "hidden";
+  document.regularization.token5Text.style.visibility = "hidden";
+  document.regularization.token6Text.style.visibility = "hidden";
+  document.regularization.token7Text.style.visibility = "hidden";
+  document.regularization.token8Text.style.visibility = "hidden";
+  document.regularization.token9Text.style.visibility = "hidden";
+  document.regularization.token10Text.style.visibility = "hidden";
+  document.regularization.token11Text.style.visibility = "hidden";
+
+  document.regularization.token1Text.value = "";
+  document.regularization.token2Text.value = "";
+  document.regularization.token3Text.value = "";
+  document.regularization.token4Text.value = "";
+  document.regularization.token5Text.value = "";
+  document.regularization.token6Text.value = "";
+  document.regularization.token7Text.value = "";
+  document.regularization.token8Text.value = "";
+  document.regularization.token9Text.value = "";
+  document.regularization.token10Text.value = "";
+  document.regularization.token11Text.value = "";
+
+  if(currentPosition == totalPos)
+  {
+    //alert("end of tokens");
+    var position = currentPosition - 1;
+    findDistinct(position);
+  }
+  else
+  {
+    findDistinct(currentPosition++);
+  }
+}
+
+function backToken()
+{
+  //alert("back");
+ 
+  document.getElementById('token1').innerHTML = "";
+  document.getElementById('token2').innerHTML = "";
+  document.getElementById('token3').innerHTML = "";
+  document.getElementById('token4').innerHTML = "";
+  document.getElementById('token5').innerHTML = "";
+  document.getElementById('token6').innerHTML = "";
+  document.getElementById('token7').innerHTML = "";
+  document.getElementById('token8').innerHTML = "";
+  document.getElementById('token9').innerHTML = "";
+  document.getElementById('token10').innerHTML = "";
+  document.getElementById('token11').innerHTML = "";
+
+  document.regularization.token1Text.style.visibility = "hidden";
+  document.regularization.token2Text.style.visibility = "hidden";
+  document.regularization.token3Text.style.visibility = "hidden";
+  document.regularization.token4Text.style.visibility = "hidden";
+  document.regularization.token5Text.style.visibility = "hidden";
+  document.regularization.token6Text.style.visibility = "hidden";
+  document.regularization.token7Text.style.visibility = "hidden";
+  document.regularization.token8Text.style.visibility = "hidden";
+  document.regularization.token9Text.style.visibility = "hidden";
+  document.regularization.token10Text.style.visibility = "hidden";
+  document.regularization.token11Text.style.visibility = "hidden";
+
+  document.regularization.token1Text.value = "";
+  document.regularization.token2Text.value = "";
+  document.regularization.token3Text.value = "";
+  document.regularization.token4Text.value = "";
+  document.regularization.token5Text.value = "";
+  document.regularization.token6Text.value = "";
+  document.regularization.token7Text.value = "";
+  document.regularization.token8Text.value = "";
+  document.regularization.token9Text.value = "";
+  document.regularization.token10Text.value = "";
+  document.regularization.token11Text.value = "";
+
+  if(currentPosition == 1)
+  {
+    //alert("beg of tokens");
+    var position = 0;
+    currentPosition == 1;
+    findDistinct(position);
+  }
+  else
+  {
+    //alert("go back");
+    var position = currentPosition - 2;
+    currentPosition--;
+    findDistinct(position);
+  }
+}
+
 
 </script>
 </head>
@@ -484,8 +639,8 @@ originals)
 	onclick="regularize_onoff()">
 	<input name="recollate" type="submit"
         value="Recollate">
-	<input name="back" type="button" value="Back">
-	<input name="next" type="button" value="Next">
+	<input name="back" type="button" value="Back" onclick="backToken()">
+	<input name="next" type="button" value="Next" onclick="nextToken()">
 	<input name="view" type="button" value="View Originals">
 	<input name="done" type="button" value="DONE">
     </form>
