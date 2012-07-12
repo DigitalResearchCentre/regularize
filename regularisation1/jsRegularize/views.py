@@ -77,4 +77,46 @@ def saveRules(request):
                r.json = ""
                r.save()
 
+               # Rule.objects.all().delete();
+
     return HttpResponse("OK")
+
+def getRules(request):
+    
+    jdata = '{"rules" : ['
+    position = 0
+    for r in Rule.objects.all():
+        # print r.ruleID
+        # print r.appliesTo
+        # print r.condition
+        # print r.action
+        # print r.user
+        # print r.scope
+        # print r.regularization_type
+        # print r.description
+        # print r.token
+        # print r.lemma
+        # print r.json
+        if position != 0:
+            jdata = jdata + ','
+        jdata = jdata + '{"_id": ' + jsonpickle.encode(r.ruleID) + ","
+        jdata = jdata + '"appliesTo":' + jsonpickle.encode(r.appliesTo) + ","
+        jdata = jdata + '"condition":' + jsonpickle.encode(r.condition) + ","
+        jdata = jdata + '"action":' + jsonpickle.encode(r.action) + ","
+        jdata = jdata + '"user":' + jsonpickle.encode(r.user) + ","
+        jdata = jdata + '"scope":' + jsonpickle.encode(r.scope) + ","
+        jdata = jdata + '"regularization_type":' + jsonpickle.encode(r.regularization_type) + ","
+        jdata = jdata + '"description":' + jsonpickle.encode(r.description) + ","
+        jdata = jdata + '"token":' + jsonpickle.encode(r.token) + ","
+        jdata = jdata + '"lemma":' + jsonpickle.encode(r.lemma) + ","
+        jdata = jdata + '"json":' + jsonpickle.encode(r.json) + "}"
+        position = position + 1
+    jdata = jdata + ']}'
+
+    # Rule.objects.all().delete()
+
+    #jdata = json.dumps({"witnesses" : [{"id" : "Bo1", "content" : "soen" }, {"id" : "Bo2", "content" : "erin" }]})
+
+    print jdata
+        
+    return HttpResponse(jdata, mimetype="application/json")

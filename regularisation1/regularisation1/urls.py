@@ -3,7 +3,7 @@ from input.views import regularization, change, show_original
 from birmingham.views import pickText
 from sampleJSON.views import collate, regularize, getWitnesses, getTokens
 from jsRegularize.views import getBaseWitnesses, getBaseTokens, loadInterface
-from jsRegularize.views import saveRules
+from jsRegularize.views import saveRules, getRules
 from django.conf import settings
 
 # Uncomment the next two lines to enable the admin:
@@ -37,6 +37,7 @@ urlpatterns = patterns('',
     url(r'^regularization/interface/$', loadInterface),
 
     url(r'^regularization/interface/saveRules/$', saveRules),
+    url(r'^regularization/interface/getRules/$', getRules),
 )
 
 # if settings.DEBUG:
