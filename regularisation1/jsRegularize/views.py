@@ -1,5 +1,5 @@
 from django.http import HttpResponseRedirect, HttpResponse
-from models import Witness, Collation, Token
+from models import Witness, Collation, Token, Rule
 from django.views.decorators.csrf import csrf_exempt
 from django.shortcuts import render_to_response
 
@@ -22,10 +22,9 @@ def getBaseWitnesses(request):
     contentHg = '[6orncp]W[/6orncp]han that Aueryl wt his shoures soote'
     contentLa = '[xorncp]W[/xorncp]Han pat April wype his schoures soote .'
     contentTo1 = '[3emph]W[/3emph]hen that April . with his shouris . swote'
-    contentWy = '[3orncp]W[/3orncp]han pt Apryll wuth his shoures sote'
 
     jdata = json.dumps({"witnesses" : [{"id" : "Bo1", "content" : contentBo1 }, {"id" : "Bo2", "content" : contentBo2 }, {"id" : "Ch", "content" : contentCh }, {"id" : "Cx1", "content" : contentCx1 }, {"id" : "Cx2", "content" : contentCx2},{"id" : "El", "content" : contentEl }, {"id" : "Ha4", "content" : contentHa4 }, {"id" : "Hg", "content" : contentHg }, {"id" : "La", "content" : contentLa },\
-{"id" : "To1", "content" : contentTo1 }, {"id" : "Wy", "content" : contentWy}]})
+{"id" : "To1", "content" : contentTo1 }]})
 
     return HttpResponse(jdata, mimetype="application/json")
 
@@ -43,15 +42,39 @@ def getBaseTokens(request):
     contentHg = '[6orncp]W[/6orncp]han that Aueryl wt his shoures soote'
     contentLa = '[xorncp]W[/xorncp]Han pat April wype his schoures soote .'
     contentTo1 = '[3emph]W[/3emph]hen that April . with his shouris . swote'
-    contentWy = '[3orncp]W[/3orncp]han pt Apryll wuth his shoures sote'
 
     jdata = json.dumps({"witnesses" : [{"id" : "Bo1", "content" : contentBo1 }, {"id" : "Bo2", "content" : contentBo2 }, {"id" : "Ch", "content" : contentCh }, {"id" : "Cx1", "content" : contentCx1 }, {"id" : "Cx2", "content" : contentCx2},{"id" : "El", "content" : contentEl }, {"id" : "Ha4", "content" : contentHa4 }, {"id" : "Hg", "content" : contentHg }, {"id" : "La", "content" : contentLa },\
-{"id" : "To1", "content" : contentTo1 }, {"id" : "Wy", "content" : contentWy}]})
+{"id" : "To1", "content" : contentTo1 }]})
 
     send = httplib2.Http()
     response, content = send.request(url, 'POST', jdata, headers)
 
-    jdata2 = json.loads(content)
-    pprint.pprint(jdata2)
+    #jdata2 = json.loads(content)
+    #pprint.pprint(jdata2)
     
     return HttpResponse(content, mimetype="application/json")
+
+@csrf_exempt
+def saveRules(request):
+    print "saveRules"
+    if request.is_ajax():
+       if request.method == 'POST':
+           jdata = json.loads(request.raw_post_data)
+           # print jdata
+
+           for rule in jdata['rules']:
+               r = Rule()
+               r.ruleID = rule['_id']
+               r.appliesTo = rule['appliesTo']
+               r.condition = rule['condition']
+               r.action = rule['action']
+               r.user = rule['user']
+               r.scope = rule['scope']
+               r.regularization_type=rule['regularization_type']
+               r.description = rule['description']
+               r.token=rule['token']
+               r.lemma=rule['lemma']
+               r.json = ""
+               r.save()
+
+    return HttpResponse("OK")
