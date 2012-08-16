@@ -19,6 +19,7 @@ var line11W;
 var regLineW;
 var contextStruct;
 var allRules;
+var newWitnesses;
 
 function determineClick(token)
 {
@@ -488,6 +489,214 @@ function(jdata) {
 })
 .error(function() { alert("error"); });
 
+  // add keyboard shortcut
+  shortcut.add("Right", function () {
+    //alert("shortcut");
+    addTokenThis();
+  });
+
+  shortcut.add("Shift+Right", function () {
+    addTokenTo();
+  });
+
+  shortcut.add("Tab", function() {
+    findNextVariant();
+  });
+
+}
+
+function findNextVariant() {
+
+  var reg_this = document.regularization.reg_this.value;
+  var reg_to = document.regularization.reg_to.value;
+
+  var position = currentPosition - 1;
+  var newToken = "";
+
+  if(reg_to == "")
+  {
+    alert("Please select a token");
+  }
+  else
+  {
+     //alert("tokenSelected");
+     reg_to = reg_to.split(" ", 1);
+     var found = false;
+     var foundVariant = false;
+     var variant = "";
+     for (var i in allTokens.alignment)
+     {
+       if (allTokens.alignment[i].tokens[position].t == reg_to && !found)
+       {
+         //alert("found token");
+         found = true;
+       }
+       else if (found && reg_to != allTokens.alignment[i].tokens[position].t && !foundVariant)
+       {
+         foundVariant = true;
+         variant = allTokens.alignment[i].tokens[position].t;
+       }
+     }
+     if(foundVariant)
+     {
+       document.regularization.reg_this.value = variant;
+     }
+     else
+     {
+       alert("Error: Cannot get next variant.");
+     } 
+   }
+  
+}
+
+function addTokenTo()
+{
+  //alert("addToken");
+
+    // if more than one winess, check to see if words are different
+    // if words are different -> cannot add next word
+    // else add next word to reg_this
+    // if reg_on see if rules apply to next word!
+
+  var reg_this = document.regularization.reg_to.value;
+  var position = currentPosition - 1;
+  var newToken = "";
+  if(reg_this == "")
+  {
+    alert("Please select a token");
+  }
+  else
+  {
+     //alert("tokenSelected");
+     reg_this = reg_this.split(" ", 1);
+     var add = true;
+     var found = false;
+     var newPosition = currentPosition;
+     var regToken = false;
+     for (var i in allTokens.alignment)
+     {
+       if (allTokens.alignment[i].tokens[position].t == reg_this && !found)
+       {
+         //alert("found token");
+         position = position + 1;
+         var token = "";
+         if(regOn){
+         for (var k in allRules.rules)
+         {
+           //alert(allRules.rules[k].action);
+           token = allTokens.alignment[i].tokens[position].t;
+           if (token == allRules.rules[k].token)
+           {
+             alert(allRules.rules[k].action);
+             action = allRules.rules[k].action;
+             token = action.split(', ')[1];
+             token = token.substring(0, token.length-1);
+             regToken = true;
+             found = true;
+             //alert(token);
+           }
+         }
+         if (regToken)
+         {
+           newToken = token;
+         }}
+         else
+         {
+           newToken = allTokens.alignment[i].tokens[position].t;
+           found = true;
+         }
+       }
+       else if (allTokens.alignment[i].tokens[position].t == reg_this && found && allTokens.alignment[i].tokens[position].t != newToken)
+       {
+         add = false;
+       }
+     }
+
+     if(add)
+     {
+       document.regularization.reg_to.value = reg_this + " " + newToken;
+     }
+     else
+     {
+       alert("Error: Cannot get next token.  Not all next tokens match.");
+     } 
+  }
+
+}
+
+function addTokenThis()
+{
+  //alert("addToken");
+
+    // if more than one winess, check to see if words are different
+    // if words are different -> cannot add next word
+    // else add next word to reg_this
+    // if reg_on see if rules apply to next word!
+
+  var reg_this = document.regularization.reg_this.value;
+  var position = currentPosition - 1;
+  var newToken = "";
+  if(reg_this == "")
+  {
+    alert("Please select a token");
+  }
+  else
+  {
+     //alert("tokenSelected");
+     reg_this = reg_this.split(" ", 1);
+     var add = true;
+     var found = false;
+     var newPosition = currentPosition;
+     var regToken = false;
+     for (var i in allTokens.alignment)
+     {
+       if (allTokens.alignment[i].tokens[position].t == reg_this && !found)
+       {
+         //alert("found token");
+         position = position + 1;
+         var token = "";
+         if(regOn){
+         for (var k in allRules.rules)
+         {
+           //alert(allRules.rules[k].action);
+           token = allTokens.alignment[i].tokens[position].t;
+           if (token == allRules.rules[k].token)
+           {
+             alert(allRules.rules[k].action);
+             action = allRules.rules[k].action;
+             token = action.split(', ')[1];
+             token = token.substring(0, token.length-1);
+             regToken = true;
+             found = true;
+             //alert(token);
+           }
+         }
+         if (regToken)
+         {
+           newToken = token;
+         }}
+         else
+         {
+           newToken = allTokens.alignment[i].tokens[position].t;
+           found = true;
+         }
+       }
+       else if (allTokens.alignment[i].tokens[position].t == reg_this && found && allTokens.alignment[i].tokens[position].t != newToken)
+       {
+         add = false;
+       }
+     }
+
+     if(add)
+     {
+       document.regularization.reg_this.value = reg_this + " " +newToken;
+     }
+     else
+     {
+       alert("Error: Cannot get next token.  Not all next tokens match.");
+     } 
+  }
+
 }
 
 function regularize_onoff()
@@ -579,7 +788,14 @@ function regularize(position)
   var line1 = ""; var line2 = ""; var line3 = ""; var line4 = "";
   var line5 = "" ; var line6 = ""; var line7 = ""; var line8 = "";
   var line9 = ""; var line10 = ""; var line11 = "";
+
+  var line1Break = true; var line2Break = true; var line3Break = true;
+  var line4Break = true; var line5Break = true; var line6Break = true;
+  var line7Break = true; var line8Break = true; var line9Break = true;
+  var line10Break = true; var line11Break = true;
+
   var regToken = false;
+  var origToken = "";
 
   //alert("regularize");
   for (var i in allTokens.alignment)
@@ -588,10 +804,12 @@ function regularize(position)
     if(allTokens.alignment[i].tokens[position] == null)
     {
        token = "null";
+       origToken = "null";
     }
     else
     {
       token = allTokens.alignment[i].tokens[position].t;
+      origToken = allTokens.alignment[i].tokens[position].t;
     }
 
     //alert(allTokens.alignment[i].witness);
@@ -612,14 +830,46 @@ function regularize(position)
 
     if (token == document.regularization.token1Text.value)
     {
-       //alert("line1");
+       //alert("line1REPEAT");
        if (regToken)
        {
-         line1 += allTokens.alignment[i].witness + "(" + allTokens.alignment[i].tokens[position].t + ") ";
+         line1 += allTokens.alignment[i].witness + "(" + origToken + ") ";
+         if (line1.length > 80 && line1Break)
+         {
+           line1 += "<br />";
+           line1 += "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"
+           line1Break = false;
+         }
+         else if (!line1Break && line1.length > 160)
+         {
+            line1 += "<br />";
+            line1 += "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"
+         }
+         else if (!line1Break && line1.length > 240)
+         {
+            line1 += "<br />";
+            line1 += "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"
+         }
        }
        else
        {
          line1 += allTokens.alignment[i].witness + " ";
+         if (line1.length > 80 && line1Break)
+         {
+           line1 += "<br />";
+           line1 += "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"
+           line1Break = false;
+         }
+         else if (!line1Break && line1.length > 160)
+         {
+            line1 += "<br />";
+            line1 += "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"
+         }
+         else if (!line1Break && line1.length > 240)
+         {
+            line1 += "<br />";
+            line1 += "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"
+         }
        }
        line1W.witnesses.push({ "id": allTokens.alignment[i].witness});
        boxPos.witness.push({
@@ -633,7 +883,7 @@ function regularize(position)
        // alert("line2");
        if (regToken)
        {
-         line2 += allTokens.alignment[i].witness + "(" + allTokens.alignment[i].tokens[position].t + ") ";
+         line2 += allTokens.alignment[i].witness + "(" + origToken + ") ";
        }
        else
        {
@@ -651,7 +901,7 @@ function regularize(position)
        // alert("line3");
        if (regToken)
        {
-         line3 += allTokens.alignment[i].witness + "(" + allTokens.alignment[i].tokens[position].t + ") ";
+         line3 += allTokens.alignment[i].witness + "(" + origToken + ") ";
        }
        else
        {
@@ -669,7 +919,7 @@ function regularize(position)
        // alert("line4");
        if (regToken)
        {
-         line4 += allTokens.alignment[i].witness + "(" + allTokens.alignment[i].tokens[position].t + ") ";
+         line4 += allTokens.alignment[i].witness + "(" + origToken + ") ";
        }
        else
        {
@@ -687,7 +937,7 @@ function regularize(position)
        // alert("line5");
        if (regToken)
        {
-         line5 += allTokens.alignment[i].witness + "(" + allTokens.alignment[i].tokens[position].t + ") ";
+         line5 += allTokens.alignment[i].witness + "(" + origToken + ") ";
        }
        else
        {
@@ -705,7 +955,7 @@ function regularize(position)
        // alert("line6");
        if (regToken)
        {
-         line6 += allTokens.alignment[i].witness + "(" + allTokens.alignment[i].tokens[position].t + ") ";
+         line6 += allTokens.alignment[i].witness + "(" + origToken + ") ";
        }
        else
        {
@@ -723,7 +973,7 @@ function regularize(position)
        // alert("line7");
        if (regToken)
        {
-         line7 += allTokens.alignment[i].witness + "(" + allTokens.alignment[i].tokens[position].t + ") ";
+         line7 += allTokens.alignment[i].witness + "(" + origToken + ") ";
        }
        else
        {
@@ -741,7 +991,7 @@ function regularize(position)
        // alert("line8");
        if (regToken)
        {
-         line8 += allTokens.alignment[i].witness + "(" + allTokens.alignment[i].tokens[position].t + ") ";
+         line8 += allTokens.alignment[i].witness + "(" + origToken + ") ";
        }
        else
        {
@@ -759,7 +1009,7 @@ function regularize(position)
        // alert("line9");
        if (regToken)
        {
-         line9 += allTokens.alignment[i].witness + "(" + allTokens.alignment[i].tokens[position].t + ") ";
+         line9 += allTokens.alignment[i].witness + "(" + origToken + ") ";
        }
        else
        {
@@ -777,7 +1027,7 @@ function regularize(position)
        //alert("line10");
        if (regToken)
        {
-         line10 += allTokens.alignment[i].witness + "(" + allTokens.alignment[i].tokens[position].t + ") ";
+         line10 += allTokens.alignment[i].witness + "(" + origToken + ") ";
        }
        else
        {
@@ -795,7 +1045,438 @@ function regularize(position)
        //alert("line11");
        if (regToken)
        {
-         line11 += allTokens.alignment[i].witness + "(" + allTokens.alignment[i].tokens[position].t + ") ";
+         line11 += allTokens.alignment[i].witness + "(" + origToken + ") ";
+       }
+       else
+       {
+         line11 += allTokens.alignment[i].witness + " ";
+       }
+       line11W.witnesses.push({ "id": allTokens.alignment[i].witness});
+       boxPos.witness.push({
+          "id" : allTokens.alignment[i].witness,
+          "token" : token,
+          "position" : "11"
+       });
+    }
+    else
+    {
+       // Put the token into the input field
+       if(document.regularization.token1Text.value == "")
+       {
+          //alert("line1");
+          if (regToken)
+          {
+            line1 += allTokens.alignment[i].witness + "(" + origToken + ") ";
+          }
+          else
+          {
+            line1 += allTokens.alignment[i].witness + " ";
+          }
+          line1W.witnesses.push({ "id": allTokens.alignment[i].witness});
+          document.regularization.token1Text.value = token;
+          document.regularization.token1Text.style.visibility = "visible";
+       }
+       else if(document.regularization.token2Text.value == "")
+       {
+          //alert("line2");
+          if (regToken)
+          {
+           line2 += allTokens.alignment[i].witness + "(" + origToken + ") ";
+          }
+          else
+          {
+           line2 += allTokens.alignment[i].witness + " ";
+          }
+          line2W.witnesses.push({ "id": allTokens.alignment[i].witness});
+          document.regularization.token2Text.value = token;
+          document.regularization.token2Text.style.visibility = "visible";
+       }
+       else if(document.regularization.token3Text.value == "")
+       {
+          //alert("line3");
+          if (regToken)
+          {
+           line3 += allTokens.alignment[i].witness + "(" + origToken + ") ";
+          }
+          else
+          {
+           line3 += allTokens.alignment[i].witness + " ";
+          }
+          line3W.witnesses.push({ "id": allTokens.alignment[i].witness});
+          document.regularization.token3Text.value = token;
+          document.regularization.token3Text.style.visibility = "visible";
+       }
+       else if(document.regularization.token4Text.value == "")
+       {
+          // alert("line4");
+          if (regToken)
+          {
+           line4 += allTokens.alignment[i].witness + "(" + origToken + ") ";
+          }
+          else
+          {
+           line4 += allTokens.alignment[i].witness + " ";
+          }
+          line4W.witnesses.push({ "id": allTokens.alignment[i].witness});
+          document.regularization.token4Text.value = token;
+          document.regularization.token4Text.style.visibility = "visible";
+       }
+       else if(document.regularization.token5Text.value == "")
+       {
+         // alert("line5");
+          if (regToken)
+          {
+           line5 += allTokens.alignment[i].witness + "(" + origToken + ") ";
+          }
+          else
+          {
+           line5 += allTokens.alignment[i].witness + " ";
+          }
+          line5W.witnesses.push({ "id": allTokens.alignment[i].witness});
+          document.regularization.token5Text.value = token;
+          document.regularization.token5Text.style.visibility = "visible";
+       }
+       else if(document.regularization.token6Text.value == "")
+       {
+          //alert("line6");
+          if (regToken)
+          {
+           line6 += allTokens.alignment[i].witness + "(" + origToken + ") ";
+          }
+          else
+          {
+           line6 += allTokens.alignment[i].witness + " ";
+          }
+          line6W.witnesses.push({ "id": allTokens.alignment[i].witness});
+          document.regularization.token6Text.value = token;
+          document.regularization.token6Text.style.visibility = "visible";
+       }
+       else if(document.regularization.token7Text.value == "")
+       {
+          //alert("line7");
+          if (regToken)
+          {
+           line7 += allTokens.alignment[i].witness + "(" + origToken + ") ";
+          }
+          else
+          {
+           line7 += allTokens.alignment[i].witness + " ";
+          }
+          line7W.witnesses.push({ "id": allTokens.alignment[i].witness});
+          document.regularization.token7Text.value = token;
+          document.regularization.token7Text.style.visibility = "visible";
+       }
+       else if(document.regularization.token8Text.value == "")
+       {
+         // alert("line8");
+          if (regToken)
+          {
+           line8 += allTokens.alignment[i].witness + "(" + origToken + ") ";
+          }
+          else
+          {
+           line8 += allTokens.alignment[i].witness + " ";
+          }
+          line8W.witnesses.push({ "id": allTokens.alignment[i].witness});
+          document.regularization.token8Text.value = token;
+          document.regularization.token8Text.style.visibility = "visible";
+       }
+       else if(document.regularization.token9Text.value == "")
+       {
+         // alert("line9");
+          if (regToken)
+          {
+           line9 += allTokens.alignment[i].witness + "(" + origToken + ") ";
+          }
+          else
+          {
+           line9 += allTokens.alignment[i].witness + " ";
+          }
+          line9W.witnesses.push({ "id": allTokens.alignment[i].witness});
+          document.regularization.token9Text.value = token;
+          document.regularization.token9Text.style.visibility = "visible";
+       }
+       else if(document.regularization.token10Text.value == "")
+       {
+          // alert("line10");
+          if (regToken)
+          {
+           line10 += allTokens.alignment[i].witness + "(" + origToken + ") ";
+          }
+          else
+          {
+           line10 += allTokens.alignment[i].witness + " ";
+          }
+          line10W.witnesses.push({ "id": allTokens.alignment[i].witness});
+          document.regularization.token10Text.value = token;
+          document.regularization.token10Text.style.visibility = "visible";
+       }
+       else if(document.regularization.token11Text.value == "")
+       {
+          //alert("line11");
+          if (regToken)
+          {
+           line11 += allTokens.alignment[i].witness + "(" + origToken + ") ";
+          }
+          else
+          {
+           line11 += allTokens.alignment[i].witness + " ";
+          }
+          line11W.witnesses.push({ "id": allTokens.alignment[i].witness});
+          document.regularization.token11Text.value = token;
+          document.regularization.token11Text.style.visibility = "visible";
+       }
+    }
+  regToken = false;
+  }
+
+  document.getElementById('token1').innerHTML = line1;
+  document.getElementById('token2').innerHTML = line2;
+  document.getElementById('token3').innerHTML = line3;
+  document.getElementById('token4').innerHTML = line4;
+  document.getElementById('token5').innerHTML = line5;
+  document.getElementById('token6').innerHTML = line6;
+  document.getElementById('token7').innerHTML = line7;
+  document.getElementById('token8').innerHTML = line8;
+  document.getElementById('token9').innerHTML = line9;
+  document.getElementById('token10').innerHTML = line10;
+  document.getElementById('token11').innerHTML = line11;
+}
+
+function regularize_regOff(position)
+{
+
+  var line1 = ""; var line2 = ""; var line3 = ""; var line4 = "";
+  var line5 = "" ; var line6 = ""; var line7 = ""; var line8 = "";
+  var line9 = ""; var line10 = ""; var line11 = "";
+  var regToken = false;
+  var origToken = "";
+
+  //alert("regularize");
+  for (var i in allTokens.alignment)
+  {
+
+    if(allTokens.alignment[i].tokens[position] == null)
+    {
+       token = "null";
+       origToken = "null";
+    }
+    else
+    {
+      token = allTokens.alignment[i].tokens[position].t;
+      origToken = allTokens.alignment[i].tokens[position].t;
+    }
+
+    //alert(allTokens.alignment[i].witness);
+    // regularize token
+    for (var k in newRules.rules)
+    {
+      //alert(newRules.rules[k].action);
+      if (token == newRules.rules[k].token)
+      {
+        //alert(newRules.rules[k].action);
+        action = newRules.rules[k].action;
+        token = action.split(', ')[1];
+        token = token.substring(0, token.length-1);
+        regToken = true;
+        //alert(token);
+      }
+    }
+
+    if (token == document.regularization.token1Text.value)
+    {
+       //alert("line1");
+       if (regToken)
+       {
+         line1 += allTokens.alignment[i].witness + "(" + origToken + ") ";
+         if (line1.length > 60)
+         {
+           line1 += "<br />";
+         }
+       }
+       else
+       {
+         line1 += allTokens.alignment[i].witness + " ";
+         if (line1.length > 60)
+         {
+           line1 += "<br />";
+         }
+       }
+       line1W.witnesses.push({ "id": allTokens.alignment[i].witness});
+       boxPos.witness.push({
+          "id" : allTokens.alignment[i].witness,
+          "token" : token,
+          "position" : "1"
+       });
+    }
+    else if (token == document.regularization.token2Text.value)
+    {
+       // alert("line2");
+       if (regToken)
+       {
+         line2 += allTokens.alignment[i].witness + "(" + origToken + ") ";
+       }
+       else
+       {
+         line2 += allTokens.alignment[i].witness + " ";
+       }
+       line2W.witnesses.push({ "id": allTokens.alignment[i].witness});
+       boxPos.witness.push({
+          "id" : allTokens.alignment[i].witness,
+          "token" : token,
+          "position" : "2"
+       });
+    }
+    else if (token == document.regularization.token3Text.value)
+    {
+       // alert("line3");
+       if (regToken)
+       {
+         line3 += allTokens.alignment[i].witness + "(" + origToken + ") ";
+       }
+       else
+       {
+         line3 += allTokens.alignment[i].witness + " ";
+       }
+       line3W.witnesses.push({ "id": allTokens.alignment[i].witness});
+       boxPos.witness.push({
+          "id" : allTokens.alignment[i].witness,
+          "token" : token,
+          "position" : "3"
+       });
+    }
+    else if (token == document.regularization.token4Text.value)
+    {
+       // alert("line4");
+       if (regToken)
+       {
+         line4 += allTokens.alignment[i].witness + "(" + origToken + ") ";
+       }
+       else
+       {
+         line4 += allTokens.alignment[i].witness + " ";
+       }
+       line4W.witnesses.push({ "id": allTokens.alignment[i].witness});
+       boxPos.witness.push({
+          "id" : allTokens.alignment[i].witness,
+          "token" : token,
+          "position" : "4"
+       });
+    }
+    else if (token == document.regularization.token5Text.value)
+    {
+       // alert("line5");
+       if (regToken)
+       {
+         line5 += allTokens.alignment[i].witness + "(" + origToken + ") ";
+       }
+       else
+       {
+         line5 += allTokens.alignment[i].witness + " ";
+       }
+       line5W.witnesses.push({ "id": allTokens.alignment[i].witness});
+       boxPos.witness.push({
+          "id" : allTokens.alignment[i].witness,
+          "token" : token,
+          "position" : "5"
+       });
+    }
+    else if (token == document.regularization.token6Text.value)
+    {
+       // alert("line6");
+       if (regToken)
+       {
+         line6 += allTokens.alignment[i].witness + "(" + origToken + ") ";
+       }
+       else
+       {
+         line6 += allTokens.alignment[i].witness + " ";
+       }
+       line6W.witnesses.push({ "id": allTokens.alignment[i].witness});
+       boxPos.witness.push({
+          "id" : allTokens.alignment[i].witness,
+          "token" : token,
+          "position" : "6"
+       });
+    }
+    else if (token == document.regularization.token7Text.value)
+    {
+       // alert("line7");
+       if (regToken)
+       {
+         line7 += allTokens.alignment[i].witness + "(" + origToken + ") ";
+       }
+       else
+       {
+         line7 += allTokens.alignment[i].witness + " ";
+       }
+       line7W.witnesses.push({ "id": allTokens.alignment[i].witness});
+       boxPos.witness.push({
+          "id" : allTokens.alignment[i].witness,
+          "token" : token,
+          "position" : "7"
+       });
+    }
+    else if (token == document.regularization.token8Text.value)
+    {
+       // alert("line8");
+       if (regToken)
+       {
+         line8 += allTokens.alignment[i].witness + "(" + origToken + ") ";
+       }
+       else
+       {
+         line8 += allTokens.alignment[i].witness + " ";
+       }
+       line8W.witnesses.push({ "id": allTokens.alignment[i].witness});
+       boxPos.witness.push({
+          "id" : allTokens.alignment[i].witness,
+          "token" : token,
+          "position" : "8"
+       });
+    }
+    else if (token == document.regularization.token9Text.value)
+    {
+       // alert("line9");
+       if (regToken)
+       {
+         line9 += allTokens.alignment[i].witness + "(" + origToken + ") ";
+       }
+       else
+       {
+         line9 += allTokens.alignment[i].witness + " ";
+       }
+       line9W.witnesses.push({ "id": allTokens.alignment[i].witness});
+       boxPos.witness.push({
+          "id" : allTokens.alignment[i].witness,
+          "token" : token,
+          "position" : "9"
+       });
+    }
+    else if (token == document.regularization.token10Text.value)
+    {
+       //alert("line10");
+       if (regToken)
+       {
+         line10 += allTokens.alignment[i].witness + "(" + origToken + ") ";
+       }
+       else
+       {
+         line10 += allTokens.alignment[i].witness + " ";
+       }
+       line10W.witnesses.push({ "id": allTokens.alignment[i].witness});
+       boxPos.witness.push({
+          "id" : allTokens.alignment[i].witness,
+          "token" : token,
+          "position" : "10"
+       });
+    }
+    else if (token == document.regularization.token11Text.value)
+    {
+       //alert("line11");
+       if (regToken)
+       {
+         line11 += allTokens.alignment[i].witness + "(" + origToken + ") ";
        }
        else
        {
@@ -816,11 +1497,19 @@ function regularize(position)
           //alert("line1");
           if (regToken)
        {
-         line1 += allTokens.alignment[i].witness + "(" + allTokens.alignment[i].tokens[position].t + ") ";
+         line1 += allTokens.alignment[i].witness + "(" + origToken + ") ";
+         if (line1.length > 60)
+         {
+           line1 += "<br />";
+         }
        }
        else
        {
          line1 += allTokens.alignment[i].witness + " ";
+         if (line1.length > 60)
+         {
+           line1 += "<br />";
+         }
        }
           line1W.witnesses.push({ "id": allTokens.alignment[i].witness});
           document.regularization.token1Text.value = token;
@@ -831,7 +1520,7 @@ function regularize(position)
           //alert("line2");
           if (regToken)
           {
-           line2 += allTokens.alignment[i].witness + "(" + allTokens.alignment[i].tokens[position].t + ") ";
+           line2 += allTokens.alignment[i].witness + "(" + origToken + ") ";
           }
           else
           {
@@ -846,7 +1535,7 @@ function regularize(position)
           //alert("line3");
           if (regToken)
           {
-           line3 += allTokens.alignment[i].witness + "(" + allTokens.alignment[i].tokens[position].t + ") ";
+           line3 += allTokens.alignment[i].witness + "(" + origToken + ") ";
           }
           else
           {
@@ -861,7 +1550,7 @@ function regularize(position)
           // alert("line4");
           if (regToken)
           {
-           line4 += allTokens.alignment[i].witness + "(" + allTokens.alignment[i].tokens[position].t + ") ";
+           line4 += allTokens.alignment[i].witness + "(" + origToken + ") ";
           }
           else
           {
@@ -876,7 +1565,7 @@ function regularize(position)
          // alert("line5");
           if (regToken)
           {
-           line5 += allTokens.alignment[i].witness + "(" + allTokens.alignment[i].tokens[position].t + ") ";
+           line5 += allTokens.alignment[i].witness + "(" + origToken + ") ";
           }
           else
           {
@@ -891,7 +1580,7 @@ function regularize(position)
           //alert("line6");
           if (regToken)
           {
-           line6 += allTokens.alignment[i].witness + "(" + allTokens.alignment[i].tokens[position].t + ") ";
+           line6 += allTokens.alignment[i].witness + "(" + origToken + ") ";
           }
           else
           {
@@ -906,7 +1595,7 @@ function regularize(position)
           //alert("line7");
           if (regToken)
           {
-           line7 += allTokens.alignment[i].witness + "(" + allTokens.alignment[i].tokens[position].t + ") ";
+           line7 += allTokens.alignment[i].witness + "(" + origToken + ") ";
           }
           else
           {
@@ -921,7 +1610,7 @@ function regularize(position)
          // alert("line8");
           if (regToken)
           {
-           line8 += allTokens.alignment[i].witness + "(" + allTokens.alignment[i].tokens[position].t + ") ";
+           line8 += allTokens.alignment[i].witness + "(" + origToken + ") ";
           }
           else
           {
@@ -936,7 +1625,7 @@ function regularize(position)
          // alert("line9");
           if (regToken)
           {
-           line9 += allTokens.alignment[i].witness + "(" + allTokens.alignment[i].tokens[position].t + ") ";
+           line9 += allTokens.alignment[i].witness + "(" + origToken + ") ";
           }
           else
           {
@@ -951,7 +1640,7 @@ function regularize(position)
           // alert("line10");
           if (regToken)
           {
-           line10 += allTokens.alignment[i].witness + "(" + allTokens.alignment[i].tokens[position].t + ") ";
+           line10 += allTokens.alignment[i].witness + "(" + origToken + ") ";
           }
           else
           {
@@ -966,7 +1655,7 @@ function regularize(position)
           //alert("line11");
           if (regToken)
           {
-           line11 += allTokens.alignment[i].witness + "(" + allTokens.alignment[i].tokens[position].t + ") ";
+           line11 += allTokens.alignment[i].witness + "(" + origToken + ") ";
           }
           else
           {
@@ -1082,6 +1771,52 @@ function addrule()
   //alert("rule added");
 
   contextStruct = { witnesses: [] };
+
+  document.getElementById('token1').innerHTML = "";
+  document.getElementById('token2').innerHTML = "";
+  document.getElementById('token3').innerHTML = "";
+  document.getElementById('token4').innerHTML = "";
+  document.getElementById('token5').innerHTML = "";
+  document.getElementById('token6').innerHTML = "";
+  document.getElementById('token7').innerHTML = "";
+  document.getElementById('token8').innerHTML = "";
+  document.getElementById('token9').innerHTML = "";
+  document.getElementById('token10').innerHTML = "";
+  document.getElementById('token11').innerHTML = "";
+
+  document.regularization.token1Text.style.visibility = "hidden";
+  document.regularization.token2Text.style.visibility = "hidden";
+  document.regularization.token3Text.style.visibility = "hidden";
+  document.regularization.token4Text.style.visibility = "hidden";
+  document.regularization.token5Text.style.visibility = "hidden";
+  document.regularization.token6Text.style.visibility = "hidden";
+  document.regularization.token7Text.style.visibility = "hidden";
+  document.regularization.token8Text.style.visibility = "hidden";
+  document.regularization.token9Text.style.visibility = "hidden";
+  document.regularization.token10Text.style.visibility = "hidden";
+  document.regularization.token11Text.style.visibility = "hidden";
+
+  document.regularization.token1Text.value = "";
+  document.regularization.token2Text.value = "";
+  document.regularization.token3Text.value = "";
+  document.regularization.token4Text.value = "";
+  document.regularization.token5Text.value = "";
+  document.regularization.token6Text.value = "";
+  document.regularization.token7Text.value = "";
+  document.regularization.token8Text.value = "";
+  document.regularization.token9Text.value = "";
+  document.regularization.token10Text.value = "";
+  document.regularization.token11Text.value = "";
+
+  document.regularization.reg_this.value = "";
+  document.regularization.reg_to.value = "";
+
+  var position;
+  if(currentPosition != 0)
+  {
+    position = currentPosition - 1;
+  }
+  regularize_regOff(position);
 }
 
 function getContext(reg_word)
@@ -1242,27 +1977,22 @@ function getMoreContext(id, witnessIndex)
     }
   }
 
-  if(contextStruct.witnesses[witnessIndex].startPos == 1 &&
-contextStruct.witnesses[witnessIndex].maxPos == totalPos)
+  if(contextStruct.witnesses[witnessIndex].startPos == 1 && contextStruct.witnesses[witnessIndex].maxPos == totalPos)
   {
     // total context
     return false;
   }
-  else if (contextStruct.witnesses[witnessIndex].startPos == 1 &&
-contextStruct.witnesses[witnessIndex].endPos != totalPos)
+  else if (contextStruct.witnesses[witnessIndex].startPos == 1 && contextStruct.witnesses[witnessIndex].endPos != totalPos)
   {
     contextStruct.witnesses[witnessIndex].endPos++;
-    contextStruct.witnesses[witnessIndex].context += " " +
-allTokens.alignment[tokenWitnessIndex].tokens[contextStruct.witnesses[witnessIndex].endPos].t;
+    contextStruct.witnesses[witnessIndex].context += " " + allTokens.alignment[tokenWitnessIndex].tokens[contextStruct.witnesses[witnessIndex].endPos].t;
     contextStruct.witnesses[witnessIndex].switchDirections = false;
   }
   else if (contextStruct.witnesses[witnessIndex].endPos == totalPos &&
-contextStruct.witnesses[witnessIndex].startPos != 1)
+  contextStruct.witnesses[witnessIndex].startPos != 1)
   {
     contextStruct.witnesses[witnessIndex].startPos--;
-    contextStruct.witnesses[witnessIndex].context =
-allTokens.alignment[tokenWitnessIndex].tokens[contextStruct.witnesses[witnessIndex].startPos].t
-+ " " + contextStruct.witnesses[witnessIndex].context;
+    contextStruct.witnesses[witnessIndex].context = allTokens.alignment[tokenWitnessIndex].tokens[contextStruct.witnesses[witnessIndex].startPos].t + " " + contextStruct.witnesses[witnessIndex].context;
     contextStruct.witnesses[witnessIndex].switchDirections = false;
   }
   else if (contextStruct.witnesses[witnessIndex].goForward == true &&
@@ -1270,16 +2000,14 @@ contextStruct.witnesses[witnessIndex].endPos != totalPos)
   {
     contextStruct.witnesses[witnessIndex].goForward = false;
     contextStruct.witnesses[witnessIndex].endPos++;
-    contextStruct.witnesses[witnessIndex].context += " " +
-allTokens.alignment[tokenWitnessIndex].tokens[contextStruct.witnesses[witnessIndex].endPos].t;
+    contextStruct.witnesses[witnessIndex].context += " " + allTokens.alignment[tokenWitnessIndex].tokens[contextStruct.witnesses[witnessIndex].endPos].t;
   }
   else if (contextStruct.witnesses[witnessIndex].goForward == false &&
-contextStruct.witnesses[witnessIndex].startPos != 1)
+  contextStruct.witnesses[witnessIndex].startPos != 1)
   {
     contextStruct.witnesses[witnessIndex].goForward = true;
     contextStruct.witnesses[witnessIndex].startPos--;
-    contextStruct.witnesses[witnessIndex].context = allTokens.alignment[tokenWitnessIndex].tokens[contextStruct.witnesses[witnessIndex].startPos].t
-+ " " + contextStruct.witnesses[witnessIndex].context;
+    contextStruct.witnesses[witnessIndex].context = allTokens.alignment[tokenWitnessIndex].tokens[contextStruct.witnesses[witnessIndex].startPos].t + " " + contextStruct.witnesses[witnessIndex].context;
   }
 
   return true;
@@ -1295,7 +2023,7 @@ function sendRule()
      })
    .error(function () {alert("error");});
 
-  newRules = { rules: [] };
+  //newRules = { rules: [] };
 
 }
 
@@ -1441,6 +2169,288 @@ function backToken()
   }
 }
 
+function buildWitnesses()
+{
+  newWitnesses = { witnesses: [] };
+
+  for (var i in allTokens.alignment)
+  {
+    var content = "";
+    for (var j in allTokens.alignment[i].tokens)
+    {
+      var token = "";
+      if(allTokens.alignment[i].tokens[j] == null)
+      {
+       token = "null";
+      }
+      else
+      {
+        token = allTokens.alignment[i].tokens[j].t;
+      }
+
+      //alert("BEFORE: " + token);
+      //alert(allTokens.alignment[i].witness);
+      // regularize token
+      for (var k in allRules.rules)
+      {
+        //alert(allRules.rules[k].action);
+        if (token == allRules.rules[k].token)
+        {
+          //alert(allRules.rules[k].action);
+          action = allRules.rules[k].action;
+          token = action.split(', ')[1];
+          token = token.substring(0, token.length-1);
+          //regToken = true;
+          //alert(token);
+        }
+      }
+      //alert("After: " + token);
+      content += token + " ";
+    }
+    //alert (content);
+    newWitnesses.witnesses.push ({
+      "id": allTokens.alignment[i].witness,
+      "content": content
+    });
+  }
+
+  recollate();
+}
+
+function recollate()
+{
+  $.post("http://127.0.0.1:8000/regularization/interface/recollate/",
+       JSON.stringify(newWitnesses), function(data){
+       //alert("success");
+       alert(data.alignment[0].tokens[2].t);
+     })
+   .error(function () {alert("error");});
+}
+
+/**
+ * http://www.openjs.com/scripts/events/keyboard_shortcuts/
+ * Version : 2.01.B
+ * By Binny V A
+ * License : BSD
+ */
+shortcut = {
+	'all_shortcuts':{},//All the shortcuts are stored in this array
+	'add': function(shortcut_combination,callback,opt) {
+		//Provide a set of default options
+		var default_options = {
+			'type':'keydown',
+			'propagate':false,
+			'disable_in_input':false,
+			'target':document,
+			'keycode':false
+		}
+		if(!opt) opt = default_options;
+		else {
+			for(var dfo in default_options) {
+				if(typeof opt[dfo] == 'undefined') opt[dfo] = default_options[dfo];
+			}
+		}
+
+		var ele = opt.target;
+		if(typeof opt.target == 'string') ele = document.getElementById(opt.target);
+		var ths = this;
+		shortcut_combination = shortcut_combination.toLowerCase();
+
+		//The function to be called at keypress
+		var func = function(e) {
+			e = e || window.event;
+			
+			if(opt['disable_in_input']) { //Don't enable shortcut keys in Input, Textarea fields
+				var element;
+				if(e.target) element=e.target;
+				else if(e.srcElement) element=e.srcElement;
+				if(element.nodeType==3) element=element.parentNode;
+
+				if(element.tagName == 'INPUT' || element.tagName == 'TEXTAREA') return;
+			}
+	
+			//Find Which key is pressed
+			if (e.keyCode) code = e.keyCode;
+			else if (e.which) code = e.which;
+			var character = String.fromCharCode(code).toLowerCase();
+			
+			if(code == 188) character=","; //If the user presses , when the type is onkeydown
+			if(code == 190) character="."; //If the user presses , when the type is onkeydown
+
+			var keys = shortcut_combination.split("+");
+			//Key Pressed - counts the number of valid keypresses - if it is same as the number of keys, the shortcut function is invoked
+			var kp = 0;
+			
+			//Work around for stupid Shift key bug created by using lowercase - as a result the shift+num combination was broken
+			var shift_nums = {
+				"`":"~",
+				"1":"!",
+				"2":"@",
+				"3":"#",
+				"4":"$",
+				"5":"%",
+				"6":"^",
+				"7":"&",
+				"8":"*",
+				"9":"(",
+				"0":")",
+				"-":"_",
+				"=":"+",
+				";":":",
+				"'":"\"",
+				",":"<",
+				".":">",
+				"/":"?",
+				"\\":"|"
+			}
+			//Special Keys - and their codes
+			var special_keys = {
+				'esc':27,
+				'escape':27,
+				'tab':9,
+				'space':32,
+				'return':13,
+				'enter':13,
+				'backspace':8,
+	
+				'scrolllock':145,
+				'scroll_lock':145,
+				'scroll':145,
+				'capslock':20,
+				'caps_lock':20,
+				'caps':20,
+				'numlock':144,
+				'num_lock':144,
+				'num':144,
+				
+				'pause':19,
+				'break':19,
+				
+				'insert':45,
+				'home':36,
+				'delete':46,
+				'end':35,
+				
+				'pageup':33,
+				'page_up':33,
+				'pu':33,
+	
+				'pagedown':34,
+				'page_down':34,
+				'pd':34,
+	
+				'left':37,
+				'up':38,
+				'right':39,
+				'down':40,
+	
+				'f1':112,
+				'f2':113,
+				'f3':114,
+				'f4':115,
+				'f5':116,
+				'f6':117,
+				'f7':118,
+				'f8':119,
+				'f9':120,
+				'f10':121,
+				'f11':122,
+				'f12':123
+			}
+	
+			var modifiers = { 
+				shift: { wanted:false, pressed:false},
+				ctrl : { wanted:false, pressed:false},
+				alt  : { wanted:false, pressed:false},
+				meta : { wanted:false, pressed:false}	//Meta is Mac specific
+			};
+                        
+			if(e.ctrlKey)	modifiers.ctrl.pressed = true;
+			if(e.shiftKey)	modifiers.shift.pressed = true;
+			if(e.altKey)	modifiers.alt.pressed = true;
+			if(e.metaKey)   modifiers.meta.pressed = true;
+                        
+			for(var i=0; k=keys[i],i<keys.length; i++) {
+				//Modifiers
+				if(k == 'ctrl' || k == 'control') {
+					kp++;
+					modifiers.ctrl.wanted = true;
+
+				} else if(k == 'shift') {
+					kp++;
+					modifiers.shift.wanted = true;
+
+				} else if(k == 'alt') {
+					kp++;
+					modifiers.alt.wanted = true;
+				} else if(k == 'meta') {
+					kp++;
+					modifiers.meta.wanted = true;
+				} else if(k.length > 1) { //If it is a special key
+					if(special_keys[k] == code) kp++;
+					
+				} else if(opt['keycode']) {
+					if(opt['keycode'] == code) kp++;
+
+				} else { //The special keys did not match
+					if(character == k) kp++;
+					else {
+						if(shift_nums[character] && e.shiftKey) { //Stupid Shift key bug created by using lowercase
+							character = shift_nums[character]; 
+							if(character == k) kp++;
+						}
+					}
+				}
+			}
+			
+			if(kp == keys.length && 
+						modifiers.ctrl.pressed == modifiers.ctrl.wanted &&
+						modifiers.shift.pressed == modifiers.shift.wanted &&
+						modifiers.alt.pressed == modifiers.alt.wanted &&
+						modifiers.meta.pressed == modifiers.meta.wanted) {
+				callback(e);
+	
+				if(!opt['propagate']) { //Stop the event
+					//e.cancelBubble is supported by IE - this will kill the bubbling process.
+					e.cancelBubble = true;
+					e.returnValue = false;
+	
+					//e.stopPropagation works in Firefox.
+					if (e.stopPropagation) {
+						e.stopPropagation();
+						e.preventDefault();
+					}
+					return false;
+				}
+			}
+		}
+		this.all_shortcuts[shortcut_combination] = {
+			'callback':func, 
+			'target':ele, 
+			'event': opt['type']
+		};
+		//Attach the function with the event
+		if(ele.addEventListener) ele.addEventListener(opt['type'], func, false);
+		else if(ele.attachEvent) ele.attachEvent('on'+opt['type'], func);
+		else ele['on'+opt['type']] = func;
+	},
+
+//Remove the shortcut - just specify the shortcut and I will remove the binding
+	'remove':function(shortcut_combination) {
+		shortcut_combination = shortcut_combination.toLowerCase();
+		var binding = this.all_shortcuts[shortcut_combination];
+		delete(this.all_shortcuts[shortcut_combination])
+		if(!binding) return;
+		var type = binding['event'];
+		var ele = binding['target'];
+		var callback = binding['callback'];
+
+		if(ele.detachEvent) ele.detachEvent('on'+type, callback);
+		else if(ele.removeEventListener) ele.removeEventListener(type, callback, false);
+		else ele['on'+type] = false;
+	}
+}
+
 </script>
 </head>
 
@@ -1508,12 +2518,19 @@ originals)
 	<input name="edit_reg" type="button" value="Edit Reg.">
 	<input name="reg_on" type="button" value="Reg. On"
 	onclick="regularize_onoff()">
-	<input name="recollate" type="submit"
-        value="Recollate">
+	<input name="recollate" type="button"
+        value="Recollate" onclick="buildWitnesses()">
 	<input name="back" type="button" value="Back" onclick="backToken()">
 	<input name="next" type="button" value="Next" onclick="nextToken()">
-	<input name="view" type="button" value="View Originals">
+	<input name="view" type="button" value="View Entire Reg.">
 	<input name="done" type="button" value="DONE">
+	<br /> Shortcuts:: <br/>"Right Arrow": Add next word to Regularize This
+	<br /> "Shift+Right Arrow": Add next word to Regularize To
+	<br /> "Tab": Find next variant to regularize
+	<br /> <input type="checkbox" name="automate" value="automate"
+	/> Automate regularization selection
+	<br /> <input type="checkbox" name="punctuation" value="punctuation"
+	/> No punctuation
     </form>
 
 </body> </html>

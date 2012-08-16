@@ -3,7 +3,10 @@ from input.views import regularization, change, show_original
 from birmingham.views import pickText
 from sampleJSON.views import collate, regularize, getWitnesses, getTokens
 from jsRegularize.views import getBaseWitnesses, getBaseTokens, loadInterface
-from jsRegularize.views import saveRules, getRules
+from jsRegularize.views import saveRules, getRules, recollate, saveRegWitnesses
+from jsRegularize.views import loadViewReg, getRegWitnesses, loadInformationWindow
+from jsRegularize.views import saveInformationWindow, getInformationWindow, changeRule
+from jsRegularize.views import deleteRule
 from django.conf import settings
 
 # Uncomment the next two lines to enable the admin:
@@ -38,6 +41,15 @@ urlpatterns = patterns('',
 
     url(r'^regularization/interface/saveRules/$', saveRules),
     url(r'^regularization/interface/getRules/$', getRules),
+    url(r'^regularization/interface/recollate/$', recollate),
+    url(r'^regularization/interface/saveRegWitnesses/$', saveRegWitnesses),
+    url(r'^regularization/interface/view/$', loadViewReg),
+    url(r'^regularization/interface/getRegWitnesses/$', getRegWitnesses),
+    url(r'^regularization/interface/informationWindow/$', loadInformationWindow),
+    url(r'^regularization/interface/saveInformationWindow/$', saveInformationWindow),
+    url(r'^regularization/interface/getInformationWindow/$', getInformationWindow),
+    url(r'^regularization/interface/changeRule/$', changeRule),
+    url(r'^regularization/interface/deleteRule/$', deleteRule),
 )
 
 # if settings.DEBUG:

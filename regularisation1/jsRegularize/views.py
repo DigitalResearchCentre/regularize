@@ -2,17 +2,55 @@ from django.http import HttpResponseRedirect, HttpResponse
 from models import Witness, Collation, Token, Rule
 from django.views.decorators.csrf import csrf_exempt
 from django.shortcuts import render_to_response
+from itertools import chain
 
 import pprint
 import jsonpickle
 import json
 import httplib2
 
+regWitnesses = {}
+regInfo = {}
+
 def loadInterface(request):
-    return render_to_response('jsRegularize/interface.html')
+    #return render_to_response('jsRegularize/interface.html')
+    return render_to_response('jsRegularize/collate_interface.html')
+
+def loadViewReg(request):
+    return render_to_response('jsRegularize/view_reg.html')
+
+def loadInformationWindow(request):
+    return render_to_response('jsRegularize/information_window.html')
+
+@csrf_exempt
+def saveInformationWindow(request):
+    if request.is_ajax():
+       if request.method == 'POST':
+           global regInfo
+           regInfo = request.raw_post_data
+           # print regInfo
+
+    return HttpResponse("OK")
+
+def getInformationWindow(request):
+    print regInfo
+    return HttpResponse(regInfo, mimetype="application/json")
+
+@csrf_exempt
+def saveRegWitnesses(request):
+     if request.is_ajax():
+       if request.method == 'POST':
+           global regWitnesses
+           regWitnesses = request.raw_post_data
+           #print regWitnesses
+
+     return HttpResponse("OK")
+
+def getRegWitnesses(request):
+    return HttpResponse(regWitnesses, mimetype="application/json")
 
 def getBaseWitnesses(request):
-    contentBo1 = '[4xcp]w[/4xcp]Whan that April with his shouris sote'
+    contentBo1 = '[4xcp]w[/4xcp]Whan that Ap ri l with his shouris sote'
     contentBo2 = '[6orncp]W[/6orncp]hen that april; with his showres swote'
     contentCh = '[5emph]W[/5emph]han that Auerel wt his shoures soote'
     contentCx1 = '[3orncp]W[/3orncp]Han that Apprill with his shouris sote'
@@ -32,7 +70,7 @@ def getBaseTokens(request):
     url = 'http://127.0.0.1:8080/collatex-web-0.9.1-RC2/api/collate'
     headers = {'Content-Type': 'application/json', 'Accept': 'application/json'}
 
-    contentBo1 = '[4xcp]w[/4xcp]Whan that April with his shouris sote'
+    contentBo1 = '[4xcp]w[/4xcp]Whan that Ap ri l with his shouris sote'
     contentBo2 = '[6orncp]W[/6orncp]hen that april; with his showres swote'
     contentCh = '[5emph]W[/5emph]han that Auerel wt his shoures soote'
     contentCx1 = '[3orncp]W[/3orncp]Han that Apprill with his shouris sote'
@@ -56,47 +94,164 @@ def getBaseTokens(request):
 
 @csrf_exempt
 def saveRules(request):
-    print "saveRules"
     if request.is_ajax():
        if request.method == 'POST':
            jdata = json.loads(request.raw_post_data)
            # print jdata
 
            for rule in jdata['rules']:
-               r = Rule()
-               r.ruleID = rule['_id']
-               r.appliesTo = rule['appliesTo']
-               r.condition = rule['condition']
-               r.action = rule['action']
-               r.user = rule['user']
-               r.scope = rule['scope']
-               r.regularization_type=rule['regularization_type']
-               r.description = rule['description']
-               r.token=rule['token']
-               r.lemma=rule['lemma']
-               r.json = ""
-               r.save()
+               filteredRules = Rule.objects.filter(ruleID=rule['_id']).filter(\
+                                            appliesTo=rule['appliesTo']).filter(\
+                                            condition=rule['condition']).filter(\
+                                            action=rule['action']).filter(\
+                                            user=rule['user']).filter(\
+                                            scope=rule['scope']).filter(\
+                                            regularization_type=rule['regularization_type']).filter(\
+                                            description=rule['description']).filter(\
+                                            token=rule['token']).filter(\
+                                            lemma=rule['lemma'])
+               if not filteredRules:
+                   r = Rule()
+                   r.ruleID = rule['_id']
+                   r.appliesTo = rule['appliesTo']
+                   r.condition = rule['condition']
+                   r.action = rule['action']
+                   r.user = rule['user']
+                   r.scope = rule['scope']
+                   r.regularization_type=rule['regularization_type']
+                   r.description = rule['description']
+                   r.token=rule['token']
+                   r.lemma=rule['lemma']
+                   r.save()
 
                # Rule.objects.all().delete();
 
     return HttpResponse("OK")
 
+@csrf_exempt
+def changeRule(request):
+    
+    if request.is_ajax():
+       if request.method == 'POST':
+           jdata = json.loads(request.raw_post_data)
+           print jdata
+
+    ruleNum = 0
+    for rule in jdata['rules']:
+        if (ruleNum == 1):
+            #add rule
+            ruleNum = 0
+            print "add rule"
+            filteredRules = Rule.objects.filter(ruleID=rule['_id']).filter(\
+                                            appliesTo=rule['appliesTo']).filter(\
+                                            condition=rule['condition']).filter(\
+                                            action=rule['action']).filter(\
+                                            user=rule['user']).filter(\
+                                            scope=rule['scope']).filter(\
+                                            regularization_type=rule['regularization_type']).filter(\
+                                            description=rule['description']).filter(\
+                                            token=rule['token']).filter(\
+                                            lemma=rule['lemma'])
+            if not filteredRules:
+                   r = Rule()
+                   r.ruleID = rule['_id']
+                   r.appliesTo = rule['appliesTo']
+                   r.condition = rule['condition']
+                   r.action = rule['action']
+                   r.user = rule['user']
+                   r.scope = rule['scope']
+                   r.regularization_type=rule['regularization_type']
+                   r.description = rule['description']
+                   r.token=rule['token']
+                   r.lemma=rule['lemma']
+                   r.save()
+                   
+        elif(ruleNum == 0):
+        	ruleNum = 1
+       		print "delete rule"
+        	Rule.objects.filter(ruleID=rule['_id']).filter(\
+                                            appliesTo=rule['appliesTo']).filter(\
+                                            condition=rule['condition']).filter(\
+                                            action=rule['action']).filter(\
+                                            user=rule['user']).filter(\
+                                            scope=rule['scope']).filter(\
+                                            regularization_type=rule['regularization_type']).filter(\
+                                            description=rule['description']).filter(\
+                                            token=rule['token']).filter(\
+                                            lemma=rule['lemma']).delete()
+
+    return HttpResponse("OK");
+
+@csrf_exempt
+def deleteRule(request):
+
+    if request.is_ajax():
+       if request.method == 'POST':
+           jdata = json.loads(request.raw_post_data)
+           print jdata
+
+    for rule in jdata['rules']:
+        filteredRules = Rule.objects.filter(ruleID=rule['_id']).filter(\
+                                            appliesTo=rule['appliesTo']).filter(\
+                                            condition=rule['condition']).filter(\
+                                            action=rule['action']).filter(\
+                                            user=rule['user']).filter(\
+                                            scope=rule['scope']).filter(\
+                                            regularization_type=rule['regularization_type']).filter(\
+                                            description=rule['description']).filter(\
+                                            token=rule['token']).filter(\
+                                            lemma=rule['lemma']).delete()
+        
+    return HttpResponse("OK");
+
+@csrf_exempt
+def recollate(request):
+    url = 'http://127.0.0.1:8080/collatex-web-0.9.1-RC2/api/collate'
+    headers = {'Content-Type': 'application/json', 'Accept': 'application/json'}
+    
+    print "recollateNow"
+    
+    jdata = ""
+    if request.is_ajax():
+       if request.method == 'POST':
+           jdata = request.raw_post_data
+
+    pprint.pprint(json.loads(jdata))
+
+    send = httplib2.Http()
+    response, content = send.request(url, 'POST', jdata, headers)
+
+    # jdata2 = json.loads(content)
+    # pprint.pprint(jdata2)
+    
+    return HttpResponse(content, mimetype="application/json")
+
 def getRules(request):
     
     jdata = '{"rules" : ['
     position = 0
-    for r in Rule.objects.all():
-        # print r.ruleID
-        # print r.appliesTo
-        # print r.condition
-        # print r.action
-        # print r.user
-        # print r.scope
-        # print r.regularization_type
-        # print r.description
-        # print r.token
-        # print r.lemma
-        # print r.json
+
+    this_word = Rule.objects.filter(scope="this_word")
+    this_block = Rule.objects.filter(scope="this_block")
+    all_places = Rule.objects.filter(scope="all_places")
+
+    rules = []
+    if all_places and this_block and this_word :
+        rules = list(chain(all_places, this_block, this_word))
+    elif all_places and this_block:
+        rules = list(chain(all_places, this_block))
+    elif this_block and this_word:
+        rules = list(chain(this_block, this_word))
+    elif(all_places):
+        rules = all_places
+    elif(this_block):
+        rules = this_block
+    elif(this_word):
+        rules = this_word
+    else:
+        rules = Rule.objects.all()
+    
+    for r in rules:
         if position != 0:
             jdata = jdata + ','
         jdata = jdata + '{"_id": ' + jsonpickle.encode(r.ruleID) + ","
@@ -108,8 +263,7 @@ def getRules(request):
         jdata = jdata + '"regularization_type":' + jsonpickle.encode(r.regularization_type) + ","
         jdata = jdata + '"description":' + jsonpickle.encode(r.description) + ","
         jdata = jdata + '"token":' + jsonpickle.encode(r.token) + ","
-        jdata = jdata + '"lemma":' + jsonpickle.encode(r.lemma) + ","
-        jdata = jdata + '"json":' + jsonpickle.encode(r.json) + "}"
+        jdata = jdata + '"lemma":' + jsonpickle.encode(r.lemma) + "}"
         position = position + 1
     jdata = jdata + ']}'
 
@@ -117,6 +271,6 @@ def getRules(request):
 
     #jdata = json.dumps({"witnesses" : [{"id" : "Bo1", "content" : "soen" }, {"id" : "Bo2", "content" : "erin" }]})
 
-    print jdata
+    pprint.pprint(jdata)
         
     return HttpResponse(jdata, mimetype="application/json")

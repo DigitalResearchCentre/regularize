@@ -1,0 +1,2293 @@
+<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML//EN">
+<html> <head>
+<title>Collate Interface</title>
+<script src="http://code.jquery.com/jquery-1.7.2.min.js"></script>
+<script type="text/javascript">
+
+var allWitnesses;
+var newRules;
+var contextStruct;
+var allTokens;
+var totalPos;
+var currentPosition;
+var regOn;
+var iTimeoutId = null;
+var allRules;
+var reg_thisBox;
+var reg_toBox;
+var origTokens;
+var isBuildWitnesses;
+var isRecollate;
+var customRules;
+var isCustomRules;
+var autoReg;
+var distinct;
+var changeLabelTimer = null;
+
+function load()
+{
+  //alert("load");
+  $.getJSON("http://127.0.0.1:8000/regularization/interface/getBaseWitnesses/",
+function(jdata) {
+
+  // save the witnesses to a global variable
+  allWitnesses = jdata;
+ 
+})
+.error(function() { alert("error: getBaseWitnesses"); });
+
+  //initialize new rules
+  newRules = { rules: [] };
+  customRules = { rules: [] };
+
+  contextStruct = { witnesses: [] };
+
+  regOn = false;
+  
+  isBuildWitnesses = false;
+  isRecollate = false;
+  document.information.style.visibility = "hidden";
+  document.edit_reg.style.visibility = "hidden";
+  isCustomRules = false;
+  autoReg = false;
+  distinct = { witnesses: [] };
+
+  $.getJSON("http://127.0.0.1:8000/regularization/interface/getBaseTokens/",
+function(jdata) {
+
+  // save the tokens to a global variable
+  allTokens = jdata;
+  origTokens = jdata;
+  //alert("load: " + origTokens.alignment[0].tokens[0].t);
+  
+  for(var i in allTokens.alignment)
+  {
+    for(var j in allTokens.alignment[i].tokens)
+    {
+       if(allTokens.alignment[i].tokens[j] != null)
+       {
+         allTokens.alignment[i].tokens[j].origToken = '';
+         allTokens.alignment[i].tokens[j].reg_to = '';
+         //allTokens.alignment[i].tokens[j].t.splice(0,0,{origToken: ''});
+       }
+    }
+  }
+  
+  //console.log(allTokens);
+
+  totalPos = -1;
+
+  // find how many positions are in tokens
+  for (var i in allTokens.alignment[0].tokens)
+  {
+     totalPos++;
+  }
+
+  // put distinct tokens at position 0 into interface
+  currentPosition = 0;
+  regularize(newRules);
+})
+.error(function() { alert("error: getBaseTokens"); });
+
+  // add keyboard shortcut
+  shortcut.add("Right", function () {
+    addTokenThis();
+  });
+
+  shortcut.add("Shift+Right", function () {
+    addTokenTo();
+  });
+
+  shortcut.add("Tab", function() {
+    findNextVariant();
+  });
+  
+  /*
+shortcut.add("Enter", function() {
+    addRule();
+  });
+*/
+}
+
+function nextToken()
+{
+  document.regularization.reg_this.value = "";
+  document.regularization.reg_to.value = "";
+
+  if(currentPosition == totalPos)
+  {
+    if(regOn)
+    {
+      if(isRecollate)
+      {
+        recollate();
+        isRecollate = false;
+      }
+      
+      if(isCustomRules)
+      {
+        var regRules = customRules;
+      }
+      else
+      {
+        var regRules = allRules;
+      }
+      
+      for(var i in newRules.rules)
+      {
+        regRules.rules.push(newRules.rules[i]);
+      }
+      regularize(regRules);
+    }
+    else
+    {
+      allTokens = origTokens;
+      regularize(newRules);
+    }
+  }
+  else
+  {
+    if(regOn)
+    {
+      if(isRecollate)
+      {
+        recollate();
+        isRecollate = false;
+      }
+      
+      if(isCustomRules)
+      {
+        var regRules = customRules;
+      }
+      else
+      {
+        var regRules = allRules;
+      }
+      
+      currentPosition++;
+      for(var i in newRules.rules)
+      {
+        regRules.rules.push(newRules.rules[i]);
+      }
+      regularize(regRules);
+    }
+    else
+    {
+      currentPosition++;
+      allTokens = origTokens;
+      regularize(newRules);
+    }
+    
+  }
+}
+
+function previousToken()
+{
+  document.regularization.reg_this.value = "";
+  document.regularization.reg_to.value = "";
+
+  if(currentPosition == 0)
+  {
+    if(regOn)
+    {
+      if(isRecollate)
+      {
+        recollate();
+        isRecollate = false;
+      }
+      
+      if(isCustomRules)
+      {
+        var regRules = customRules;
+      }
+      else
+      {
+        var regRules = allRules;
+      }
+      
+      for(var i in newRules.rules)
+      {
+        regRules.rules.push(newRules.rules[i]);
+      }
+      regularize(regRules);
+    }
+    else
+    {
+      allTokens = origTokens;
+      regularize(newRules);
+    }
+  }
+  else
+  {
+    if(regOn)
+    {
+      if(isRecollate)
+      {
+        recollate();
+        isRecollate = false;
+      }
+      
+      if(isCustomRules)
+      {
+        var regRules = customRules;
+      }
+      else
+      {
+        var regRules = allRules;
+      }
+      currentPosition--;
+      
+      for(var i in newRules.rules)
+      {
+        regRules.rules.push(newRules.rules[i]);
+      }
+      regularize(regRules);
+    }
+    else
+    {
+      currentPosition--;
+      allTokens = origTokens;
+      regularize(newRules);
+    }
+    
+  }
+}
+
+function determineClick()
+{
+  if (iTimeoutId == null || !iTimeoutId)
+  {
+    iTimeoutId = setTimeout("selectNew()", 500);
+  }
+  else
+  {
+    window.clearTimeout(iTimeoutId);
+    iTimeoutId = null;
+    selectToken();
+  }
+}
+
+function findWord(pos, content)
+{
+  //find whitespaces -- find word indexes
+    var found = false;
+    var endPos = pos;
+    while(!found)
+    {
+      if(content[endPos] != " ")
+      {
+        endPos++;
+      }
+      else
+      {
+        found = true;
+      }
+    }
+
+    found = false;
+    var startPos = pos;
+    while(!found)
+    {
+      if(content[startPos] != " ")
+      {
+        if(startPos != 0)
+        {
+          startPos--;
+        }
+        else
+        {
+          found = true;
+        }
+      }
+      else
+      {
+        found = true;
+      }
+    }
+
+  var length = endPos - startPos;
+  var token = content.substr(startPos, length);
+  token = token.split(" ");
+  token = token.join("");
+
+  var notToken = false;
+  for(var i in allWitnesses.witnesses)
+  {
+    if(token == allWitnesses.witnesses[i].id)
+    {
+      notToken = true;
+    }
+  }
+
+  if(token == "/" || token == "")
+  {
+    notToken = true;
+  }
+  else if(token.match(/ORIG:/g))
+  {
+    informationWindow(token);
+    token = " ";
+  }
+
+  if(notToken)
+  {
+    return false;
+  }
+  else
+  {
+    return token;
+  }
+}
+
+function selectToken()
+{
+    var content = document.regularization.reg.value;
+    var txt = document.regularization.reg;
+    var pos = txt.selectionStart;
+
+    var token = findWord(pos, content);
+
+    if(!token)
+    {
+      alert("Invalid selection");
+    }
+    else
+    {
+      document.regularization.reg_this.value = token;
+      reg_thisBox = token;
+    }
+
+}
+
+function selectNew()
+{
+  iTimeoutId = null;
+  var content = document.regularization.reg.value;
+  var txt = document.regularization.reg;
+  var pos = txt.selectionStart;
+
+  token = findWord(pos, content);
+
+  if(!token)
+  {
+    alert("Invalid selection");
+  }
+  else
+  {
+    document.regularization.reg_to.value = token;
+    reg_toBox = token;
+  }
+}
+
+function addRule()
+{
+  var reg_word = reg_thisBox;
+  var reg_to = reg_toBox;
+  var reg_thisWhole = document.regularization.reg_this.value;
+  var reg_toWhole = document.regularization.reg_to.value;
+  var choice = document.regularization.reg_choices.value;
+  
+  if(reg_thisWhole == "" || reg_toWhole == "")
+  {
+    alert("Invalid Rule");
+    return false;
+  }
+  
+  if(reg_toWhole[reg_toWhole.length] == " ")
+  {
+    reg_toWhole = reg_toWhole.substring(0, reg_toWhole.length-1);
+  }
+
+  if (reg_word != "" && reg_to != "")
+  {
+    // anywhere reg_word is found change to reg_to
+         if(choice == "all_places")
+         {
+          // alert("all_places");
+           var action = "regularize(" + reg_thisWhole + ", " + reg_toWhole + ")";
+           newRules.rules.push({
+             "_id" : "",
+             "appliesTo" : "",
+             "condition" : "",
+             "action" : action,
+             "user" : "",
+             "scope" : choice,
+             "regularization_type" : "",
+             "description" : "",
+             "token" : reg_word,
+             "lemma" : ""
+           });
+         }
+         // everytime the system sees reg_word in this
+         // section of text (ex: first line of Canterbury Tales)
+         // TODO: need to change applies to once load different lines
+         else if(choice == "this_block")
+         {
+          //alert("this_block");
+           var action = "regularize(" + reg_thisWhole + ", " + reg_toWhole + ")";
+             newRules.rules.push({
+             "_id" : "",
+             "appliesTo" : "",
+             "condition" : "",
+             "action" : action,
+             "user" : "",
+             "scope" : choice,
+             "regularization_type" : "",
+             "description" : "",
+             "token" : reg_word,
+             "lemma" : ""
+           });
+         }
+         // every time reg_word is seen in this context change to
+         //  reg_to
+         // TODO: need to change appliesTo once load different lines
+         else if (choice == "this_word")
+         {
+           getContext(reg_word);
+           // alert(context);
+           // alert("this_word");
+            for (var k in contextStruct.witnesses)
+            {
+              var context = contextStruct.witnesses[k].context;
+            var action = "regularize(" + context + ", " + reg_toWhole + ")";
+            newRules.rules.push({
+             "_id" : "",
+             "appliesTo" : "",
+             "condition" : "",
+             "action" : action,
+             "user" : "",
+             "scope" : choice,
+             "regularization_type" : "",
+             "description" : "",
+             "token" : reg_word,
+             "lemma" : ""
+           });
+           }
+         }
+         else
+         {
+           alert("other");
+         }
+  }
+
+  sendRule();
+
+  contextStruct = { witnesses: [] };
+
+  document.regularization.reg_this.value = "";
+  //document.regularization.reg_to.value = "";
+  
+  if(isCustomRules)
+  {
+    var newRule = createRule(choice, reg_thisWhole, reg_toWhole, reg_word);
+    customRules.rules.push(newRule);
+    regularize(customRules);
+  }
+  else if(regOn && !isCustomRules)
+  {
+    var regRules = allRules;
+    // TODO: may have to change --> could be repeated rules
+    for(var i in newRules.rules)
+    {
+      regRules.rules.push(newRules.rules[i]);
+    }
+    regularize(regRules);
+  }
+  else
+  {
+    regularize(newRules);
+  }
+  
+  if(regOn)
+  {
+    //alert(choice + " " + reg_thisWhole + " " + reg_toWhole);
+    insertRegTable(choice, reg_thisWhole, reg_toWhole);
+  }
+  
+  //console.log(newRules);
+  
+  changeRegularizeLabel(choice, reg_thisWhole, reg_toWhole);
+
+}
+
+function getContext(reg_word)
+{ 
+  //alert("getContext");
+  var context = [];
+  var position = currentPosition;
+
+  // set up structure to find context
+  for( var i in regLineW.witnesses)
+  {
+    var goForward;
+    var switchDirections;
+    if(currentPosition == 0)
+    {
+      // cannot go backwards
+      goForward = true;
+      switchDirections = false;
+    }
+    else if (currentPosition == totalPos)
+    {
+      // cannot go forwards
+      goForward = false;
+      switchDirections = false;
+    }
+    else
+    {
+      goForward = true;
+      switchDirections = true;
+    }
+    contextStruct.witnesses.push({
+      "id": regLineW.witnesses[i].id,
+      "token": reg_word,
+      "context": reg_word,
+      "tokenPos": position,
+      "startPos": position,
+      "endPos": position,
+      "goForward": goForward,
+      "switchDirections": switchDirections
+    });
+  }
+
+  //alert("afterBuild");
+
+  var needContextStruct = { witnesses: [] };
+  for (var i in allWitnesses.witnesses)
+  {
+    needContextStruct.witnesses.push({
+      "id" : allWitnesses.witnesses[i].id,
+      "needContext": []});
+    //alert(allWitnesses.witnesses[i].id);
+    for (var j in contextStruct.witnesses)
+    {
+      needContextStruct.witnesses[i].needContext.push(true);
+    }
+  }
+
+  var needContext = true;
+  var witness;
+  var result;
+  while(needContext)
+  {
+    for (var i in needContextStruct.witnesses)
+    {
+      for (var l in contextStruct.witnesses)
+      {
+
+        // split on any character that isn't A-Z, 0-9, or underscore
+        // **Get rid of punctuation
+        context = contextStruct.witnesses[l].context;
+        context = context.split(/\W/);
+        context = context.join(' ');
+
+        // create a regular expression for matching
+       var re = new RegExp(context, 'g');
+       //alert(re);
+
+      //alert(needContextStruct.witnesses[i].id);
+
+      witness = allWitnesses.witnesses[i].content;
+      witness = witness.split(/\W/);
+      witness = witness.join(' ');
+
+      result = witness.match(re);
+      if(result)
+      {
+        if(result.length > 1)
+        {
+          // need context
+          //alert("greater");
+          var getMore = getMoreContext(allWitnesses.witnesses[i].id, l);
+          if(getMore == false)
+          {
+            needContextStruct.witnesses[i].needContext[l] = false;
+          }
+        }
+        else if (result.length == 1)
+        {
+          // if it != position -> need context
+          token = allTokens.alignment[i].tokens[position].t;
+          token = token.split(/\W/);
+          token = token.join(' ');
+          //alert(token);
+          if( !(token.match(re)) )
+          {
+            // need Context
+            //alert("equal dne: " + allWitnesses.witnesses[i].id);
+            var getMore = getMoreContext(allWitnesses.witnesses[i].id, l);
+            if(getMore == false)
+            {
+              needContextStruct.witnesses[i].needContext[l] = false;
+            }
+          }
+          else
+          {
+            // in correct place, therefore remove from list
+            needContextStruct.witnesses[i].needContext[l] = false;
+            //alert("equal equal");
+          }
+        }
+      }
+      else
+      {
+        // no match found, remove from list
+        needContextStruct.witnesses[i].needContext[l] = false;
+        //alert("no match: " + allWitnesses.witnesses[i].id);
+      }
+      }
+    }
+
+    needContext = false;
+    for (var i in needContextStruct.witnesses)
+    {
+       for (var k in contextStruct.witnesses)
+       {
+         if(needContextStruct.witnesses[i].needContext[l])
+         {
+           needContext = true;
+         }
+       }
+    }
+  } 
+}
+
+function getMoreContext(id, witnessIndex)
+{
+  //alert("getMoreContext");
+
+  var tokenWitnessIndex;
+  for (var i in allWitnesses.witnesses)
+  {
+    if(allWitnesses.witnesses[i].id == id)
+    {
+      tokenWitnessIndex = i;
+    }
+  }
+
+  if(contextStruct.witnesses[witnessIndex].startPos == 1 && contextStruct.witnesses[witnessIndex].maxPos == totalPos)
+  {
+    // total context
+    return false;
+  }
+  else if (contextStruct.witnesses[witnessIndex].startPos == 1 && contextStruct.witnesses[witnessIndex].endPos != totalPos)
+  {
+    contextStruct.witnesses[witnessIndex].endPos++;
+    contextStruct.witnesses[witnessIndex].context += " " + allTokens.alignment[tokenWitnessIndex].tokens[contextStruct.witnesses[witnessIndex].endPos].t;
+    contextStruct.witnesses[witnessIndex].switchDirections = false;
+  }
+  else if (contextStruct.witnesses[witnessIndex].endPos == totalPos && contextStruct.witnesses[witnessIndex].startPos != 1)
+  {
+    contextStruct.witnesses[witnessIndex].startPos--;
+    contextStruct.witnesses[witnessIndex].context = allTokens.alignment[tokenWitnessIndex].tokens[contextStruct.witnesses[witnessIndex].startPos].t + " " + contextStruct.witnesses[witnessIndex].context;
+    contextStruct.witnesses[witnessIndex].switchDirections = false;
+  }
+  else if (contextStruct.witnesses[witnessIndex].goForward == true && contextStruct.witnesses[witnessIndex].endPos != totalPos)
+  {
+    contextStruct.witnesses[witnessIndex].goForward = false;
+    contextStruct.witnesses[witnessIndex].endPos++;
+    contextStruct.witnesses[witnessIndex].context += " " + allTokens.alignment[tokenWitnessIndex].tokens[contextStruct.witnesses[witnessIndex].endPos].t;
+  }
+  else if (contextStruct.witnesses[witnessIndex].goForward == false && contextStruct.witnesses[witnessIndex].startPos != 1)
+  {
+    contextStruct.witnesses[witnessIndex].goForward = true;
+    contextStruct.witnesses[witnessIndex].startPos--;
+    contextStruct.witnesses[witnessIndex].context = allTokens.alignment[tokenWitnessIndex].tokens[contextStruct.witnesses[witnessIndex].startPos].t + " " + contextStruct.witnesses[witnessIndex].context;
+  }
+
+  return true;
+}
+
+function sendRule()
+{
+  //alert("sendRule");
+
+  $.post("http://127.0.0.1:8000/regularization/interface/saveRules/",
+       JSON.stringify(newRules), function(data){
+       //alert("success");
+     })
+   .error(function () {alert("error: saveRules");});
+
+}
+
+function changeRegularizeLabel(choice, reg_thisWhole, reg_toWhole)
+{
+
+  //alert("changeRegularizeLabel");
+  
+  changeLabelTimer = null;
+  
+  var scope = "";
+  if(choice == "all_places")
+  {
+    scope = "all places in all witnesses.";
+  }
+  else if (choice == "this_block")
+  {
+    scope = "all witnesses in this block.";
+  }
+  else
+  {
+    scope = "all witnesses for this word.";
+  }
+  
+  var content = "REGULARIZED:: \"" + reg_thisWhole + "\" to \"" + reg_toWhole + "\" in " + scope;
+  document.getElementById('regularize_label').innerHTML = content;
+  
+  //alert(content);
+  
+  if (changeLabelTimer == null || !changeLabelTimer)
+  {
+    changeLabelTimer = setTimeout(function() {document.getElementById('regularize_label').innerHTML = "Double click on the word you want regularized, single click or type in the word you want it regularized to.  Select combination of Witnesses and Place.  Click OK when finished.";}, 5000);
+  }
+  
+}
+
+function regularize_onoff()
+{
+  
+  if (regOn == false)
+  {
+     regOn = true;
+     document.getElementById('reg_on').innerHTML = "Regularization is on! Click on a witness for a regularized word to see more detail.";
+     document.getElementById('reg_button').value = "Reg. Off";
+     
+     if(isRecollate)
+     {
+       recollate();
+       isRecollate = false;
+     }
+
+     getRules();
+  }
+  else
+  {
+     regOn = false;
+     string = "Regularization is off! (Showing originals)";
+     document.getElementById('reg_on').innerHTML = string;
+     document.getElementById('reg_button').value = "Reg. On";
+     
+     document.information.style.visibility = "hidden";
+     document.edit_reg.style.visibility = "hidden";
+     
+     $.ajax({
+    url: "http://127.0.0.1:8000/regularization/interface/getBaseTokens/",
+    dataType: 'json',
+    async: false,
+    success: function(data){
+    	//alert("success");
+    	origTokens = data;
+    	
+    	allTokens = origTokens;
+    	
+    	if(isCustomRules)
+    	{
+    	  regularize(customRules);
+    	}
+    	else
+    	{
+    	  regularize(newRules);
+    	}
+    
+    }});
+     
+       
+     $.getJSON("http://127.0.0.1:8000/regularization/interface/getBaseTokens/",
+function(jdata) {
+        origTokens = jdata;
+        
+        allTokens = origTokens;
+        regularize(newRules);
+
+      })
+      .error(function () {alert("error: getBaseTokens2");});
+  }
+}
+
+function getRules()
+{
+
+  // all rules should be in db
+  // if want to see new rules added without
+  newRules = { rules: [] };
+  var regRules = { rules: [] };
+  
+  $.getJSON("http://127.0.0.1:8000/regularization/interface/getRules/",
+function(jdata) {
+
+  allRules = jdata;
+
+  document.regularization.reg_this.value = "";
+  document.regularization.reg_to.value = "";
+
+
+  loadRegTable();
+  
+  if(isCustomRules)
+  {
+      regRules = customRules;
+      ///alert("isCustom: getRules");
+  }
+  else
+  {
+      regRules = allRules;
+  }
+  
+  regularize(regRules);
+  //alert("success");
+})
+.error(function() { alert("error: getRules"); });
+
+}
+
+function regularize(regRules)
+{
+  
+  distinct = {witnesses:[]};
+
+  var position = currentPosition;
+
+  for (var i in allTokens.alignment)
+  {
+    var regToken = false;
+    var origToken = "";
+    var added = false;
+    var token = "";
+
+    if(allTokens.alignment[i].tokens[position] == null)
+    {
+       origToken = "null";
+    }
+    else
+    {
+      origToken = allTokens.alignment[i].tokens[position].t;
+    }
+
+    // regularize token
+    var token = getToken(regRules, i, position);
+    
+    /*
+if(origToken != token)
+    {
+      regToken=true;
+    }
+    
+*/
+    if(allTokens.alignment[i].tokens[position] != null)
+    {
+      if(allTokens.alignment[i].tokens[position].origToken != "" && allTokens.alignment[i].tokens[position].origToken != undefined)
+      {
+        regToken = true;
+        origToken = allTokens.alignment[i].tokens[position].origToken;
+      }
+    }
+    
+    for (var j in distinct.witnesses)
+    {
+      var distinctToken = distinct.witnesses[j].token;
+      //alert("Token: " + token + " Distinct: " + distinctToken);
+
+      if(token == distinctToken && !added)
+      {
+        if(regToken)
+        {
+          distinct.witnesses[j].id.push(allTokens.alignment[i].witness + "(ORIG:" + origToken + ")");
+        }
+        else
+        {
+          distinct.witnesses[j].id.push(allTokens.alignment[i].witness);
+        }
+        added = true;
+        //alert("add: "+ allTokens.alignment[i].witness);
+      }
+    }
+
+    if(i==0)
+    {
+      distinct.witnesses.push({
+           "token" : token,
+           "id": []
+      });
+
+      for( var k in distinct.witnesses)
+      {
+        distinctToken = distinct.witnesses[k].token;
+
+        if(token == distinctToken)
+        {
+          if(regToken)
+          {
+            distinct.witnesses[k].id.push(allTokens.alignment[i].witness + "(ORIG:" + origToken + ")");
+          }
+          else
+          {
+            distinct.witnesses[k].id.push(allTokens.alignment[i].witness);
+          }
+        }
+      }
+      //alert("new: " + allTokens.alignment[i].witness);
+    }
+    else if(!added)
+    {
+      distinct.witnesses.push({
+           "token" : token,
+           "id": []
+      });
+      for( var k in distinct.witnesses)
+      {
+        distinctToken = distinct.witnesses[k].token;
+
+        if(token == distinctToken)
+        {
+          if(regToken)
+          {
+            distinct.witnesses[k].id.push(allTokens.alignment[i].witness + "(ORIG:" + origToken + ")");
+          }
+          else
+          {
+            distinct.witnesses[k].id.push(allTokens.alignment[i].witness);
+          }
+        }
+      }
+      added = true;
+      //alert("new: " + allTokens.alignment[i].witness);
+    }
+  }
+
+  var content = "";
+  for (var i in distinct.witnesses)
+  {
+    //alert(distinct.witnesses[i].id[0]);
+    content += distinct.witnesses[i].token + " ";
+    for (var j in distinct.witnesses[i].id)
+    {
+      content += distinct.witnesses[i].id[j] + " ";
+    }
+    content += "/ ";
+  }
+
+  document.regularization.reg.value = content;
+  
+}
+
+//http://www.openjs.com/scripts/events/keyboard_shortcuts/
+shortcut = {
+	'all_shortcuts':{},//All the shortcuts are stored in this array
+	'add': function(shortcut_combination,callback,opt) {
+		//Provide a set of default options
+		var default_options = {
+			'type':'keydown',
+			'propagate':false,
+			'disable_in_input':false,
+			'target':document,
+			'keycode':false
+		}
+		if(!opt) opt = default_options;
+		else {
+			for(var dfo in default_options) {
+				if(typeof opt[dfo] == 'undefined') opt[dfo] = default_options[dfo];
+			}
+		}
+
+		var ele = opt.target;
+		if(typeof opt.target == 'string') ele = document.getElementById(opt.target);
+		var ths = this;
+		shortcut_combination = shortcut_combination.toLowerCase();
+
+		//The function to be called at keypress
+		var func = function(e) {
+			e = e || window.event;
+			
+			if(opt['disable_in_input']) { //Don't enable shortcut keys in Input, Textarea fields
+				var element;
+				if(e.target) element=e.target;
+				else if(e.srcElement) element=e.srcElement;
+				if(element.nodeType==3) element=element.parentNode;
+
+				if(element.tagName == 'INPUT' || element.tagName == 'TEXTAREA') return;
+			}
+	
+			//Find Which key is pressed
+			if (e.keyCode) code = e.keyCode;
+			else if (e.which) code = e.which;
+			var character = String.fromCharCode(code).toLowerCase();
+			
+			if(code == 188) character=","; //If the user presses , when the type is onkeydown
+			if(code == 190) character="."; //If the user presses , when the type is onkeydown
+
+			var keys = shortcut_combination.split("+");
+			//Key Pressed - counts the number of valid keypresses - if it is same as the number of keys, the shortcut function is invoked
+			var kp = 0;
+			
+			//Work around for stupid Shift key bug created by using lowercase - as a result the shift+num combination was broken
+			var shift_nums = {
+				"`":"~",
+				"1":"!",
+				"2":"@",
+				"3":"#",
+				"4":"$",
+				"5":"%",
+				"6":"^",
+				"7":"&",
+				"8":"*",
+				"9":"(",
+				"0":")",
+				"-":"_",
+				"=":"+",
+				";":":",
+				"'":"\"",
+				",":"<",
+				".":">",
+				"/":"?",
+				"\\":"|"
+			}
+			//Special Keys - and their codes
+			var special_keys = {
+				'esc':27,
+				'escape':27,
+				'tab':9,
+				'space':32,
+				'return':13,
+				'enter':13,
+				'backspace':8,
+	
+				'scrolllock':145,
+				'scroll_lock':145,
+				'scroll':145,
+				'capslock':20,
+				'caps_lock':20,
+				'caps':20,
+				'numlock':144,
+				'num_lock':144,
+				'num':144,
+				
+				'pause':19,
+				'break':19,
+				
+				'insert':45,
+				'home':36,
+				'delete':46,
+				'end':35,
+				
+				'pageup':33,
+				'page_up':33,
+				'pu':33,
+	
+				'pagedown':34,
+				'page_down':34,
+				'pd':34,
+	
+				'left':37,
+				'up':38,
+				'right':39,
+				'down':40,
+	
+				'f1':112,
+				'f2':113,
+				'f3':114,
+				'f4':115,
+				'f5':116,
+				'f6':117,
+				'f7':118,
+				'f8':119,
+				'f9':120,
+				'f10':121,
+				'f11':122,
+				'f12':123
+			}
+	
+			var modifiers = { 
+				shift: { wanted:false, pressed:false},
+				ctrl : { wanted:false, pressed:false},
+				alt  : { wanted:false, pressed:false},
+				meta : { wanted:false, pressed:false}	//Meta is Mac specific
+			};
+                        
+			if(e.ctrlKey)	modifiers.ctrl.pressed = true;
+			if(e.shiftKey)	modifiers.shift.pressed = true;
+			if(e.altKey)	modifiers.alt.pressed = true;
+			if(e.metaKey)   modifiers.meta.pressed = true;
+                        
+			for(var i=0; k=keys[i],i<keys.length; i++) {
+				//Modifiers
+				if(k == 'ctrl' || k == 'control') {
+					kp++;
+					modifiers.ctrl.wanted = true;
+
+				} else if(k == 'shift') {
+					kp++;
+					modifiers.shift.wanted = true;
+
+				} else if(k == 'alt') {
+					kp++;
+					modifiers.alt.wanted = true;
+				} else if(k == 'meta') {
+					kp++;
+					modifiers.meta.wanted = true;
+				} else if(k.length > 1) { //If it is a special key
+					if(special_keys[k] == code) kp++;
+					
+				} else if(opt['keycode']) {
+					if(opt['keycode'] == code) kp++;
+
+				} else { //The special keys did not match
+					if(character == k) kp++;
+					else {
+						if(shift_nums[character] && e.shiftKey) { //Stupid Shift key bug created by using lowercase
+							character = shift_nums[character]; 
+							if(character == k) kp++;
+						}
+					}
+				}
+			}
+			
+			if(kp == keys.length && 
+						modifiers.ctrl.pressed == modifiers.ctrl.wanted &&
+						modifiers.shift.pressed == modifiers.shift.wanted &&
+						modifiers.alt.pressed == modifiers.alt.wanted &&
+						modifiers.meta.pressed == modifiers.meta.wanted) {
+				callback(e);
+	
+				if(!opt['propagate']) { //Stop the event
+					//e.cancelBubble is supported by IE - this will kill the bubbling process.
+					e.cancelBubble = true;
+					e.returnValue = false;
+	
+					//e.stopPropagation works in Firefox.
+					if (e.stopPropagation) {
+						e.stopPropagation();
+						e.preventDefault();
+					}
+					return false;
+				}
+			}
+		}
+		this.all_shortcuts[shortcut_combination] = {
+			'callback':func, 
+			'target':ele, 
+			'event': opt['type']
+		};
+		//Attach the function with the event
+		if(ele.addEventListener) ele.addEventListener(opt['type'], func, false);
+		else if(ele.attachEvent) ele.attachEvent('on'+opt['type'], func);
+		else ele['on'+opt['type']] = func;
+	},
+
+//Remove the shortcut - just specify the shortcut and I will remove the binding
+	'remove':function(shortcut_combination) {
+		shortcut_combination = shortcut_combination.toLowerCase();
+		var binding = this.all_shortcuts[shortcut_combination];
+		delete(this.all_shortcuts[shortcut_combination])
+		if(!binding) return;
+		var type = binding['event'];
+		var ele = binding['target'];
+		var callback = binding['callback'];
+
+		if(ele.detachEvent) ele.detachEvent('on'+type, callback);
+		else if(ele.removeEventListener) ele.removeEventListener(type, callback, false);
+		else ele['on'+type] = false;
+	}
+}
+
+function findNextVariant()
+{
+
+  //alert("Tab");
+
+  var reg_this = document.regularization.reg_this.value;
+  var reg_to = document.regularization.reg_to.value;
+
+  var position = currentPosition;
+  var newToken = "";
+  var regRules = "";
+
+  if(isCustomRules)
+  {
+    regRules = customRules;
+  }
+  else
+  {
+    regRules = newRules;
+
+    if(regOn)
+    {
+      for(var i in allRules.rules)
+      {
+        regRules.rules.push(allRules.rules[i]);
+      }
+    }
+  }
+
+  if(reg_to == "")
+  {
+    alert("Please select a token");
+  }
+  else
+  {
+     //alert("tokenSelected");
+     reg_to = reg_to.split(" ", 1);
+     var found = false;
+     var foundVariant = false;
+     var variant = "";
+     for (var i in allTokens.alignment)
+     {
+       var token = getToken(regRules, i, position);
+
+       if (token == reg_to && !found)
+       {
+         //alert(token);
+         found = true;
+       }
+       else if (found && reg_to != token && !foundVariant)
+       {
+           foundVariant = true;
+           variant = token;
+           reg_thisBox = token;
+           //alert(variant);
+       }
+     }
+     if(foundVariant)
+     {
+       document.regularization.reg_this.value = "";
+       document.regularization.reg_this.value = variant;
+     }
+     else
+     {
+       alert("Error: Cannot get next variant.");
+     } 
+   }
+}
+
+function addTokenTo()
+{
+    // if more than one winess, check to see if words are different
+    // if words are different -> cannot add next word
+    // else add next word to reg_this
+    // if reg_on see if rules apply to next word!
+
+  var reg_this = document.regularization.reg_to.value;
+  var position = currentPosition;
+  var newToken = "";
+  var regRules = "";
+
+  if(isCustomRules)
+  {
+    regRules = customRules;
+  }
+  else
+  {
+    regRules = newRules;
+
+    if(regOn)
+    {
+      for(var i in allRules.rules)
+      {
+        regRules.rules.push(allRules.rules[i]);
+      }
+    }
+  }
+  
+  var reg_thisArray = reg_this.split(" ");
+  var newPosition = currentPosition-1;
+  newPosition += reg_thisArray.length;
+
+  if(reg_this == "")
+  {
+    alert("Please select a token");
+  }
+  else if(newPosition >= totalPos)
+  {
+    alert("Cannot add next token: There are no more tokens in entity!");
+  }
+  else
+  {
+     position--;
+     for(var i in reg_thisArray)
+     {
+       reg_this = reg_thisArray[i];
+       position++;
+     }
+  
+     var add = true;
+     var found = false;
+
+     for (var i in allTokens.alignment)
+     {
+       //alert(allTokens.alignment[i].witness);
+       var token = getToken(regRules, i, position);
+        
+        if(token == reg_this)
+        {
+         var newPosition = position + 1;
+         var rToken = getToken(regRules, i, newPosition);
+
+          if(!found)
+          {
+           	found = true;
+           	newToken = rToken;
+           	//alert(newToken);
+          }
+          else if(found && rToken != newToken)
+          {
+            //alert("here");
+            add = false;
+          }
+         }
+    }
+
+     if(add)
+     {
+       document.regularization.reg_to.value += " " + newToken;
+     }
+     else
+     {
+       alert("Error: Cannot get next token.  Not all next tokens match.");
+     } 
+  }
+
+}
+
+function addTokenThis()
+{
+    // if more than one winess, check to see if words are different
+    // if words are different -> cannot add next word
+    // else add next word to reg_this
+    // if reg_on see if rules apply to next word!
+
+  var reg_this = document.regularization.reg_this.value;
+  var position = currentPosition;
+  var newToken = "";
+  var regRules = "";
+
+  if(isCustomRules)
+  {
+    regRules = customRules;
+  }
+  else
+  {
+    regRules = newRules;
+
+    if(regOn)
+    {
+      for(var i in allRules.rules)
+      {
+        regRules.rules.push(allRules.rules[i]);
+      }
+    }
+  }
+  
+  var reg_thisArray = reg_this.split(" ");
+  var newPosition = currentPosition-1;
+  newPosition += reg_thisArray.length;
+
+  if(reg_this == "")
+  {
+    alert("Please select a token");
+  }
+  else if(newPosition >= totalPos)
+  {
+    alert("Cannot add next token: There are no more tokens in entity!");
+  }
+  else
+  {
+     position--;
+     for(var i in reg_thisArray)
+     {
+       reg_this = reg_thisArray[i];
+       position++;
+     }
+  
+     var add = true;
+     var found = false;
+
+     for (var i in allTokens.alignment)
+     {
+       //alert(allTokens.alignment[i].witness);
+       var token = getToken(regRules, i, position);
+        
+        
+        if(token == reg_this)
+        {
+          var newPosition = position + 1;
+          var rToken = getToken(regRules, i, newPosition);
+
+          if(!found)
+          {
+           	found = true;
+           	newToken = rToken;
+           	//alert(newToken);
+          }
+          else if(found && rToken != newToken)
+          {
+            //alert("here");
+            add = false;
+          }
+         }
+    }
+
+     if(add)
+     {
+       document.regularization.reg_this.value += " " + newToken;
+     }
+     else
+     {
+       alert("Error: Cannot get next token.  Not all next tokens match.");
+     } 
+  }
+}
+
+function buildWitnesses()
+{
+  //alert("buildWitnesses");
+  newWitnesses = { witnesses: [] };
+  var regRules = "";
+  isBuildWitnesses = true;
+
+  $.ajax({
+    url: "http://127.0.0.1:8000/regularization/interface/getRules/",
+    dataType: 'json',
+    async: false,
+    success: function(jdata){
+
+    regRules = jdata;
+    
+    if(isCustomRules)
+    {
+      regRules = customRules;
+      $.ajax({
+    	url: "http://127.0.0.1:8000/regularization/interface/getBaseTokens/",
+    	dataType: 'json',
+    	async: false,
+    	success: function(jdata){
+    		origTokens = jdata;
+    		allTokens = origTokens;
+    	
+    	}});
+      
+    }
+
+  }});
+
+  for (var i in allTokens.alignment)
+  {
+    var content = "";
+    for (var j in allTokens.alignment[i].tokens)
+    {
+      var token = getToken(regRules, i, j);
+      if(token != "null")
+      {
+        content += token + " ";
+      }
+    }
+
+    content = content.substring(0, content.length-1);
+    newWitnesses.witnesses.push ({
+      "id": allTokens.alignment[i].witness,
+      "content": content
+    });
+    
+    //alert(content);
+  }
+  
+  isBuildWitnesses=false;
+
+   return newWitnesses;
+}
+
+function seeWitnesses()
+{
+
+  newWitnesses = buildWitnesses();
+
+   $.post("http://127.0.0.1:8000/regularization/interface/saveRegWitnesses/",
+       JSON.stringify(newWitnesses), function(){
+       //alert("success");
+      window.location.href = "http://127.0.0.1:8000/regularization/interface/view/";
+     })
+   .error(function () {alert("error: saveRegWitnesses");});
+  
+}
+
+function recollate()
+{
+  //alert("recollate");
+  
+  var newWitnesses = buildWitnesses();
+  newWitnesses = JSON.stringify(newWitnesses);
+  
+  $.ajax({
+    url: "http://127.0.0.1:8000/regularization/interface/recollate/",
+    dataType: 'json',
+    type: 'post',
+    async: false,
+    data: newWitnesses,
+    success: function(data){
+ 
+      for(var i in data.alignment)
+      {
+        for(var j in data.alignment[i].tokens)
+        {
+            for(var k in allTokens.alignment[i].tokens)
+            {
+              if(allTokens.alignment[i].tokens[k] != null && data.alignment[i].tokens[j] != null)
+              {
+                if(allTokens.alignment[i].tokens[k].t == data.alignment[i].tokens[j].t)
+                {
+                  data.alignment[i].tokens[j].origToken = allTokens.alignment[i].tokens[k].origToken;
+                }
+              }
+            }
+        }
+      }
+      
+      allTokens = data;
+      
+      $.getJSON("http://127.0.0.1:8000/regularization/interface/getBaseTokens/",
+function(jdata) {
+        origTokens = jdata;
+
+      })
+      .error(function () {alert("error: getBaseTokens2");});
+ }});
+}
+
+function checkSpaces(reg_word)
+{
+  
+  var position = 0;
+  var i = -1;
+  var indices = [];
+  
+  while (position != -1)
+  {
+    position = reg_word.indexOf(" ", i + 1);
+    if(position != -1)
+    {
+      indices.push(position);
+    }
+    i = position;
+  }
+  
+  if(indices == [])
+  {
+    return false;
+  }
+  else
+  {
+    return indices;
+  }
+}
+
+function getToken(regRules, witnessId, position)
+{
+
+   var token = "";
+   var collate = false;
+   var wholeToToken = "";
+   var nonRegToken = "";
+  
+   if(allTokens.alignment[witnessId].tokens[position] == null)
+   {
+     token = "null";
+   }
+   else
+   {
+     token = allTokens.alignment[witnessId].tokens[position].t;
+     nonRegToken = token;
+   }
+   
+   //alert(allTokens.alignment[witnessId].witness);
+
+   for (var k in regRules.rules)
+   {
+     if (token == regRules.rules[k].token)
+     {
+        //alert(token);
+        action = regRules.rules[k].action;
+        reg_this = action.split(',')[0];
+        reg_this = reg_this.substring(11,reg_this.length);
+        reg_to = action.split(', ')[1];
+        reg_to = reg_to.substring(0, reg_to.length-1);
+        wholeToToken = reg_to;
+        
+        var spacesThis = checkSpaces(reg_this);
+        var spacesTo = checkSpaces(reg_to);
+        
+        if(spacesThis != false)
+        {
+          //Check if next word(s) match
+          // if match -> recollate
+          
+          var content = token;
+          
+          for (var i in spacesThis)
+          {
+            position++;
+            if(allTokens.alignment[witnessId].tokens[position] == null)
+            {
+              newToken = "null";
+            }
+            else
+            {
+              newToken = allTokens.alignment[witnessId].tokens[position].t;
+            }
+            content += " " + newToken;
+          }
+          
+		  if(content == reg_this)
+		  {
+		    position = currentPosition;
+		    allTokens.alignment[witnessId].tokens[position].t = reg_to;
+		    allTokens.alignment[witnessId].tokens[currentPosition].origToken = reg_this;
+		    allTokens.alignment[witnessId].tokens[currentPosition].reg_to = reg_to;
+		    
+		    console.log(allTokens);
+		    position++;
+		    for(var i in spacesThis)
+		    { 
+		      allTokens.alignment[witnessId].tokens.splice(position, 1);
+		    }
+		    //collate = true;
+		  }
+		  
+        }
+        else
+        {
+          token = reg_to;
+          if(isRecollate)
+          {
+            token = nonRegToken;
+          }
+        }
+        
+        if(spacesTo != false)
+        {
+          //Check if next word(s) match
+          // if match -> recollate
+          
+          var content = reg_to;
+          //alert("spacesTo");
+          
+          content = content.split(' ').join('');
+          
+          //alert(content + " " + reg_this + " " + reg_to);
+          
+		  if(content == reg_this)
+		  {
+		    var insertTokens = reg_to.split(' ');
+		    var position = currentPosition;
+		    for(var k in insertTokens)
+		    {
+		      if(k == 0)
+		      {
+		        allTokens.alignment[witnessId].tokens[position].t = insertTokens[k];
+		        allTokens.alignment[witnessId].tokens[position].origToken = reg_this;
+		        allTokens.alignment[witnessId].tokens[position].reg_to = reg_to;
+		      }
+		      else
+		      {
+		        var insertTok = { "t" : insertTokens[k], "n" : insertTokens[k], "origToken" : reg_this, "reg_to" : reg_to};
+		        allTokens.alignment[witnessId].tokens.splice(position,0,insertTok);
+		      }
+		      position++;
+		    }
+		    
+		    console.log(allTokens);
+		    reg_to = reg_to.split(' ')[0];
+		    //alert("reg_to: " + reg_to);
+		    //collate = true;
+		    token = reg_to;
+		    
+		  }
+        }
+        else
+        {
+          token = reg_to;
+          if(isRecollate)
+          {
+            token = nonRegToken;
+          }
+        }
+      }
+    }
+    
+    if(collate)
+    {
+      collate = false;
+      if(!isBuildWitnesses)
+      {
+      	//recollate();
+      	isRecollate = true;
+      	token = reg_to;
+      }
+      else
+      {
+        token = wholeToToken;
+      }
+    }
+    
+    return token;
+}
+
+function informationWindow(witnessId)
+{
+  //alert("informationWindow");
+  var regInfo = { data: [] };
+  var context = "";
+  var index = "";
+  var position = currentPosition + 1;
+  var regRules = "";
+  
+  witnessId = witnessId.split('(')[0];
+  
+  for (var i in allWitnesses.witnesses)
+  {
+    if(witnessId == allWitnesses.witnesses[i].id)
+    {
+      context = allWitnesses.witnesses[i].content;
+      index = i;
+    }
+  }
+  
+  $.ajax({
+    url: "http://127.0.0.1:8000/regularization/interface/getRules/",
+    dataType: 'json',
+    async: false,
+    success: function(jdata){
+
+    regRules = jdata;
+    
+    if(isCustomRules)
+    {
+      regRules = customRules;
+    }
+
+  }});
+  
+  
+  var reg_this = "";
+  var reg_to = "";
+  var choice = "";
+  
+  for(var i in regRules.rules)
+  {
+    var action = regRules.rules[i].action;
+    
+    if(allTokens.alignment[index].tokens[currentPosition].origToken != null && allTokens.alignment[index].tokens[currentPosition].origToken != "")
+    {
+      if(allTokens.alignment[index].tokens[currentPosition].origToken == regRules.rules[i].token)
+      {
+        reg_this = regRules.rules[i].token;
+        reg_to = action.split(', ')[1];
+        reg_to = reg_to.substring(0, reg_to.length-1);
+        choice = regRules.rules[i].scope;
+      }
+    }
+    else 
+    {
+      if (allTokens.alignment[index].tokens[currentPosition] != null)
+      {
+        token = allTokens.alignment[index].tokens[currentPosition].t;
+      }
+      else
+      {
+        token = "null";
+      }
+      
+      if(token == regRules.rules[i].token)
+      {
+        reg_this = regRules.rules[i].token;
+        reg_to = action.split(', ')[1];
+        reg_to = reg_to.substring(0, reg_to.length-1);
+        choice = regRules.rules[i].scope;
+      }
+    }
+  }
+  
+  if(choice == "all_places")
+  {
+    choice = "all places in all witnesses";
+  }
+  else if(choice == "this_block")
+  {
+    choice = "this block in all witnesses";
+  }
+  else if(choice == "this_word")
+  {
+    choice = "this word in all witnesses";
+  }
+  
+  document.information.style.visibility = "visible";
+  document.getElementById('witnessId').innerHTML = witnessId;
+  document.getElementById('word').innerHTML = position;
+  document.getElementById('block').innerHTML = 1; //need to change
+  document.getElementById('context').innerHTML = context;
+  document.getElementById('reg_this_info').innerHTML = reg_this;
+  document.getElementById('reg_to_info').innerHTML = reg_to;
+  document.getElementById('choice').innerHTML = choice;
+  
+  /*  Send to another page
+regInfo.data.push({
+  	"witnessId": witnessId,
+  	"word": position,
+  	"block": 1, //change this later to apply to more
+  	"context": context,
+  	"reg_this": reg_this,
+  	"reg_to": reg_to,
+  	"choice": choice
+  });
+  
+  
+  $.post("http://127.0.0.1:8000/regularization/interface/saveInformationWindow/",
+       JSON.stringify(regInfo), function(){
+       //alert("success");
+       window.location.href = "http://127.0.0.1:8000/regularization/interface/informationWindow/";
+     })
+   .error(function () {alert("error: informationWindow");});
+*/
+}
+
+function loadRegTable()
+{
+  var regRules = { rules: [] };
+  
+  regRules = allRules;
+
+  //delete everything out of reg_table
+     var table = document.getElementById('reg_table');
+     var rowCount = table.rows.length;
+     for(var i =rowCount-1; i>=0; i--)
+     {
+       table.deleteRow(i);
+     }
+
+  var table = document.getElementById('reg_table');
+
+  var rowCount = table.rows.length;
+  var row = table.insertRow(rowCount);
+  
+  var checkCellTitle = row.insertCell(0);
+  var scopeCellTitle = row.insertCell(1);
+  scopeCellTitle.innerHTML = "Scope";
+  var regThisCellTitle = row.insertCell(2);
+  regThisCellTitle.innerHTML = "Reg. This";
+  var regToCellTitle = row.insertCell(3);
+  regToCellTitle.innerHTML = "Reg. To";
+  var deleteCellTitle = row.insertCell(4);
+  deleteCellTitle.innerHTML = "Delete";
+  
+  rowCount++; 
+  
+  for(var i in regRules.rules)
+  {
+    var scope = regRules.rules[i].scope;
+    var reg_this = regRules.rules[i].token;
+    var reg_to = "";
+    action = regRules.rules[i].action;
+    reg_this = action.split(',')[0];
+    reg_this = reg_this.substring(11,reg_this.length);
+    reg_to = action.split(', ')[1];
+    reg_to = reg_to.substring(0, reg_to.length-1);
+    
+    insertRegTable(scope, reg_this, reg_to);
+  	
+  	rowCount++;
+  }
+  
+  document.edit_reg.style.visibility = "visible";
+}
+
+function insertRegTable(scope, reg_this, reg_to)
+{
+    if(reg_this == null)
+    {
+      reg_this = "null";
+    }
+    
+    if(reg_to == null)
+    {
+      reg_to = "null";
+    }
+    
+    var found = true;
+    if(isCustomRules)
+    {
+      found = false;
+      //alert("isCustom: insertRegTable"); 
+      
+      for(var i in customRules.rules)
+      {
+        var customScope = customRules.rules[i].scope;
+      	var action = customRules.rules[i].action;
+	  	var reg_thisRule = action.split(',')[0];
+	  	reg_thisRule = reg_thisRule.substring(11,reg_thisRule.length);
+	  	var reg_toRule = action.split(', ')[1];
+	  	reg_toRule = reg_toRule.substring(0, reg_toRule.length-1);
+	  	var scopeRule = customRules.rules[i].scope;
+	  	
+	  	//alert(customScope + " " + scope + " " + reg_thisRule + " " + reg_this + " "+ reg_toRule + " " + reg_to);
+        //TODO: add more when completed rules
+        if(customScope == scope && reg_this == reg_thisRule && reg_to == reg_toRule)
+        {
+          found = true;
+        }
+      }
+    }
+    
+    var table = document.getElementById('reg_table');
+
+    var rowCount = table.rows.length;
+  	var row = table.insertRow(rowCount);
+    
+    var checkCell = row.insertCell(0);
+  	var element1 = document.createElement("input");
+  	element1.type = "checkbox";
+  	if(found)
+  	{
+  	  element1.checked = "checked";
+  	}
+  	checkCell.appendChild(element1);
+  	
+  	var scopeCell = row.insertCell(1);
+  	var element2 = document.createElement("select");
+  	var option1 = document.createElement("option");
+  	option1.text = "All witnesses, this block";
+  	element2.options.add(option1);
+  	var option2 = document.createElement("option");
+  	option2.text = "All witnesses, this word";
+  	element2.options.add(option2);
+  	var option3 = document.createElement("option");
+  	option3.text = "All witnesses, all places";
+  	element2.options.add(option3);
+  	if(scope == "all_places")
+  	{
+  	  element2.selectedIndex = 2; 
+  	}
+  	else if (scope == "this_word")
+  	{
+  	  element2.selectedIndex = 1;
+  	}
+  	scopeCell.appendChild(element2);
+  	
+  	var regThisCell = row.insertCell(2);
+  	var element3 = document.createElement("input");
+  	element3.type = "text";
+  	element3.size = "40";
+  	//regThisCell.innerHTML = reg_this;
+  	element3.value = reg_this;
+  	regThisCell.appendChild(element3);
+  	
+  	var regToCell = row.insertCell(3);
+  	var element4 = document.createElement("input");
+  	element4.type = "text";
+  	element4.size = "40";
+  	element4.value = reg_to;
+  	regToCell.appendChild(element4);
+  	
+  	
+  	var deleteCell = row.insertCell(4);
+  	deleteCell.align = "center";
+  	var element5 = document.createElement("input");
+  	element5.type = "checkbox";
+  	//element5.checked = "checked";
+  	deleteCell.appendChild(element5);
+  	
+  	/*
+var deleteRegCell = row.insertCell(4);
+  	var element5 = document.createElement("input");
+  	element5.type = "button";
+  	element5.value = "Delete";
+  	deleteRegCell.appendChild(element5);
+*/
+  
+}
+
+function submitCustomReg()
+{
+  //alert("submitCustomReg");
+  isCustomRules = true;
+  var table = document.getElementById('reg_table');
+  var rowCount = table.rows.length;
+  
+  customRules = { rules: [] };
+  //first one is one to delete; second is new reg
+  var sendRules = { rules: [] };
+  var deleteJSON = { rules: [] };
+  
+  var regRules = allRules;
+  for(var i in newRules.rules)
+  {
+    regRules.rules.push(newRules.rules[i]);
+  }
+  
+  for(var i=1; i<rowCount; i++)
+  {
+    var row = table.rows[i];
+    var check = row.cells[0].childNodes[0];
+    var deleteRule = row.cells[4].childNodes[0];
+    var index = i - 1;
+    var scope = row.cells[1].childNodes[0].value;
+	var reg_this = row.cells[2].childNodes[0].value;
+	var reg_to = row.cells[3].childNodes[0].value;
+
+	  if(scope == "All witnesses, this block")
+	  {
+	    scope = "this_block";
+	  }
+	  else if(scope == "All witnesses, this word")
+	  {
+	    scope = "this_word";
+	  }
+	  else
+	  {
+	    scope = "all_places";
+	  }
+	  
+	  var action = regRules.rules[index].action;
+	  var reg_thisRule = action.split(',')[0];
+	  reg_thisRule = reg_thisRule.substring(11,reg_thisRule.length);
+	  var reg_toRule = action.split(', ')[1];
+	  reg_toRule = reg_toRule.substring(0, reg_toRule.length-1);
+	  var scopeRule = regRules.rules[index].scope;
+    
+    if(deleteRule != null && deleteRule.checked)
+    {
+      // delete from database
+      var newRule = createRule(scope, reg_this, reg_to, regRules.rules[index].token);
+      deleteJSON.rules.push(newRule);
+    }
+    else
+    {
+    	if(check != null && check.checked)
+    	{
+		      
+	      if(reg_this == reg_thisRule && reg_to == reg_toRule && scope == scopeRule)
+	      {
+	        //add to customReg
+	        customRules.rules.push(regRules.rules[index]);
+	        //alert("match");
+	      }
+	      else
+	      {
+	        //delete from database
+	        // save new rule
+	        //update rules
+	        
+	        //isCustomRules = true;
+	        sendRules.rules.push(regRules.rules[index]);
+	        
+	        var newRule = createRule(scope, reg_this, reg_to, regRules.rules[index].token);
+	        sendRules.rules.push(newRule);
+	        customRules.rules.push(newRule);
+	        
+	      }
+	    }
+    
+	 }
+  }
+  
+   $.ajax({
+	    	url: "http://127.0.0.1:8000/regularization/interface/deleteRule/",
+	    	dataType: 'json',
+	    	type: 'post',
+	    	async: false,
+	    	data: JSON.stringify(deleteJSON),
+	    	success: function(data){
+	    	
+	    	  alert("success");
+	    	
+	    	}
+	    });
+	 
+	 $.ajax({
+	    	url: "http://127.0.0.1:8000/regularization/interface/changeRule/",
+	    	dataType: 'json',
+	    	type: 'post',
+	    	async: false,
+	    	data: JSON.stringify(sendRules),
+	    	success: function(data){
+	    	
+	    	  alert("success");
+	    	
+	    	}
+	    });
+      
+   // get new/all rules and reload reg_table
+   $.ajax({
+    	url: "http://127.0.0.1:8000/regularization/interface/getBaseTokens/",
+    	dataType: 'json',
+    	async: false,
+    	success: function(jdata){
+    		origTokens = jdata;
+    		allTokens = origTokens;
+    	
+    	}});
+
+   getRules();
+}
+
+function createRule(scope, reg_this, reg_to, token)
+{
+  var action = "regularize(" + reg_this + ", " + reg_to + ")";
+  newRule = {
+             "_id" : "",
+             "appliesTo" : "",
+             "condition" : "",
+             "action" : action,
+             "user" : "",
+             "scope" : scope,
+             "regularization_type" : "",
+             "description" : "",
+             "token" : token,
+             "lemma" : ""
+           };
+           
+  return newRule;
+
+}
+
+function automateReg(checkBox)
+{
+  
+  if(checkBox.checked)
+  {
+    autoReg = true; 
+    
+    var maxPosition = 0;
+    var maxLength = 0;
+    
+    for (var i in distinct.witnesses)
+    {
+      if(distinct.witnesses[i].id.length > maxLength)
+      {
+        maxPosition = i;
+        maxLength = distinct.witnesses[i].id.length;
+      }
+    }
+   
+    
+    document.regularization.reg_to.value = distinct.witnesses[maxPosition].token;
+    
+    if(maxPosition != distinct.witnesses.length-1)
+    {
+      maxPosition++;
+      document.regularization.reg_this.value = distinct.witnesses[maxPosition].token;
+    }
+    else if(maxPosition != 0 && maxPosition == distinct.witnesses.length)
+    {
+      document.regularization.reg_this.value = distinct.witnesses[0].token;
+    }
+    
+    reg_thisBox = document.regularization.reg_this.value;
+    reg_toBox = document.regularization.reg_to.value;
+    
+  }
+  else
+  {
+    autoReg = false;
+    
+    document.regularization.reg_this.value = "";
+    document.regularization.reg_to.value = "";
+  }
+}
+
+function backToken()
+{
+  alert("backToken");
+  //shows all previously collated words and allows user to choose one to go to
+}
+
+</script>
+</head>
+
+<body onload="load()">
+<h1>Regularization: Make Modifications</h1>
+<label for="regularize_label" id="regularize_label">Double click on the word you want regularized, single click or type in the
+word you want it regularized to.  Select
+combination of Witnesses and Place.  Click OK when
+finished.</label>
+<br /><br /><label for="reg_on" id="reg_on">Regularization is off! (Showing
+originals)
+</label>
+
+<table>
+<tr>
+<td>
+<form action="." method="POST" name="regularization">
+       <br /><textarea rows="10" cols="75" name="reg" onclick="determineClick()"></textarea>
+           
+       <br /><label id="reg_this" name="reg_this">Regularize This:</label>
+           <input type="text" name="reg_this" size="82"/>
+       <br /><label id="reg_to">To This:</label>
+           <input type="text" name="reg_to" size="92"/>
+
+        <p>Regularize Choices:
+       <select name="reg_choices">
+	  <option value="this_block">All witnesses, this block</option>
+	  <option value="this_word">All witnesses, this word</option>
+	  <option value="all_places">All witnesses, all places</option>
+	  <option value="other">Other ...</option>
+	</select></p>
+
+	<input name="ok" type="button" value="Add Rule"
+	onclick="addRule()">
+	<!-- <input name="edit_reg" type="button" value="Edit Reg."> -->
+	<input name="reg_on" id="reg_button" type="button" value="Reg. On"
+	onclick="regularize_onoff()">
+	<!--
+<input name="recollate" type="button"
+        value="Recollate" onclick="buildWitnesses()">
+-->
+	<input name="back" type="button" value="Back" onclick="backToken()">
+	<input name="previous" type="button" value="Previous" onclick="previousToken()">
+	<input name="next" type="button" value="Next" onclick="nextToken()">
+	<input name="view" type="button" value="View Entire Reg." onclick="seeWitnesses()">
+	<input name="done" type="button" value="DONE">
+	<br /> Shortcuts:: <br/>"Right Arrow": Add next word to Regularize This
+	<br /> "Shift+Right Arrow": Add next word to Regularize To
+	<br /> "Tab": Find next variant to regularize
+	<br /> <input type="checkbox" name="automate" value="automate"
+	onchange="automateReg(this)"/> Automate regularization selection
+    </form>
+</td>
+<td valign="top">
+<form action="." method="POST" name="information">
+<h2>Regularization Information</h2>
+Regularization at word <label for="word" id="word"></label> in block <label for="block" id="block"></label>
+in witness <label for="witnessId" id="witnessId"></label>
+
+<br /><br />
+
+Context:<br/>
+<label for="context" id="context"></label>
+
+<br /><br />
+
+Reg. from:<br/>
+<label for="reg_this_info" id="reg_this_info"></label>
+
+<br /><br />
+
+Reg. to:<br/>
+<label for="reg_to_info" id="reg_to_info"></label>
+
+<br /><br />
+
+This regularization set for <label for="choice" id="choice"></label>
+</form>
+</td>
+</tr>
+</table>
+
+<form name="edit_reg">
+<h2>Regularizations</h2>
+
+<table id="reg_table" border="1">
+	
+</table>
+
+<input name="submit" type="button" value="Submit" onclick="submitCustomReg()">
+
+</form>
+
+</body> </html>

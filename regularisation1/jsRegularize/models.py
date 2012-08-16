@@ -31,4 +31,3 @@ class Rule(models.Model):
     description = models.CharField(max_length=100)
     token = models.CharField(max_length=100)
     lemma = models.CharField(max_length=20)
-    json = models.CharField(max_length=10000)
