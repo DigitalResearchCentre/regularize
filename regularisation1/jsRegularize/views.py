@@ -50,16 +50,16 @@ def getRegWitnesses(request):
     return HttpResponse(regWitnesses, mimetype="application/json")
 
 def getBaseWitnesses(request):
-    contentBo1 = '[4xcp]w[/4xcp]Whan that Ap ri l with his shouris sote'
-    contentBo2 = '[6orncp]W[/6orncp]hen that april; with his showres swote'
-    contentCh = '[5emph]W[/5emph]han that Auerel wt his shoures soote'
-    contentCx1 = '[3orncp]W[/3orncp]Han that Apprill with his shouris sote'
-    contentCx2 = '[4orncp]W[/4orncp]Han that Apryll wyth hys shouris sote'
-    contentEl = '[6orncp]W[/6orncp]Han that April with hise shoures soote'
-    contentHa4 = '[6orncp]W[/6orncp]han that aprille with his schowres swoote'
-    contentHg = '[6orncp]W[/6orncp]han that Aueryl wt his shoures soote'
-    contentLa = '[xorncp]W[/xorncp]Han pat April wype his schoures soote .'
-    contentTo1 = '[3emph]W[/3emph]hen that April . with his shouris . swote'
+    contentBo1 = '[4xcp]w[/4xcp]Whan that April with his [6orncp]W[/6orncp]han shouris sote'
+    contentBo2 = '[6orncp]W[/6orncp]hen that april; with his [6orncp]W[/6orncp]han showres swote'
+    contentCh = '[5emph]W[/5emph]han that Auerel wt his [6orncp]W[/6orncp]han shoures soote'
+    contentCx1 = '[3orncp]W[/3orncp]Han that Apprill with his [6orncp]W[/6orncp]han shouris sote'
+    contentCx2 = '[4orncp]W[/4orncp]Han that Apryll wyth hys [6orncp]W[/6orncp]han shouris sote'
+    contentEl = '[6orncp]W[/6orncp]Han that April with hise [6orncp]W[/6orncp]han shoures soote'
+    contentHa4 = '[6orncp]W[/6orncp]han that aprille with his [6orncp]W[/6orncp]han schowres swoote'
+    contentHg = '[6orncp]W[/6orncp]han that Aueryl wt his [6orncp]W[/6orncp]han shoures soote'
+    contentLa = '[xorncp]W[/xorncp]Han pat April wype his [6orncp]W[/6orncp]han schoures soote .'
+    contentTo1 = '[3emph]W[/3emph]hen that April . with his [6orncp]W[/6orncp]han shouris . swote'
 
     jdata = json.dumps({"witnesses" : [{"id" : "Bo1", "content" : contentBo1 }, {"id" : "Bo2", "content" : contentBo2 }, {"id" : "Ch", "content" : contentCh }, {"id" : "Cx1", "content" : contentCx1 }, {"id" : "Cx2", "content" : contentCx2},{"id" : "El", "content" : contentEl }, {"id" : "Ha4", "content" : contentHa4 }, {"id" : "Hg", "content" : contentHg }, {"id" : "La", "content" : contentLa },\
 {"id" : "To1", "content" : contentTo1 }]})
@@ -70,16 +70,16 @@ def getBaseTokens(request):
     url = 'http://127.0.0.1:8080/collatex-web-0.9.1-RC2/api/collate'
     headers = {'Content-Type': 'application/json', 'Accept': 'application/json'}
 
-    contentBo1 = '[4xcp]w[/4xcp]Whan that Ap ri l with his shouris sote'
-    contentBo2 = '[6orncp]W[/6orncp]hen that april; with his showres swote'
-    contentCh = '[5emph]W[/5emph]han that Auerel wt his shoures soote'
-    contentCx1 = '[3orncp]W[/3orncp]Han that Apprill with his shouris sote'
-    contentCx2 = '[4orncp]W[/4orncp]Han that Apryll wyth hys shouris sote'
-    contentEl = '[6orncp]W[/6orncp]Han that April with hise shoures soote'
-    contentHa4 = '[6orncp]W[/6orncp]han that aprille with his schowres swoote'
-    contentHg = '[6orncp]W[/6orncp]han that Aueryl wt his shoures soote'
-    contentLa = '[xorncp]W[/xorncp]Han pat April wype his schoures soote .'
-    contentTo1 = '[3emph]W[/3emph]hen that April . with his shouris . swote'
+    contentBo1 = '[4xcp]w[/4xcp]Whan that April with his [6orncp]W[/6orncp]han shouris sote'
+    contentBo2 = '[6orncp]W[/6orncp]hen that april; with his [6orncp]W[/6orncp]han showres swote'
+    contentCh = '[5emph]W[/5emph]han that Auerel wt his [6orncp]W[/6orncp]han shoures soote'
+    contentCx1 = '[3orncp]W[/3orncp]Han that Apprill with his [6orncp]W[/6orncp]han shouris sote' 
+    contentCx2 = '[4orncp]W[/4orncp]Han that Apryll wyth hys [6orncp]W[/6orncp]han shouris sote'
+    contentEl = '[6orncp]W[/6orncp]Han that April with hise [6orncp]W[/6orncp]han shoures soote'
+    contentHa4 = '[6orncp]W[/6orncp]han that aprille with his [6orncp]W[/6orncp]han schowres swoote'
+    contentHg = '[6orncp]W[/6orncp]han that Aueryl wt his [6orncp]W[/6orncp]han shoures soote'
+    contentLa = '[xorncp]W[/xorncp]Han pat April wype his [6orncp]W[/6orncp]han schoures soote .'
+    contentTo1 = '[3emph]W[/3emph]hen that April . with his [6orncp]W[/6orncp]han shouris . swote'
 
     jdata = json.dumps({"witnesses" : [{"id" : "Bo1", "content" : contentBo1 }, {"id" : "Bo2", "content" : contentBo2 }, {"id" : "Ch", "content" : contentCh }, {"id" : "Cx1", "content" : contentCx1 }, {"id" : "Cx2", "content" : contentCx2},{"id" : "El", "content" : contentEl }, {"id" : "Ha4", "content" : contentHa4 }, {"id" : "Hg", "content" : contentHg }, {"id" : "La", "content" : contentLa },\
 {"id" : "To1", "content" : contentTo1 }]})

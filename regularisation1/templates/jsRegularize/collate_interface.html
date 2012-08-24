@@ -386,6 +386,9 @@ function addRule()
   var reg_thisWhole = document.regularization.reg_this.value;
   var reg_toWhole = document.regularization.reg_to.value;
   var choice = document.regularization.reg_choices.value;
+  var newRule = "";
+  var index = "";
+  var rulesToAdd = {rules:[]};
   
   if(reg_thisWhole == "" || reg_toWhole == "")
   {
@@ -400,262 +403,204 @@ function addRule()
 
   if (reg_word != "" && reg_to != "")
   {
-    // anywhere reg_word is found change to reg_to
-         if(choice == "all_places")
-         {
-          // alert("all_places");
-           var action = "regularize(" + reg_thisWhole + ", " + reg_toWhole + ")";
-           newRules.rules.push({
-             "_id" : "",
-             "appliesTo" : "",
-             "condition" : "",
-             "action" : action,
-             "user" : "",
-             "scope" : choice,
-             "regularization_type" : "",
-             "description" : "",
-             "token" : reg_word,
-             "lemma" : ""
-           });
-         }
-         // everytime the system sees reg_word in this
-         // section of text (ex: first line of Canterbury Tales)
-         // TODO: need to change applies to once load different lines
-         else if(choice == "this_block")
-         {
-          //alert("this_block");
-           var action = "regularize(" + reg_thisWhole + ", " + reg_toWhole + ")";
-             newRules.rules.push({
-             "_id" : "",
-             "appliesTo" : "",
-             "condition" : "",
-             "action" : action,
-             "user" : "",
-             "scope" : choice,
-             "regularization_type" : "",
-             "description" : "",
-             "token" : reg_word,
-             "lemma" : ""
-           });
-         }
-         // every time reg_word is seen in this context change to
-         //  reg_to
-         // TODO: need to change appliesTo once load different lines
-         else if (choice == "this_word")
-         {
-           getContext(reg_word);
-           // alert(context);
-           // alert("this_word");
-            for (var k in contextStruct.witnesses)
-            {
-              var context = contextStruct.witnesses[k].context;
-            var action = "regularize(" + context + ", " + reg_toWhole + ")";
-            newRules.rules.push({
-             "_id" : "",
-             "appliesTo" : "",
-             "condition" : "",
-             "action" : action,
-             "user" : "",
-             "scope" : choice,
-             "regularization_type" : "",
-             "description" : "",
-             "token" : reg_word,
-             "lemma" : ""
-           });
-           }
-         }
-         else
-         {
-           alert("other");
-         }
+    if(choice == "this_word")
+    {
+      for (var i in distinct.witnesses)
+      {
+        if(reg_word == distinct.witnesses[i].token)
+        {
+           index = i;
+        }
+      }
+      
+      // get rule for each of the witnesses with this token
+      for(var i in distinct.witnesses[index].id)
+      {
+        var id = getId(distinct.witnesses[index].id[i]);
+        //alert(id);
+        newRule = createRule(choice, reg_thisWhole, reg_toWhole, reg_word, id, index);
+        
+        var add = true;
+        for(var i in rulesToAdd.rules)
+        {
+          if(rulesToAdd.rules[i].scope == newRule.scope && rulesToAdd.rules[i].action == newRule.action && 
+              rulesToAdd.rules[i].token == newRule.token)
+          {
+            add = false;
+          }
+        }
+        
+        if(add)
+        {
+          rulesToAdd.rules.push(newRule);
+        }
+      }
+      
+      for(var i in rulesToAdd.rules)
+      {
+        addRuleList(rulesToAdd.rules[i]);
+      }
+    }
+    else
+    {
+      newRule = createRule(choice, reg_thisWhole, reg_toWhole, reg_word, "", "");
+      addRuleList(newRule);
+    }
+      
   }
-
-  sendRule();
 
   contextStruct = { witnesses: [] };
 
   document.regularization.reg_this.value = "";
   //document.regularization.reg_to.value = "";
   
-  if(isCustomRules)
-  {
-    var newRule = createRule(choice, reg_thisWhole, reg_toWhole, reg_word);
-    customRules.rules.push(newRule);
-    regularize(customRules);
-  }
-  else if(regOn && !isCustomRules)
-  {
-    var regRules = allRules;
-    // TODO: may have to change --> could be repeated rules
-    for(var i in newRules.rules)
-    {
-      regRules.rules.push(newRules.rules[i]);
-    }
-    regularize(regRules);
-  }
-  else
-  {
-    regularize(newRules);
-  }
-  
   if(regOn)
   {
-    //alert(choice + " " + reg_thisWhole + " " + reg_toWhole);
-    insertRegTable(choice, reg_thisWhole, reg_toWhole);
+    if(choice != "this_word")
+    {
+      insertRegTable(choice, reg_thisWhole, reg_toWhole);
+    }
+    else
+    {
+      action = newRule.rules[k].action;
+      reg_this = action.split(',')[0];
+      reg_this = reg_this.substring(11,reg_this.length);
+      reg_to = action.split(', ')[1];
+      reg_to = reg_to.substring(0, reg_to.length-1);
+      insertRegTable(choice, reg_this, reg_to);
+    }
   }
   
   //console.log(newRules);
   
   changeRegularizeLabel(choice, reg_thisWhole, reg_toWhole);
+}
+
+function addRuleList(newRule)
+{ 
+  if(isCustomRules)
+  {
+    //newRule = createRule(choice, reg_thisWhole, reg_toWhole, reg_word);
+    customRules.rules.push(newRule);
+    sendRule(newRule);
+    allRules.rules.push(newRule);
+    newRules.rules.push(newRule);
+    regularize(customRules);
+  }
+  else if(regOn && !isCustomRules)
+  {
+    allRules.rules.push(newRule);
+    var regRules = allRules;
+    //CHANGED: check works!
+    newRules.rules.push(newRule);
+    sendRule(newRule);
+    regularize(regRules);
+  }
+  else
+  {
+    newRules.rules.push(newRule);
+    sendRule(newRule);
+    regularize(newRules);
+  }
 
 }
 
-function getContext(reg_word)
+/*
+ * id: id of the witness getting context for
+ * index: index in the distinct.witnesses list (for token)
+ */
+function getContext(id, index)
 { 
   //alert("getContext");
-  var context = [];
-  var position = currentPosition;
-
-  // set up structure to find context
-  for( var i in regLineW.witnesses)
+  
+  //console.log(contextStruct);
+  
+  var needMoreContext = false;
+  var context = "";
+  var contextIndex;
+  var origContext = "";
+  
+  // find the context that relate to the id
+  for(var i in contextStruct.witnesses)
   {
-    var goForward;
-    var switchDirections;
-    if(currentPosition == 0)
+    if(contextStruct.witnesses[i].id == id)
     {
-      // cannot go backwards
-      goForward = true;
-      switchDirections = false;
+      context = contextStruct.witnesses[i].context;
+      origContext = context;
+      context = context.split(/\W/);
+      context = context.join(' ');
+      contextIndex = i;
     }
-    else if (currentPosition == totalPos)
+  }
+  var re = new RegExp(context, 'g');
+  //alert(re);
+  
+  // find if the context matches any witnesses
+  // if it matches any witnesses that are not to be 
+  // regularize --> needMoreContext
+  // if there are more than one match in a witness to 
+  // be regularized --> needMoreContext
+  for(var i in allWitnesses.witnesses)
+  {
+    var witness = allWitnesses.witnesses[i].content.split(/\W/).join(' ');
+    var result = witness.match(re);
+    var isId = false;
+    
+    if(result)
     {
-      // cannot go forwards
-      goForward = false;
-      switchDirections = false;
+      for(var j in distinct.witnesses[index].id)
+      {
+        dWid = getId(distinct.witnesses[index].id[j]);
+        if(dWid == allWitnesses.witnesses[i].id)
+        {
+          isId = true;
+          if(result.length > 1)
+          {
+            needMoreContext = true;
+            //alert(allWitnesses.witnesses[i].id + ": found token match");
+          }
+        }
+      }
+      
+      if(!isId)
+      {
+        needMoreContext = true;
+        //alert(allWitnesses.witnesses[i].id + ": found witness match");
+      }
+    }
+  }
+  
+  if(needMoreContext)
+  {
+    returnContext = getMoreContext(id, index, contextIndex);
+    if(returnContext)
+    {
+      return context = getContext(id, index);
     }
     else
     {
-      goForward = true;
-      switchDirections = true;
+      return origContext;
     }
-    contextStruct.witnesses.push({
-      "id": regLineW.witnesses[i].id,
-      "token": reg_word,
-      "context": reg_word,
-      "tokenPos": position,
-      "startPos": position,
-      "endPos": position,
-      "goForward": goForward,
-      "switchDirections": switchDirections
-    });
+    //alert("getMoreContext()");
+    //return context; // get rid of
   }
-
-  //alert("afterBuild");
-
-  var needContextStruct = { witnesses: [] };
-  for (var i in allWitnesses.witnesses)
+  else
   {
-    needContextStruct.witnesses.push({
-      "id" : allWitnesses.witnesses[i].id,
-      "needContext": []});
-    //alert(allWitnesses.witnesses[i].id);
-    for (var j in contextStruct.witnesses)
-    {
-      needContextStruct.witnesses[i].needContext.push(true);
-    }
+    //alert("noMoreContextNeeded");
+    return origContext;
   }
-
-  var needContext = true;
-  var witness;
-  var result;
-  while(needContext)
-  {
-    for (var i in needContextStruct.witnesses)
-    {
-      for (var l in contextStruct.witnesses)
-      {
-
-        // split on any character that isn't A-Z, 0-9, or underscore
-        // **Get rid of punctuation
-        context = contextStruct.witnesses[l].context;
-        context = context.split(/\W/);
-        context = context.join(' ');
-
-        // create a regular expression for matching
-       var re = new RegExp(context, 'g');
-       //alert(re);
-
-      //alert(needContextStruct.witnesses[i].id);
-
-      witness = allWitnesses.witnesses[i].content;
-      witness = witness.split(/\W/);
-      witness = witness.join(' ');
-
-      result = witness.match(re);
-      if(result)
-      {
-        if(result.length > 1)
-        {
-          // need context
-          //alert("greater");
-          var getMore = getMoreContext(allWitnesses.witnesses[i].id, l);
-          if(getMore == false)
-          {
-            needContextStruct.witnesses[i].needContext[l] = false;
-          }
-        }
-        else if (result.length == 1)
-        {
-          // if it != position -> need context
-          token = allTokens.alignment[i].tokens[position].t;
-          token = token.split(/\W/);
-          token = token.join(' ');
-          //alert(token);
-          if( !(token.match(re)) )
-          {
-            // need Context
-            //alert("equal dne: " + allWitnesses.witnesses[i].id);
-            var getMore = getMoreContext(allWitnesses.witnesses[i].id, l);
-            if(getMore == false)
-            {
-              needContextStruct.witnesses[i].needContext[l] = false;
-            }
-          }
-          else
-          {
-            // in correct place, therefore remove from list
-            needContextStruct.witnesses[i].needContext[l] = false;
-            //alert("equal equal");
-          }
-        }
-      }
-      else
-      {
-        // no match found, remove from list
-        needContextStruct.witnesses[i].needContext[l] = false;
-        //alert("no match: " + allWitnesses.witnesses[i].id);
-      }
-      }
-    }
-
-    needContext = false;
-    for (var i in needContextStruct.witnesses)
-    {
-       for (var k in contextStruct.witnesses)
-       {
-         if(needContextStruct.witnesses[i].needContext[l])
-         {
-           needContext = true;
-         }
-       }
-    }
-  } 
+  
 }
 
-function getMoreContext(id, witnessIndex)
+/*
+ * id: id of the witness getting context for
+ * index: index in the distinct.witnesses list (for token)
+ * witnessIndex: index into the contextStruct
+ */
+function getMoreContext(id, index, witnessIndex)
 {
   //alert("getMoreContext");
-
+  
   var tokenWitnessIndex;
   for (var i in allWitnesses.witnesses)
   {
@@ -673,37 +618,53 @@ function getMoreContext(id, witnessIndex)
   else if (contextStruct.witnesses[witnessIndex].startPos == 1 && contextStruct.witnesses[witnessIndex].endPos != totalPos)
   {
     contextStruct.witnesses[witnessIndex].endPos++;
-    contextStruct.witnesses[witnessIndex].context += " " + allTokens.alignment[tokenWitnessIndex].tokens[contextStruct.witnesses[witnessIndex].endPos].t;
+    if(allTokens.alignment[tokenWitnessIndex].tokens[contextStruct.witnesses[witnessIndex].endPos] != null)
+    {
+      contextStruct.witnesses[witnessIndex].context += " " + allTokens.alignment[tokenWitnessIndex].tokens[contextStruct.witnesses[witnessIndex].endPos].t;
+    }
     contextStruct.witnesses[witnessIndex].switchDirections = false;
   }
   else if (contextStruct.witnesses[witnessIndex].endPos == totalPos && contextStruct.witnesses[witnessIndex].startPos != 1)
   {
     contextStruct.witnesses[witnessIndex].startPos--;
-    contextStruct.witnesses[witnessIndex].context = allTokens.alignment[tokenWitnessIndex].tokens[contextStruct.witnesses[witnessIndex].startPos].t + " " + contextStruct.witnesses[witnessIndex].context;
+    if(allTokens.alignment[tokenWitnessIndex].tokens[contextStruct.witnesses[witnessIndex].startPos] != null)
+    {
+      contextStruct.witnesses[witnessIndex].context = allTokens.alignment[tokenWitnessIndex].tokens[contextStruct.witnesses[witnessIndex].startPos].t + " " + contextStruct.witnesses[witnessIndex].context;
+    }
     contextStruct.witnesses[witnessIndex].switchDirections = false;
   }
   else if (contextStruct.witnesses[witnessIndex].goForward == true && contextStruct.witnesses[witnessIndex].endPos != totalPos)
   {
     contextStruct.witnesses[witnessIndex].goForward = false;
     contextStruct.witnesses[witnessIndex].endPos++;
-    contextStruct.witnesses[witnessIndex].context += " " + allTokens.alignment[tokenWitnessIndex].tokens[contextStruct.witnesses[witnessIndex].endPos].t;
+    if(allTokens.alignment[tokenWitnessIndex].tokens[contextStruct.witnesses[witnessIndex].endPos] != null)
+    {
+      contextStruct.witnesses[witnessIndex].context += " " + allTokens.alignment[tokenWitnessIndex].tokens[contextStruct.witnesses[witnessIndex].endPos].t;
+    }
   }
   else if (contextStruct.witnesses[witnessIndex].goForward == false && contextStruct.witnesses[witnessIndex].startPos != 1)
   {
     contextStruct.witnesses[witnessIndex].goForward = true;
     contextStruct.witnesses[witnessIndex].startPos--;
-    contextStruct.witnesses[witnessIndex].context = allTokens.alignment[tokenWitnessIndex].tokens[contextStruct.witnesses[witnessIndex].startPos].t + " " + contextStruct.witnesses[witnessIndex].context;
+    if(allTokens.alignment[tokenWitnessIndex].tokens[contextStruct.witnesses[witnessIndex].startPos] != null)
+    {
+      contextStruct.witnesses[witnessIndex].context = allTokens.alignment[tokenWitnessIndex].tokens[contextStruct.witnesses[witnessIndex].startPos].t + " " + contextStruct.witnesses[witnessIndex].context;
+    }
   }
+
+  //console.log(contextStruct);
 
   return true;
 }
 
-function sendRule()
+function sendRule(newRule)
 {
   //alert("sendRule");
+  var sendRules = {rules:[]};
+  sendRules.rules.push(newRule);
 
   $.post("http://127.0.0.1:8000/regularization/interface/saveRules/",
-       JSON.stringify(newRules), function(data){
+       JSON.stringify(sendRules), function(data){
        //alert("success");
      })
    .error(function () {alert("error: saveRules");});
@@ -779,28 +740,33 @@ function regularize_onoff()
     	origTokens = data;
     	
     	allTokens = origTokens;
+        
+        regularize({rules:[]});
+        
+        console.log(allTokens);
     	
-    	if(isCustomRules)
-    	{
-    	  regularize(customRules);
-    	}
-    	else
-    	{
-    	  regularize(newRules);
-    	}
+//    	if(isCustomRules)
+//    	{
+//    	  regularize(customRules);
+//    	}
+//    	else
+//    	{
+//          newRules = { rules: []};
+//    	  regularize(newRules);
+//    	}
     
     }});
      
        
-     $.getJSON("http://127.0.0.1:8000/regularization/interface/getBaseTokens/",
-function(jdata) {
-        origTokens = jdata;
-        
-        allTokens = origTokens;
-        regularize(newRules);
-
-      })
-      .error(function () {alert("error: getBaseTokens2");});
+//     $.getJSON("http://127.0.0.1:8000/regularization/interface/getBaseTokens/",
+//function(jdata) {
+//        origTokens = jdata;
+//        
+//        allTokens = origTokens;
+//        regularize(newRules);
+//
+//      })
+//      .error(function () {alert("error: getBaseTokens2");});
   }
 }
 
@@ -866,13 +832,12 @@ function regularize(regRules)
     // regularize token
     var token = getToken(regRules, i, position);
     
-    /*
-if(origToken != token)
+
+    if(origToken != token)
     {
       regToken=true;
     }
     
-*/
     if(allTokens.alignment[i].tokens[position] != null)
     {
       if(allTokens.alignment[i].tokens[position].origToken != "" && allTokens.alignment[i].tokens[position].origToken != undefined)
@@ -1512,6 +1477,7 @@ function recollate()
 {
   //alert("recollate");
   
+  isRecollate = false;
   var newWitnesses = buildWitnesses();
   newWitnesses = JSON.stringify(newWitnesses);
   
@@ -1541,6 +1507,13 @@ function recollate()
       }
       
       allTokens = data;
+      
+      totalPos = -1;
+      // find how many positions are in tokens
+      for (var i in allTokens.alignment[0].tokens)
+      {
+        totalPos++;
+      }
       
       $.getJSON("http://127.0.0.1:8000/regularization/interface/getBaseTokens/",
 function(jdata) {
@@ -1583,8 +1556,9 @@ function getToken(regRules, witnessId, position)
 
    var token = "";
    var collate = false;
-   var wholeToToken = "";
-   var nonRegToken = "";
+   var origToken = "";
+   //var wholeToToken = "";
+   //var nonRegToken = "";
   
    if(allTokens.alignment[witnessId].tokens[position] == null)
    {
@@ -1593,10 +1567,10 @@ function getToken(regRules, witnessId, position)
    else
    {
      token = allTokens.alignment[witnessId].tokens[position].t;
-     nonRegToken = token;
+     //nonRegToken = token;
    }
    
-   //alert(allTokens.alignment[witnessId].witness);
+   //console.log(regRules);
 
    for (var k in regRules.rules)
    {
@@ -1608,105 +1582,166 @@ function getToken(regRules, witnessId, position)
         reg_this = reg_this.substring(11,reg_this.length);
         reg_to = action.split(', ')[1];
         reg_to = reg_to.substring(0, reg_to.length-1);
-        wholeToToken = reg_to;
+        //wholeToToken = reg_to;
+        choice = regRules.rules[k].scope;
+        
+        if(choice == "this_word")
+        {
+          var found = false;
+          var reg_thisIndex = -1;
+          var reg_thisArray = reg_this.split(" ");
+          for(var m in reg_thisArray)
+          {
+            if(reg_thisArray[m] == token && !found)
+            {
+              found = true;
+              reg_thisIndex = m;
+              
+            }
+          }
+          if(found)
+          {
+            reg_thisArray.splice(0, reg_thisIndex);
+          }
+          origToken = reg_thisArray[0];
+          reg_thisArray = reg_thisArray.join(" ");
+          //alert(reg_thisArray);
+          
+          found = false;
+          var reg_thisArray2 = reg_this.split(" ");
+          var reg_toArray = reg_to.split(" ");
+          var reg_toIndex = -1;
+          
+          for(var m in reg_toArray)
+          {
+            if(reg_toArray[m] != reg_thisArray2[m] && !found)
+            {
+              found = true;
+              reg_toIndex = m;
+            }
+          }
+          if(found)
+          {
+            reg_toArray.splice(0, reg_toIndex);
+          }
+          reg_toArray = reg_toArray.join(" ");
+          //alert(reg_toArray);
+          
+          reg_this = reg_thisArray;
+          reg_to = reg_toArray;
+          
+        }
         
         var spacesThis = checkSpaces(reg_this);
         var spacesTo = checkSpaces(reg_to);
         
         if(spacesThis != false)
         {
-          //Check if next word(s) match
-          // if match -> recollate
-          
-          var content = token;
-          
-          for (var i in spacesThis)
-          {
-            position++;
-            if(allTokens.alignment[witnessId].tokens[position] == null)
+            //Check if next word(s) match
+            // if match -> recollate
+
+            var content = token;
+
+            for (var i in spacesThis)
             {
-              newToken = "null";
+              position++;
+              if(allTokens.alignment[witnessId].tokens[position] == null)
+              {
+                newToken = "null";
+              }
+              else
+              {
+                newToken = allTokens.alignment[witnessId].tokens[position].t;
+              }
+              content += " " + newToken;
             }
-            else
+
+            if(content == reg_this)
             {
-              newToken = allTokens.alignment[witnessId].tokens[position].t;
+              position = currentPosition;
+              if(origToken == "")
+              {
+                origToken = reg_this;
+              }
+              allTokens.alignment[witnessId].tokens[position].t = reg_to;
+              allTokens.alignment[witnessId].tokens[currentPosition].origToken = origToken;
+              allTokens.alignment[witnessId].tokens[currentPosition].reg_to = reg_to;
+
+              //console.log(allTokens);
+              position++;
+              for(var i in spacesThis)
+              { 
+                allTokens.alignment[witnessId].tokens.splice(position, 1);
+              }
+              collate = true;
             }
-            content += " " + newToken;
-          }
-          
-		  if(content == reg_this)
-		  {
-		    position = currentPosition;
-		    allTokens.alignment[witnessId].tokens[position].t = reg_to;
-		    allTokens.alignment[witnessId].tokens[currentPosition].origToken = reg_this;
-		    allTokens.alignment[witnessId].tokens[currentPosition].reg_to = reg_to;
-		    
-		    console.log(allTokens);
-		    position++;
-		    for(var i in spacesThis)
-		    { 
-		      allTokens.alignment[witnessId].tokens.splice(position, 1);
-		    }
-		    //collate = true;
-		  }
 		  
         }
         else
         {
           token = reg_to;
-          if(isRecollate)
-          {
-            token = nonRegToken;
-          }
+//          if(isRecollate)
+//          {
+//            token = nonRegToken;
+//          }
         }
         
         if(spacesTo != false)
         {
-          //Check if next word(s) match
-          // if match -> recollate
-          
-          var content = reg_to;
-          //alert("spacesTo");
-          
-          content = content.split(' ').join('');
-          
-          //alert(content + " " + reg_this + " " + reg_to);
-          
-		  if(content == reg_this)
-		  {
-		    var insertTokens = reg_to.split(' ');
-		    var position = currentPosition;
-		    for(var k in insertTokens)
-		    {
-		      if(k == 0)
-		      {
-		        allTokens.alignment[witnessId].tokens[position].t = insertTokens[k];
-		        allTokens.alignment[witnessId].tokens[position].origToken = reg_this;
-		        allTokens.alignment[witnessId].tokens[position].reg_to = reg_to;
-		      }
-		      else
-		      {
-		        var insertTok = { "t" : insertTokens[k], "n" : insertTokens[k], "origToken" : reg_this, "reg_to" : reg_to};
-		        allTokens.alignment[witnessId].tokens.splice(position,0,insertTok);
-		      }
-		      position++;
-		    }
-		    
-		    console.log(allTokens);
-		    reg_to = reg_to.split(' ')[0];
-		    //alert("reg_to: " + reg_to);
-		    //collate = true;
-		    token = reg_to;
-		    
-		  }
+            //Check if next word(s) match
+            // if match -> recollate
+
+            var content = reg_to;
+            //alert("spacesTo");
+
+            content = content.split(' ').join('');
+
+            //alert(content + " " + reg_this + " " + reg_to);
+
+            if(content == reg_this)
+            {
+              var insertTokens = reg_to.split(' ');
+              var position = currentPosition;
+              for(var k in insertTokens)
+              {
+                if(k == 0)
+                {
+                  if(origToken == "")
+                  {
+                    origToken = reg_this;
+                  }
+                  allTokens.alignment[witnessId].tokens[position].t = insertTokens[k];
+                  allTokens.alignment[witnessId].tokens[position].origToken = origToken;
+                  allTokens.alignment[witnessId].tokens[position].reg_to = reg_to;
+                }
+                else
+                {
+                  if(origToken == "")
+                  {
+                    origToken = reg_this;
+                  }
+                  var insertTok = { "t" : insertTokens[k], "n" : insertTokens[k], "origToken" : origToken, "reg_to" : reg_to};
+                  allTokens.alignment[witnessId].tokens.splice(position,0,insertTok);
+                }
+                position++;
+              }
+
+              //console.log(allTokens);
+              reg_to = reg_to.split(' ')[0];
+              //alert("reg_to: " + reg_to);
+              collate = true;
+              token = reg_to;
+
+            }
         }
         else
         {
+          reg_to = reg_to.split(' ')[0];
           token = reg_to;
-          if(isRecollate)
-          {
-            token = nonRegToken;
-          }
+//          if(isRecollate)
+//          {
+//            token = nonRegToken;
+//          }
         }
       }
     }
@@ -1718,12 +1753,13 @@ function getToken(regRules, witnessId, position)
       {
       	//recollate();
       	isRecollate = true;
+        reg_to = reg_to.split(' ')[0];
       	token = reg_to;
       }
-      else
-      {
-        token = wholeToToken;
-      }
+//      else
+//      {
+//        token = wholeToToken;
+//      }
     }
     
     return token;
@@ -2005,7 +2041,7 @@ var deleteRegCell = row.insertCell(4);
 function submitCustomReg()
 {
   //alert("submitCustomReg");
-  isCustomRules = true;
+  isCustomRules = true;  // ??!! <----
   var table = document.getElementById('reg_table');
   var rowCount = table.rows.length;
   
@@ -2015,10 +2051,7 @@ function submitCustomReg()
   var deleteJSON = { rules: [] };
   
   var regRules = allRules;
-  for(var i in newRules.rules)
-  {
-    regRules.rules.push(newRules.rules[i]);
-  }
+  console.log(regRules);
   
   for(var i=1; i<rowCount; i++)
   {
@@ -2053,8 +2086,17 @@ function submitCustomReg()
     if(deleteRule != null && deleteRule.checked)
     {
       // delete from database
-      var newRule = createRule(scope, reg_this, reg_to, regRules.rules[index].token);
+      //var newRule = createRule(scope, reg_this, reg_to, regRules.rules[index].token);
+      var newRule = allRules.rules[index];
       deleteJSON.rules.push(newRule);
+      for(var i in customRules.rules)
+      {
+        if(customRules.rules[i].action = newRule.action && customRules.rules[i].scope == newRule.scope 
+          && customRules.rules[i].token == newRule.token)
+        {
+          customRules.rules[i].splice(position, 1);
+        }
+      }
     }
     else
     {
@@ -2126,9 +2168,61 @@ function submitCustomReg()
    getRules();
 }
 
-function createRule(scope, reg_this, reg_to, token)
+function getId(witnessId)
 {
-  var action = "regularize(" + reg_this + ", " + reg_to + ")";
+  var re = new RegExp('ORIG', 'g');
+  var result = witnessId.match(re);
+  
+  if(result)
+  {
+    return witnessId.split('(ORIG:')[0];
+  }
+  else
+  {
+    return witnessId;
+  }
+  
+}
+
+function createRule(scope, reg_this, reg_to, token, id, index)
+{
+ 
+  contextStruct = {witnesses:[]};
+  var goForward;
+  var context = reg_this;
+  
+  if(currentPosition == totalPos)
+  {
+    goForward = false;
+  }
+  else
+  {
+    goForward = true;
+  }
+  
+  if(scope == "this_word")
+  {
+      contextStruct.witnesses.push({
+        "id": id,
+        "token": token,
+        "context": reg_this,
+        "tokenPos": currentPosition,
+        "startPos": currentPosition,
+        "endPos": currentPosition,
+        "goForward": goForward,
+        "switchDirections": true
+        
+      });
+      //alert("before getContext: " + context);
+      context = getContext(id, index);
+      //alert("after getContext: " + context);
+      
+      var contextRegTo = context.replace(reg_this, reg_to);
+      reg_to = contextRegTo;
+      //alert("reg_to: " + reg_to);
+  }
+    
+  var action = "regularize(" + context + ", " + reg_to + ")";
   newRule = {
              "_id" : "",
              "appliesTo" : "",
@@ -2141,6 +2235,7 @@ function createRule(scope, reg_this, reg_to, token)
              "token" : token,
              "lemma" : ""
            };
+           
            
   return newRule;
 
