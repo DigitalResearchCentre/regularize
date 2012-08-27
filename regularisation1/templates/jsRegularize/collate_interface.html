@@ -26,15 +26,17 @@ var changeLabelTimer = null;
 
 function load()
 {
-  //alert("load");
-  $.getJSON("http://127.0.0.1:8000/regularization/interface/getBaseWitnesses/",
-function(jdata) {
+  document.information.style.visibility = "hidden";
+  document.edit_reg.style.visibility = "hidden";
 
-  // save the witnesses to a global variable
-  allWitnesses = jdata;
- 
-})
-.error(function() { alert("error: getBaseWitnesses"); });
+  $.ajax({
+    	url: "http://127.0.0.1:8000/regularization/interface/getBaseWitnesses/",
+    	dataType: 'json',
+    	async: false,
+    	success: function(jdata){
+    		allWitnesses = jdata;
+    	
+    	}});
 
   //initialize new rules
   newRules = { rules: [] };
@@ -46,8 +48,6 @@ function(jdata) {
   
   isBuildWitnesses = false;
   isRecollate = false;
-  document.information.style.visibility = "hidden";
-  document.edit_reg.style.visibility = "hidden";
   isCustomRules = false;
   autoReg = false;
   distinct = { witnesses: [] };
@@ -319,7 +319,7 @@ function findWord(pos, content)
     }
   }
 
-  if(token == "/" || token == "")
+  if(token == "///" || token == "")
   {
     notToken = true;
   }
@@ -462,7 +462,7 @@ function addRule()
     }
     else
     {
-      action = newRule.rules[k].action;
+      action = newRule.action;
       reg_this = action.split(',')[0];
       reg_this = reg_this.substring(11,reg_this.length);
       reg_to = action.split(', ')[1];
@@ -928,7 +928,7 @@ function regularize(regRules)
     {
       content += distinct.witnesses[i].id[j] + " ";
     }
-    content += "/ ";
+    content += "/// ";
   }
 
   document.regularization.reg.value = content;
@@ -1955,11 +1955,11 @@ function insertRegTable(scope, reg_this, reg_to)
       {
         var customScope = customRules.rules[i].scope;
       	var action = customRules.rules[i].action;
-	  	var reg_thisRule = action.split(',')[0];
-	  	reg_thisRule = reg_thisRule.substring(11,reg_thisRule.length);
-	  	var reg_toRule = action.split(', ')[1];
-	  	reg_toRule = reg_toRule.substring(0, reg_toRule.length-1);
-	  	var scopeRule = customRules.rules[i].scope;
+        var reg_thisRule = action.split(',')[0];
+        reg_thisRule = reg_thisRule.substring(11,reg_thisRule.length);
+        var reg_toRule = action.split(', ')[1];
+        reg_toRule = reg_toRule.substring(0, reg_toRule.length-1);
+        var scopeRule = customRules.rules[i].scope;
 	  	
 	  	//alert(customScope + " " + scope + " " + reg_thisRule + " " + reg_this + " "+ reg_toRule + " " + reg_to);
         //TODO: add more when completed rules
@@ -2051,7 +2051,7 @@ function submitCustomReg()
   var deleteJSON = { rules: [] };
   
   var regRules = allRules;
-  console.log(regRules);
+  //console.log(regRules);
   
   for(var i=1; i<rowCount; i++)
   {
@@ -2060,28 +2060,28 @@ function submitCustomReg()
     var deleteRule = row.cells[4].childNodes[0];
     var index = i - 1;
     var scope = row.cells[1].childNodes[0].value;
-	var reg_this = row.cells[2].childNodes[0].value;
-	var reg_to = row.cells[3].childNodes[0].value;
+    var reg_this = row.cells[2].childNodes[0].value;
+    var reg_to = row.cells[3].childNodes[0].value;
 
-	  if(scope == "All witnesses, this block")
-	  {
-	    scope = "this_block";
-	  }
-	  else if(scope == "All witnesses, this word")
-	  {
-	    scope = "this_word";
-	  }
-	  else
-	  {
-	    scope = "all_places";
-	  }
-	  
-	  var action = regRules.rules[index].action;
-	  var reg_thisRule = action.split(',')[0];
-	  reg_thisRule = reg_thisRule.substring(11,reg_thisRule.length);
-	  var reg_toRule = action.split(', ')[1];
-	  reg_toRule = reg_toRule.substring(0, reg_toRule.length-1);
-	  var scopeRule = regRules.rules[index].scope;
+    if(scope == "All witnesses, this block")
+    {
+      scope = "this_block";
+    }
+    else if(scope == "All witnesses, this word")
+    {
+      scope = "this_word";
+    }
+    else
+    {
+      scope = "all_places";
+    }
+
+    var action = regRules.rules[index].action;
+    var reg_thisRule = action.split(',')[0];
+    reg_thisRule = reg_thisRule.substring(11,reg_thisRule.length);
+    var reg_toRule = action.split(', ')[1];
+    reg_toRule = reg_toRule.substring(0, reg_toRule.length-1);
+    var scopeRule = regRules.rules[index].scope;
     
     if(deleteRule != null && deleteRule.checked)
     {
@@ -2089,43 +2089,34 @@ function submitCustomReg()
       //var newRule = createRule(scope, reg_this, reg_to, regRules.rules[index].token);
       var newRule = allRules.rules[index];
       deleteJSON.rules.push(newRule);
-      for(var i in customRules.rules)
+      check.checked = false;
+    }
+    
+    if(check != null && check.checked)
+    {
+      alert(reg_this);
+
+      if(reg_this == reg_thisRule && reg_to == reg_toRule && scope == scopeRule)
       {
-        if(customRules.rules[i].action = newRule.action && customRules.rules[i].scope == newRule.scope 
-          && customRules.rules[i].token == newRule.token)
-        {
-          customRules.rules[i].splice(position, 1);
-        }
+        //add to customReg
+        customRules.rules.push(regRules.rules[index]);
+        //alert("match");
+      }
+      else
+      {
+        //delete from database
+        // save new rule
+        //update rules
+
+        //isCustomRules = true;
+        sendRules.rules.push(regRules.rules[index]);
+
+        var newRule = createRule(scope, reg_this, reg_to, regRules.rules[index].token);
+        sendRules.rules.push(newRule);
+        customRules.rules.push(newRule);
+
       }
     }
-    else
-    {
-    	if(check != null && check.checked)
-    	{
-		      
-	      if(reg_this == reg_thisRule && reg_to == reg_toRule && scope == scopeRule)
-	      {
-	        //add to customReg
-	        customRules.rules.push(regRules.rules[index]);
-	        //alert("match");
-	      }
-	      else
-	      {
-	        //delete from database
-	        // save new rule
-	        //update rules
-	        
-	        //isCustomRules = true;
-	        sendRules.rules.push(regRules.rules[index]);
-	        
-	        var newRule = createRule(scope, reg_this, reg_to, regRules.rules[index].token);
-	        sendRules.rules.push(newRule);
-	        customRules.rules.push(newRule);
-	        
-	      }
-	    }
-    
-	 }
   }
   
    $.ajax({
@@ -2153,6 +2144,7 @@ function submitCustomReg()
 	    	
 	    	}
 	    });
+            
       
    // get new/all rules and reload reg_table
    $.ajax({
@@ -2166,6 +2158,9 @@ function submitCustomReg()
     	}});
 
    getRules();
+   
+   console.log(customRules);
+   console.log(allRules);
 }
 
 function getId(witnessId)

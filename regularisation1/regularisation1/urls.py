@@ -6,7 +6,7 @@ from jsRegularize.views import getBaseWitnesses, getBaseTokens, loadInterface
 from jsRegularize.views import saveRules, getRules, recollate, saveRegWitnesses
 from jsRegularize.views import loadViewReg, getRegWitnesses, loadInformationWindow
 from jsRegularize.views import saveInformationWindow, getInformationWindow, changeRule
-from jsRegularize.views import deleteRule
+from jsRegularize.views import deleteRule, getTCWitnesses
 from django.conf import settings
 
 # Uncomment the next two lines to enable the admin:
@@ -50,6 +50,7 @@ urlpatterns = patterns('',
     url(r'^regularization/interface/getInformationWindow/$', getInformationWindow),
     url(r'^regularization/interface/changeRule/$', changeRule),
     url(r'^regularization/interface/deleteRule/$', deleteRule),
+    url(r'^regularization/interface/getTCWitnesses/$', getTCWitnesses),
 )
 
 # if settings.DEBUG:

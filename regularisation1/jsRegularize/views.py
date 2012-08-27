@@ -8,9 +8,11 @@ import pprint
 import jsonpickle
 import json
 import httplib2
+import urllib
 
 regWitnesses = {}
 regInfo = {}
+baseTCWitnesses = {}
 
 def loadInterface(request):
     #return render_to_response('jsRegularize/interface.html')
@@ -50,19 +52,23 @@ def getRegWitnesses(request):
     return HttpResponse(regWitnesses, mimetype="application/json")
 
 def getBaseWitnesses(request):
-    contentBo1 = '[4xcp]w[/4xcp]Whan that April with his [6orncp]W[/6orncp]han shouris sote'
-    contentBo2 = '[6orncp]W[/6orncp]hen that april; with his [6orncp]W[/6orncp]han showres swote'
-    contentCh = '[5emph]W[/5emph]han that Auerel wt his [6orncp]W[/6orncp]han shoures soote'
-    contentCx1 = '[3orncp]W[/3orncp]Han that Apprill with his [6orncp]W[/6orncp]han shouris sote'
-    contentCx2 = '[4orncp]W[/4orncp]Han that Apryll wyth hys [6orncp]W[/6orncp]han shouris sote'
-    contentEl = '[6orncp]W[/6orncp]Han that April with hise [6orncp]W[/6orncp]han shoures soote'
-    contentHa4 = '[6orncp]W[/6orncp]han that aprille with his [6orncp]W[/6orncp]han schowres swoote'
-    contentHg = '[6orncp]W[/6orncp]han that Aueryl wt his [6orncp]W[/6orncp]han shoures soote'
-    contentLa = '[xorncp]W[/xorncp]Han pat April wype his [6orncp]W[/6orncp]han schoures soote .'
-    contentTo1 = '[3emph]W[/3emph]hen that April . with his [6orncp]W[/6orncp]han shouris . swote'
+    getTCWitnesses()
 
-    jdata = json.dumps({"witnesses" : [{"id" : "Bo1", "content" : contentBo1 }, {"id" : "Bo2", "content" : contentBo2 }, {"id" : "Ch", "content" : contentCh }, {"id" : "Cx1", "content" : contentCx1 }, {"id" : "Cx2", "content" : contentCx2},{"id" : "El", "content" : contentEl }, {"id" : "Ha4", "content" : contentHa4 }, {"id" : "Hg", "content" : contentHg }, {"id" : "La", "content" : contentLa },\
-{"id" : "To1", "content" : contentTo1 }]})
+    jdata = json.dumps({"witnesses" : [{"id" : "Hg", "content" : baseTCWitnesses[0][0]}, {"id": "El", "content": baseTCWitnesses[1][0]}, {"id" : "Db", "content": baseTCWitnesses[2][0]},{"id": "Cp", "content": baseTCWitnesses[3][0]}]})
+
+    # contentBo1 = '[4xcp]w[/4xcp]Whan that April with his [6orncp]W[/6orncp]han shouris sote'
+#     contentBo2 = '[6orncp]W[/6orncp]hen that april; with his [6orncp]W[/6orncp]han showres swote'
+#     contentCh = '[5emph]W[/5emph]han that Auerel wt his [6orncp]W[/6orncp]han shoures soote'
+#     contentCx1 = '[3orncp]W[/3orncp]Han that Apprill with his [6orncp]W[/6orncp]han shouris sote'
+#     contentCx2 = '[4orncp]W[/4orncp]Han that Apryll wyth hys [6orncp]W[/6orncp]han shouris sote'
+#     contentEl = '[6orncp]W[/6orncp]Han that April with hise [6orncp]W[/6orncp]han shoures soote'
+#     contentHa4 = '[6orncp]W[/6orncp]han that aprille with his [6orncp]W[/6orncp]han schowres swoote'
+#     contentHg = '[6orncp]W[/6orncp]han that Aueryl wt his [6orncp]W[/6orncp]han shoures soote'
+#     contentLa = '[xorncp]W[/xorncp]Han pat April wype his [6orncp]W[/6orncp]han schoures soote .'
+#     contentTo1 = '[3emph]W[/3emph]hen that April . with his [6orncp]W[/6orncp]han shouris . swote'
+
+#     jdata = json.dumps({"witnesses" : [{"id" : "Bo1", "content" : contentBo1 }, {"id" : "Bo2", "content" : contentBo2 }, {"id" : "Ch", "content" : contentCh }, {"id" : "Cx1", "content" : contentCx1 }, {"id" : "Cx2", "content" : contentCx2},{"id" : "El", "content" : contentEl }, {"id" : "Ha4", "content" : contentHa4 }, {"id" : "Hg", "content" : contentHg }, {"id" : "La", "content" : contentLa },\
+# {"id" : "To1", "content" : contentTo1 }]})
 
     return HttpResponse(jdata, mimetype="application/json")
 
@@ -70,27 +76,92 @@ def getBaseTokens(request):
     url = 'http://127.0.0.1:8080/collatex-web-0.9.1-RC2/api/collate'
     headers = {'Content-Type': 'application/json', 'Accept': 'application/json'}
 
-    contentBo1 = '[4xcp]w[/4xcp]Whan that April with his [6orncp]W[/6orncp]han shouris sote'
-    contentBo2 = '[6orncp]W[/6orncp]hen that april; with his [6orncp]W[/6orncp]han showres swote'
-    contentCh = '[5emph]W[/5emph]han that Auerel wt his [6orncp]W[/6orncp]han shoures soote'
-    contentCx1 = '[3orncp]W[/3orncp]Han that Apprill with his [6orncp]W[/6orncp]han shouris sote' 
-    contentCx2 = '[4orncp]W[/4orncp]Han that Apryll wyth hys [6orncp]W[/6orncp]han shouris sote'
-    contentEl = '[6orncp]W[/6orncp]Han that April with hise [6orncp]W[/6orncp]han shoures soote'
-    contentHa4 = '[6orncp]W[/6orncp]han that aprille with his [6orncp]W[/6orncp]han schowres swoote'
-    contentHg = '[6orncp]W[/6orncp]han that Aueryl wt his [6orncp]W[/6orncp]han shoures soote'
-    contentLa = '[xorncp]W[/xorncp]Han pat April wype his [6orncp]W[/6orncp]han schoures soote .'
-    contentTo1 = '[3emph]W[/3emph]hen that April . with his [6orncp]W[/6orncp]han shouris . swote'
+#     contentBo1 = '[4xcp]w[/4xcp]Whan that April with his [6orncp]W[/6orncp]han shouris sote'
+#     contentBo2 = '[6orncp]W[/6orncp]hen that april; with his [6orncp]W[/6orncp]han showres swote'
+#     contentCh = '[5emph]W[/5emph]han that Auerel wt his [6orncp]W[/6orncp]han shoures soote'
+#     contentCx1 = '[3orncp]W[/3orncp]Han that Apprill with his [6orncp]W[/6orncp]han shouris sote' 
+#     contentCx2 = '[4orncp]W[/4orncp]Han that Apryll wyth hys [6orncp]W[/6orncp]han shouris sote'
+#     contentEl = '[6orncp]W[/6orncp]Han that April with hise [6orncp]W[/6orncp]han shoures soote'
+#     contentHa4 = '[6orncp]W[/6orncp]han that aprille with his [6orncp]W[/6orncp]han schowres swoote'
+#     contentHg = '[6orncp]W[/6orncp]han that Aueryl wt his [6orncp]W[/6orncp]han shoures soote'
+#     contentLa = '[xorncp]W[/xorncp]Han pat April wype his [6orncp]W[/6orncp]han schoures soote .'
+#     contentTo1 = '[3emph]W[/3emph]hen that April . with his [6orncp]W[/6orncp]han shouris . swote'
 
-    jdata = json.dumps({"witnesses" : [{"id" : "Bo1", "content" : contentBo1 }, {"id" : "Bo2", "content" : contentBo2 }, {"id" : "Ch", "content" : contentCh }, {"id" : "Cx1", "content" : contentCx1 }, {"id" : "Cx2", "content" : contentCx2},{"id" : "El", "content" : contentEl }, {"id" : "Ha4", "content" : contentHa4 }, {"id" : "Hg", "content" : contentHg }, {"id" : "La", "content" : contentLa },\
-{"id" : "To1", "content" : contentTo1 }]})
+#     jdata = json.dumps({"witnesses" : [{"id" : "Bo1", "content" : contentBo1 }, {"id" : "Bo2", "content" : contentBo2 }, {"id" : "Ch", "content" : contentCh }, {"id" : "Cx1", "content" : contentCx1 }, {"id" : "Cx2", "content" : contentCx2},{"id" : "El", "content" : contentEl }, {"id" : "Ha4", "content" : contentHa4 }, {"id" : "Hg", "content" : contentHg }, {"id" : "La", "content" : contentLa },\
+# {"id" : "To1", "content" : contentTo1 }]})
 
+    jdata = json.dumps({"witnesses" : [{"id" : "Hg", "content" : baseTCWitnesses[0][0]}, {"id": "El", "content": baseTCWitnesses[1][0]}, {"id" : "Db", "content": baseTCWitnesses[2][0]},{"id": "Cp", "content": baseTCWitnesses[3][0]}]})
+    
     send = httplib2.Http()
     response, content = send.request(url, 'POST', jdata, headers)
-
-    #jdata2 = json.loads(content)
-    #pprint.pprint(jdata2)
     
     return HttpResponse(content, mimetype="application/json")
+
+def getTCWitnesses():
+    urlHg = 'http://textualcommunities.usask.ca/drc/community/1/?doc=14316&text=16374#tabs-2'
+    urlEl = 'http://textualcommunities.usask.ca/drc/community/1/?doc=16373&text=16374#tabs-2'
+    urlDb = 'http://textualcommunities.usask.ca/drc/community/1/?doc=15690&text=16374#tabs-2'
+    urlCp = 'http://textualcommunities.usask.ca/drc/community/1/?doc=15003&text=16374#tabs-2'
+    
+    send = httplib2.Http()
+    response, content = send.request(urlHg, 'GET')
+    contentHg = getWitnessesHTML(content)
+    # print contentHg
+
+    response, content = send.request(urlEl, 'GET')
+    contentEl = getWitnessesHTML(content)
+    # print contentEl
+
+    response, content = send.request(urlDb, 'GET')
+    contentDb = getWitnessesHTML(content)
+    # print contentDb
+
+    response, content = send.request(urlCp, 'GET')
+    contentCp = getWitnessesHTML(content)
+    # print contentCp
+
+    global baseTCWitnesses
+    baseTCWitnesses = [contentHg, contentEl, contentDb, contentCp]
+    
+    # return HttpResponse("OK")
+
+def getWitnessesHTML(content):
+    content = content.split("<span><lb />")
+    content = content[1:] 
+    content = "".join(content)
+    content = content.split("\n")
+    content = "".join(content)
+    content = content.split("<div>")
+    content = "".join(content)
+    content = content.split("</div>")
+    content = "".join(content)
+    for i in range(0, 50):
+        content = content.split("<span>"+str(i)+"</span>")
+        content = "".join(content)
+        content = content.split("<l n="+str(i)+">")
+        content = "".join(content)
+    content = content.split("<span>")
+    content = "".join(content)
+    content = content.split("<div class")
+    content = content[:-3]
+    content = "".join(content)
+    content = content.split("  ")
+    content = "".join(content)
+    content = content.split("<hi rend=orncp>")
+    content = "".join(content)
+    content = content.split("<hi rend=sup>")
+    content = "".join(content)
+    content = content.split("<l n=IR>")
+    content = "".join(content)
+    content = content.split("</hi>")
+    content = "".join(content)
+    content = content.split("<hi rend=bold>")
+    content = "".join(content)
+    content = content.split("</l></span>")
+    content = content[:-1]
+    #content = "".join(content)
+    
+    return content
 
 @csrf_exempt
 def saveRules(request):
