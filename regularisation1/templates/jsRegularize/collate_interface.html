@@ -1456,7 +1456,7 @@ function buildWitnesses()
   
   isBuildWitnesses=false;
 
-   return newWitnesses;
+  return newWitnesses;
 }
 
 function seeWitnesses()
@@ -1480,6 +1480,9 @@ function recollate()
   isRecollate = false;
   var newWitnesses = buildWitnesses();
   newWitnesses = JSON.stringify(newWitnesses);
+  
+  console.log(allTokens);
+  console.log(newWitnesses);
   
   $.ajax({
     url: "http://127.0.0.1:8000/regularization/interface/recollate/",
@@ -1582,7 +1585,7 @@ function getToken(regRules, witnessId, position)
         reg_this = reg_this.substring(11,reg_this.length);
         reg_to = action.split(', ')[1];
         reg_to = reg_to.substring(0, reg_to.length-1);
-        //wholeToToken = reg_to;
+        wholeToToken = reg_to;
         choice = regRules.rules[k].scope;
         
         if(choice == "this_word")
@@ -1669,7 +1672,7 @@ function getToken(regRules, witnessId, position)
 
               //console.log(allTokens);
               position++;
-              for(var i in spacesThis)
+              for(var k in spacesThis)
               { 
                 allTokens.alignment[witnessId].tokens.splice(position, 1);
               }
@@ -1686,7 +1689,7 @@ function getToken(regRules, witnessId, position)
 //          }
         }
         
-        if(spacesTo != false)
+        if(spacesTo != false && !isBuildWitnesses)
         {
             //Check if next word(s) match
             // if match -> recollate
@@ -1734,14 +1737,15 @@ function getToken(regRules, witnessId, position)
 
             }
         }
+        else if(spacesTo != false && isBuildWitnesses)
+        {
+          token = wholeToToken;
+          //alert(allTokens.alignment[witnessId].witness + " " + token);
+        }
         else
         {
           reg_to = reg_to.split(' ')[0];
           token = reg_to;
-//          if(isRecollate)
-//          {
-//            token = nonRegToken;
-//          }
         }
       }
     }
@@ -1752,14 +1756,10 @@ function getToken(regRules, witnessId, position)
       if(!isBuildWitnesses)
       {
       	//recollate();
-      	isRecollate = true;
+      	isRecollate = false;
         reg_to = reg_to.split(' ')[0];
       	token = reg_to;
       }
-//      else
-//      {
-//        token = wholeToToken;
-//      }
     }
     
     return token;
@@ -2094,7 +2094,7 @@ function submitCustomReg()
     
     if(check != null && check.checked)
     {
-      alert(reg_this);
+      //alert(reg_this);
 
       if(reg_this == reg_thisRule && reg_to == reg_toRule && scope == scopeRule)
       {
@@ -2159,8 +2159,8 @@ function submitCustomReg()
 
    getRules();
    
-   console.log(customRules);
-   console.log(allRules);
+   //console.log(customRules);
+   //console.log(allRules);
 }
 
 function getId(witnessId)
