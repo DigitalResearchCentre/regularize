@@ -9,6 +9,11 @@ SETUP:
    - birmingham.views line 170
    - to: http://gregor.middell.net/collatex/api/collate
 
+ - Python modules:
+   - httplib2
+   - jsonpickle
+   - 
+
 urls:
 
 Birmingham bible texts:

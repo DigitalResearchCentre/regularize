@@ -31,3 +31,8 @@ class Rule(models.Model):
     description = models.CharField(max_length=100)
     token = models.CharField(max_length=100)
     lemma = models.CharField(max_length=20)
+
+class Line(models.Model):
+    witnessId = models.CharField(max_length=10)
+    content = models.CharField(max_length=1000)
+    number = models.IntegerField()

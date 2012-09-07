@@ -23,11 +23,15 @@ var isCustomRules;
 var autoReg;
 var distinct;
 var changeLabelTimer = null;
+var isOriginals;
 
 function load()
 {
   document.information.style.visibility = "hidden";
   document.edit_reg.style.visibility = "hidden";
+  document.regularization.originals.style.visibility = "hidden";
+  document.getElementById("showOriginals").style.visibility = "hidden";
+  isOriginals = false;
 
   $.ajax({
     	url: "http://127.0.0.1:8000/regularization/interface/getBaseWitnesses/",
@@ -90,7 +94,7 @@ function(jdata) {
 .error(function() { alert("error: getBaseTokens"); });
 
   // add keyboard shortcut
-  shortcut.add("Right", function () {
+  shortcut.add("Alt+Right", function () {
     addTokenThis();
   });
 
@@ -102,11 +106,10 @@ function(jdata) {
     findNextVariant();
   });
   
-  /*
-shortcut.add("Enter", function() {
-    addRule();
-  });
-*/
+  shortcut.add("Enter", function() {
+      addRule();
+    });
+
 }
 
 function nextToken()
@@ -257,13 +260,13 @@ function determineClick()
 {
   if (iTimeoutId == null || !iTimeoutId)
   {
-    iTimeoutId = setTimeout("selectNew()", 500);
+    iTimeoutId = setTimeout("selectToken()", 500);
   }
   else
   {
     window.clearTimeout(iTimeoutId);
     iTimeoutId = null;
-    selectToken();
+    selectNew();
   }
 }
 
@@ -319,7 +322,7 @@ function findWord(pos, content)
     }
   }
 
-  if(token == "///" || token == "")
+  if(token == "///" || token == "" || token == "null")
   {
     notToken = true;
   }
@@ -341,6 +344,9 @@ function findWord(pos, content)
 
 function selectToken()
 {
+    window.clearTimeout(iTimeoutId);
+    iTimeoutId = null;
+    
     var content = document.regularization.reg.value;
     var txt = document.regularization.reg;
     var pos = txt.selectionStart;
@@ -361,6 +367,7 @@ function selectToken()
 
 function selectNew()
 {
+  window.clearTimeout(iTimeoutId);
   iTimeoutId = null;
   var content = document.regularization.reg.value;
   var txt = document.regularization.reg;
@@ -709,6 +716,10 @@ function regularize_onoff()
   
   if (regOn == false)
   {
+    
+     document.regularization.originals.style.visibility = "visible";
+     document.getElementById("showOriginals").style.visibility = "visible";
+  
      regOn = true;
      document.getElementById('reg_on').innerHTML = "Regularization is on! Click on a witness for a regularized word to see more detail.";
      document.getElementById('reg_button').value = "Reg. Off";
@@ -723,6 +734,9 @@ function regularize_onoff()
   }
   else
   {
+     document.regularization.originals.style.visibility = "hidden";
+     document.getElementById("showOriginals").style.visibility = "hidden";
+    
      regOn = false;
      string = "Regularization is off! (Showing originals)";
      document.getElementById('reg_on').innerHTML = string;
@@ -743,7 +757,7 @@ function regularize_onoff()
         
         regularize({rules:[]});
         
-        console.log(allTokens);
+        //console.log(allTokens);
     	
 //    	if(isCustomRules)
 //    	{
@@ -820,6 +834,7 @@ function regularize(regRules)
     var added = false;
     var token = "";
 
+    // get token from json
     if(allTokens.alignment[i].tokens[position] == null)
     {
        origToken = "null";
@@ -833,6 +848,7 @@ function regularize(regRules)
     var token = getToken(regRules, i, position);
     
 
+    // determine what the original token is, if it is regularized
     if(origToken != token)
     {
       regToken=true;
@@ -847,89 +863,107 @@ function regularize(regRules)
       }
     }
     
-    for (var j in distinct.witnesses)
+    // search if token is already in the array
+    // if is ... add after
+    for(var j in distinct.witnesses)
     {
       var distinctToken = distinct.witnesses[j].token;
-      //alert("Token: " + token + " Distinct: " + distinctToken);
-
+      
       if(token == distinctToken && !added)
       {
-        if(regToken)
+        for( var k in distinct.witnesses[j].originals)
         {
-          distinct.witnesses[j].id.push(allTokens.alignment[i].witness + "(ORIG:" + origToken + ")");
+          //console.log(distinct);
+          if(origToken == distinct.witnesses[j].originals[k].origToken && !added)
+          {
+            distinct.witnesses[j].originals[k].id.push(allTokens.alignment[i].witness);
+            added = true;
+          }
         }
-        else
+        if(!added)
         {
-          distinct.witnesses[j].id.push(allTokens.alignment[i].witness);
+          distinct.witnesses[j].originals.push({
+            "origToken": origToken,
+            "id": []
+          });
+          
+          var index = distinct.witnesses[j].originals.length-1;
+          distinct.witnesses[j].originals[index].id.push(allTokens.alignment[i].witness);
+          added = true;
         }
-        added = true;
-        //alert("add: "+ allTokens.alignment[i].witness);
       }
     }
-
+    
+    // add token to array because it is the first one
     if(i==0)
     {
       distinct.witnesses.push({
-           "token" : token,
-           "id": []
+        "token": token,
+        "originals": []
       });
-
-      for( var k in distinct.witnesses)
-      {
-        distinctToken = distinct.witnesses[k].token;
-
-        if(token == distinctToken)
-        {
-          if(regToken)
-          {
-            distinct.witnesses[k].id.push(allTokens.alignment[i].witness + "(ORIG:" + origToken + ")");
-          }
-          else
-          {
-            distinct.witnesses[k].id.push(allTokens.alignment[i].witness);
-          }
-        }
-      }
-      //alert("new: " + allTokens.alignment[i].witness);
+      
+      distinct.witnesses[i].originals.push({
+        "origToken": origToken,
+        "id" : []
+      });
+      
+      distinct.witnesses[i].originals[i].id.push(allTokens.alignment[i].witness);
+      added = true;
     }
-    else if(!added)
+    // not already in array ... add token and id to it
+    else if (!added)
     {
       distinct.witnesses.push({
-           "token" : token,
-           "id": []
+        "token": token,
+        "originals": []
       });
-      for( var k in distinct.witnesses)
+      
+      for(var j in distinct.witnesses)
       {
-        distinctToken = distinct.witnesses[k].token;
-
-        if(token == distinctToken)
+        if(distinct.witnesses[j].token == token && !added)
         {
-          if(regToken)
-          {
-            distinct.witnesses[k].id.push(allTokens.alignment[i].witness + "(ORIG:" + origToken + ")");
-          }
-          else
-          {
-            distinct.witnesses[k].id.push(allTokens.alignment[i].witness);
-          }
+          distinct.witnesses[j].originals.push({
+            "origToken": origToken,
+            "id" : []
+          });
+          
+          var index = distinct.witnesses[j].originals.length-1;
+          distinct.witnesses[j].originals[index].id.push(allTokens.alignment[i].witness);
         }
       }
-      added = true;
-      //alert("new: " + allTokens.alignment[i].witness);
     }
   }
-
+  
+  // create the content for the collation area text box
   var content = "";
   for (var i in distinct.witnesses)
   {
-    //alert(distinct.witnesses[i].id[0]);
-    content += distinct.witnesses[i].token + " ";
-    for (var j in distinct.witnesses[i].id)
+    content += distinct.witnesses[i].token;
+    
+    for(var j in distinct.witnesses[i].originals)
     {
-      content += distinct.witnesses[i].id[j] + " ";
+      if(distinct.witnesses[i].originals[j].origToken != distinct.witnesses[i].token && isOriginals)
+      {
+        for(var k in distinct.witnesses[i].originals[j].id)
+        {
+          content += " " + distinct.witnesses[i].originals[j].id[k];
+        }
+
+        content += "(" + distinct.witnesses[i].originals[j].origToken + "), ";
+      }
+      else
+      {
+        for(var k in distinct.witnesses[i].originals[j].id)
+        {
+          content += " " + distinct.witnesses[i].originals[j].id[k];
+        }
+      }
     }
-    content += "/// ";
+    
+    content += " /// "; 
   }
+  
+  automateReg(document.getElementById("automate"));
 
   document.regularization.reg.value = content;
   
@@ -1890,12 +1924,12 @@ function loadRegTable()
   regRules = allRules;
 
   //delete everything out of reg_table
-     var table = document.getElementById('reg_table');
-     var rowCount = table.rows.length;
-     for(var i =rowCount-1; i>=0; i--)
-     {
-       table.deleteRow(i);
-     }
+   var table = document.getElementById('reg_table');
+   var rowCount = table.rows.length;
+   for(var i =rowCount-1; i>=0; i--)
+   {
+     table.deleteRow(i);
+   }
 
   var table = document.getElementById('reg_table');
 
@@ -2248,15 +2282,31 @@ function automateReg(checkBox)
     
     for (var i in distinct.witnesses)
     {
-      if(distinct.witnesses[i].id.length > maxLength)
+      var numberIds = 0;
+      for(var j in distinct.witnesses[i].originals)
+      {
+        for(var k in distinct.witnesses[i].originals[j].id)
+        {
+          numberIds++;
+        }
+      }
+       
+      // nothing should ever be regularized to null
+      if(numberIds > maxLength && distinct.witnesses[i].token != "null")
       {
         maxPosition = i;
-        maxLength = distinct.witnesses[i].id.length;
+        maxLength = numberIds;
       }
     }
    
     
     document.regularization.reg_to.value = distinct.witnesses[maxPosition].token;
+    
+    // null should never be regularized to anything ?!?
+    if(distinct.witnesses[maxPosition] == "null")
+    {
+      maxPosition++;
+    }
     
     if(maxPosition != distinct.witnesses.length-1)
     {
@@ -2287,12 +2337,73 @@ function backToken()
   //shows all previously collated words and allows user to choose one to go to
 }
 
+//function seeCollation()
+//{
+//  var choice = document.regularization.collation_type.value;
+//  
+//  if(choice == "word")
+//  {
+//    //alert("word");
+//    window.location.href = "http://127.0.0.1:8000/regularization/interface/loadWordCollationWindow/";
+//  }
+//  else if(choice == "line")
+//  {
+//    //alert("line");
+//    window.location.href = "http://127.0.0.1:8000/regularization/interface/loadLineCollationWindow/";
+//  }
+//}
+
+function showOriginals(checkBox)
+{
+  //var checkBox = document.getElementById("originals");
+  
+  if(checkBox.checked)
+  {
+    isOriginals = true;
+    
+    if(isCustomRules)
+    {
+      var regRules = customRules;
+    }
+    else
+    {
+      var regRules = allRules;
+    }
+
+    for(var i in newRules.rules)
+    {
+      regRules.rules.push(newRules.rules[i]);
+    }
+    regularize(regRules);
+    
+  }
+  else
+  {
+    isOriginals = false; 
+    
+    if(isCustomRules)
+    {
+      var regRules = customRules;
+    }
+    else
+    {
+      var regRules = allRules;
+    }
+
+    for(var i in newRules.rules)
+    {
+      regRules.rules.push(newRules.rules[i]);
+    }
+    regularize(regRules);
+  }
+}
+
 </script>
 </head>
 
 <body onload="load()">
 <h1>Regularization: Make Modifications</h1>
-<label for="regularize_label" id="regularize_label">Double click on the word you want regularized, single click or type in the
+<label for="regularize_label" id="regularize_label">Single click on the word you want regularized, double click or type in the
 word you want it regularized to.  Select
 combination of Witnesses and Place.  Click OK when
 finished.</label>
@@ -2306,7 +2417,7 @@ originals)
 <form action="." method="POST" name="regularization">
        <br /><textarea rows="10" cols="75" name="reg" onclick="determineClick()"></textarea>
            
-       <br /><label id="reg_this" name="reg_this">Regularize This:</label>
+       <br /><label id="reg_this">Regularize This:</label>
            <input type="text" name="reg_this" size="82"/>
        <br /><label id="reg_to">To This:</label>
            <input type="text" name="reg_to" size="92"/>
@@ -2324,20 +2435,25 @@ originals)
 	<!-- <input name="edit_reg" type="button" value="Edit Reg."> -->
 	<input name="reg_on" id="reg_button" type="button" value="Reg. On"
 	onclick="regularize_onoff()">
-	<!--
-<input name="recollate" type="button"
-        value="Recollate" onclick="buildWitnesses()">
--->
+	
 	<input name="back" type="button" value="Back" onclick="backToken()">
 	<input name="previous" type="button" value="Previous" onclick="previousToken()">
 	<input name="next" type="button" value="Next" onclick="nextToken()">
 	<input name="view" type="button" value="View Entire Reg." onclick="seeWitnesses()">
 	<input name="done" type="button" value="DONE">
-	<br /> Shortcuts:: <br/>"Right Arrow": Add next word to Regularize This
+	<br /> Shortcuts:: <br/>"Alt+Right Arrow": Add next word to Regularize This
 	<br /> "Shift+Right Arrow": Add next word to Regularize To
 	<br /> "Tab": Find next variant to regularize
-	<br /> <input type="checkbox" name="automate" value="automate"
+        <br /> "Enter": Add rule
+	<br /> <input type="checkbox" name="automate" value="automate" id="automate"
 	onchange="automateReg(this)"/> Automate regularization selection
+        <br /> <input type="checkbox" name="originals" value="originals" onchange="showOriginals(this)"/>
+        <label id="showOriginals">Show originals</label>
+<!--        <br /> <select name="collation_type">
+          <option value="word">Word collation</option>
+          <option value="line">Line collation</option>
+        </select>
+        <input name="see_collation" type="button" value="Go!" onclick="seeCollation()"/>-->
     </form>
 </td>
 <td valign="top">

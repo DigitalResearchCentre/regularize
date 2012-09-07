@@ -1,5 +1,5 @@
 from django.http import HttpResponseRedirect, HttpResponse
-from models import Witness, Collation, Token, Rule
+from models import Witness, Collation, Token, Rule, Line
 from django.views.decorators.csrf import csrf_exempt
 from django.shortcuts import render_to_response
 from itertools import chain
@@ -9,10 +9,12 @@ import jsonpickle
 import json
 import httplib2
 import urllib
+import HTMLParser
 
 regWitnesses = {}
 regInfo = {}
 baseTCWitnesses = {}
+collationLine = -1
 
 def loadInterface(request):
     #return render_to_response('jsRegularize/interface.html')
@@ -23,6 +25,39 @@ def loadViewReg(request):
 
 def loadInformationWindow(request):
     return render_to_response('jsRegularize/information_window.html')
+
+def loadWordCollationWindow(request):
+    global collationLine
+    collationLine = 0
+    return render_to_response('jsRegularize/word_collation.html')
+
+def loadLineCollationWindow(request):
+    return render_to_response('jsRegularize/line_collation.html')
+    
+# def getWordCollation(request):
+    
+#     url = 'http://127.0.0.1:8080/collatex-web-0.9.1-RC2/api/collate'
+#     headers = {'Content-Type': 'application/json', 'Accept': 'application/json'}
+    
+#     filteredLines = Line.objects.filter(number=collationLine)
+#     jdata = '{"witnesses":['
+#     position = 0
+    
+#     for line in filteredLines:
+#         if position != 0:
+#             jdata = jdata + ","
+#         jdata = jdata + '{"id":' + jsonpickle.encode(line.witnessId) + ","
+#         jdata = jdata + '"content":' + jsonpickle.encode(str(line.content)) + "}"
+#         position = position + 1
+#     jdata = jdata + ']}'
+
+#     global collationLine
+#     collationLine = collationLine + 1
+    
+#     send = httplib2.Http()
+#     response, content = send.request(url, 'POST', jdata, headers)
+    
+#     return HttpResponse(content, mimetype="application/json")
 
 @csrf_exempt
 def saveInformationWindow(request):
@@ -47,6 +82,127 @@ def saveRegWitnesses(request):
            #print regWitnesses
 
      return HttpResponse("OK")
+
+# def getMillerWitnesses(request):
+
+#     #Line.objects.all().delete()
+#     # url = 'http://textualcommunities.usask.ca/drc/api/text/21817/'
+#     # url = 'http://textualcommunities.usask.ca/drc/admin/det/element/21817/'
+#     #url = 'http://textualcommunities.usask.ca/drc/community/1/?doc=14316&text=16374#tabs-2'
+    
+#     # 0 == IR, 1 == line1, etc.
+#     lineNumber = 0
+#     # url = 'http://textualcommunities.usask.ca/drc/community/1/?entity=12963'
+#     url = 'http://textualcommunities.usask.ca/drc/community/1/?entity='
+
+#     for i in range(12963, 14297, 2):
+#         newUrl = url + str(i)
+#         send = httplib2.Http()
+#         response, content = send.request(newUrl, 'GET')
+#         #print content    
+#         refineMillerWitnesses(content, lineNumber)
+#         lineNumber = lineNumber + 1
+
+#     return HttpResponse("OK")
+
+def getNextEntity(request):
+    urlCollation = 'http://127.0.0.1:8080/collatex-web-0.9.1-RC2/api/collate'
+    headers = {'Content-Type': 'application/json', 'Accept': 'application/json'}
+    url = 'http://textualcommunities.usask.ca/drc/community/1/?entity='
+
+    global collationLine
+    collationLine = collationLine + 1
+    entityNumber = collationLine * 2
+    entityNumber = entityNumber + 12963
+
+    newUrl = url + str(entityNumber)
+    send = httplib2.Http()
+    response, content = send.request(newUrl, 'GET')
+    
+    jdata = refineWitnesses(content)
+
+    send = httplib2.Http()
+    response, content = send.request(url, 'POST', jdata, headers)
+    
+    return HttpResponse(content, mimetype="application/json")
+
+    #def getPreviousEntity(request):
+    
+
+def refineWitnesses(content):
+    parser = HTMLParser.HTMLParser()
+    jdata = '{"witnesses":['
+    position = 0
+    
+    content = content.split("<ul>")
+    content = content[2:] 
+    content = "".join(content)
+    content = content.split("</ul>")
+    content = content[:1]
+    content = "".join(content)
+    content = content.split("<li><p><b>")
+    content = content[1:]
+
+    for x in content:
+        witnessId = x.split(":", 1)[0]
+        x = x.split(":", 1)[1]
+        x = "".join(x)
+        x = x.split("\n")
+        x = "".join(x)
+        x = x.split("&gt;", 1)[1]
+        x = "".join(x)
+        x = x.split("&lt;/l")[:-1]
+        x = "".join(x)
+        x = x.split("&lt;hi rend=&quot;u&quot;&gt;")
+        x = "".join(x)
+        x = x.split("&lt;hi rend=&quot;bold&quot;&gt;")
+        if (x[0] == ""):
+            x = x[1:]
+        x = " ".join(x)
+        x = x.split("&lt;/hi&gt;")
+        x = "".join(x)
+        x = x.split("&lt;lb n=&quot;&quot;&gt;")
+        x = "".join(x)
+        x = x.split("b&gt;")
+        x = "".join(x)
+        x = x.split("&lt;hi rend=&quot;orncp&quot;&gt;")
+        x = "".join(x)
+        x = x.split("&lt;hi rend=&quot;unex&quot;&gt;")
+        x = "".join(x)
+        x = x.split("&lt;hi rend=&quot;sup&quot;&gt;")
+        x = "".join(x)
+        x = x.split("&lt;hi rend=&quot;ud&quot;&gt;")
+        x = "".join(x)
+        x = x.split("&lt;gap extent=&quot;")
+        if(len(x) >= 2):
+            x[1] = x[1][1:]
+        x = "".join(x)
+        x = x.split("&quot;&gt;&lt;/gap&gt;")
+        x = "".join(x)
+        x = x.replace("&amp;", "&")
+        print witnessId + ": " + parser.unescape(x)
+        
+        if position != 0:
+            jdata = jdata + ","
+        jdata = jdata + '{"id":' + jsonpickle.encode(witnessId) + ","
+        jdata = jdata + '"content":' + jsonpickle.encode(str(x)) + "}"
+        position = position + 1
+    
+    jdata = jdata + ']}'
+
+        # filteredLines = Line.objects.filter(\
+        #                         content = x).filter(\
+        #                         witnessId = witnessId).filter(\
+        #                         number = lineNumber)
+
+        # if not filteredLines:
+        #     l = Line()
+        #     l.content = x
+        #     l.witnessId = witnessId
+        #     l.number = lineNumber
+        #     l.save()
+
+    return jdata
 
 def getRegWitnesses(request):
     return HttpResponse(regWitnesses, mimetype="application/json")
