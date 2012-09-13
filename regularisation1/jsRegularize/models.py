@@ -20,6 +20,11 @@ class Witness(models.Model):
 class Collation(models.Model):
     witnessList = models.ManyToManyField(Witness)
 
+# class Modification(models.Model):
+#     userId = models.CharField(max_length=100)
+#     action = models.CharField(max_length=200)
+#     dateTime = models.DateTimeField()
+
 class Rule(models.Model):
     ruleID = models.CharField(max_length=100)
     appliesTo = models.CharField(max_length=100)

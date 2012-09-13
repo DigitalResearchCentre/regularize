@@ -24,25 +24,17 @@ var autoReg;
 var distinct;
 var changeLabelTimer = null;
 var isOriginals;
+var lineNumber;
 
 function load()
 {
   document.information.style.visibility = "hidden";
+  document.reg_information.style.visibility ="hidden";
   document.edit_reg.style.visibility = "hidden";
   document.regularization.originals.style.visibility = "hidden";
   document.getElementById("showOriginals").style.visibility = "hidden";
   isOriginals = false;
-
-  $.ajax({
-    	url: "http://127.0.0.1:8000/regularization/interface/getBaseWitnesses/",
-    	dataType: 'json',
-    	async: false,
-    	success: function(jdata){
-    		allWitnesses = jdata;
-    	
-    	}});
-
-  //initialize new rules
+  lineNumber = 0;
   newRules = { rules: [] };
   customRules = { rules: [] };
 
@@ -55,45 +47,10 @@ function load()
   isCustomRules = false;
   autoReg = false;
   distinct = { witnesses: [] };
-
-  $.getJSON("http://127.0.0.1:8000/regularization/interface/getBaseTokens/",
-function(jdata) {
-
-  // save the tokens to a global variable
-  allTokens = jdata;
-  origTokens = jdata;
-  //alert("load: " + origTokens.alignment[0].tokens[0].t);
   
-  for(var i in allTokens.alignment)
-  {
-    for(var j in allTokens.alignment[i].tokens)
-    {
-       if(allTokens.alignment[i].tokens[j] != null)
-       {
-         allTokens.alignment[i].tokens[j].origToken = '';
-         allTokens.alignment[i].tokens[j].reg_to = '';
-         //allTokens.alignment[i].tokens[j].t.splice(0,0,{origToken: ''});
-       }
-    }
-  }
+  getTokensWitnesses(true);
   
-  //console.log(allTokens);
-
-  totalPos = -1;
-
-  // find how many positions are in tokens
-  for (var i in allTokens.alignment[0].tokens)
-  {
-     totalPos++;
-  }
-
-  // put distinct tokens at position 0 into interface
-  currentPosition = 0;
-  regularize(newRules);
-})
-.error(function() { alert("error: getBaseTokens"); });
-
-  // add keyboard shortcut
+   // add keyboard shortcut
   shortcut.add("Alt+Right", function () {
     addTokenThis();
   });
@@ -109,13 +66,126 @@ function(jdata) {
   shortcut.add("Enter", function() {
       addRule();
     });
+}
+
+function getTokensWitnesses(isNext)
+{
+  document.getElementById("title_label").innerHTML = lineNumber;
+  
+  if(isNext)
+  {
+    $.ajax({
+          url: "http://127.0.0.1:8000/regularization/interface/getNextEntity/",
+          dataType: 'json',
+          async: false,
+          success: function(jdata){
+            // save the tokens to a global variable
+            allTokens = jdata;
+            console.log(allTokens);
+            origTokens = jdata;
+            //alert("load: " + origTokens.alignment[0].tokens[0].t);
+
+            for(var i in allTokens.alignment)
+            {
+              for(var j in allTokens.alignment[i].tokens)
+              {
+                 if(allTokens.alignment[i].tokens[j] != null)
+                 {
+                   allTokens.alignment[i].tokens[j].origToken = '';
+                   allTokens.alignment[i].tokens[j].reg_to = '';
+                   //allTokens.alignment[i].tokens[j].t.splice(0,0,{origToken: ''});
+                 }
+              }
+            }
+
+            //console.log(allTokens);
+
+            totalPos = -1;
+
+            // find how many positions are in tokens
+            var index = 0;
+            var found = false;
+            while(!found)
+            {
+             if(allTokens.alignment[index] != undefined && allTokens.alignment[index] != null)
+             {
+               found = true;
+             }
+             else
+             {
+               index++;
+             }
+            }
+
+            for (var i in allTokens.alignment[0].tokens)
+            {
+               totalPos++;
+            }
+
+            // put distinct tokens at position 0 into interface
+            currentPosition = 0;
+            regularize(newRules);
+          }});
+  }
+  else
+  {
+    $.ajax({
+          url: "http://127.0.0.1:8000/regularization/interface/getPreviousEntity/",
+          dataType: 'json',
+          async: false,
+          success: function(jdata){
+            // save the tokens to a global variable
+            allTokens = jdata;
+            origTokens = jdata;
+            //alert("load: " + origTokens.alignment[0].tokens[0].t);
+
+            for(var i in allTokens.alignment)
+            {
+              for(var j in allTokens.alignment[i].tokens)
+              {
+                 if(allTokens.alignment[i].tokens[j] != null)
+                 {
+                   allTokens.alignment[i].tokens[j].origToken = '';
+                   allTokens.alignment[i].tokens[j].reg_to = '';
+                   //allTokens.alignment[i].tokens[j].t.splice(0,0,{origToken: ''});
+                 }
+              }
+            }
+
+            //console.log(allTokens);
+
+            totalPos = -1;
+
+            // find how many positions are in tokens
+            for (var i in allTokens.alignment[0].tokens)
+            {
+               totalPos++;
+            }
+
+            // put distinct tokens at position 0 into interface
+            currentPosition = 0;
+            regularize(newRules);
+          }});
+  
+  }
+  
+
+  $.ajax({
+    	url: "http://127.0.0.1:8000/regularization/interface/getBaseWitnesses/",
+    	dataType: 'json',
+    	async: false,
+    	success: function(jdata){
+    		allWitnesses = jdata;
+    	
+    	}});
 
 }
 
 function nextToken()
 {
+  var reg_toWhole = document.regularization.reg_to.value;
   document.regularization.reg_this.value = "";
-  document.regularization.reg_to.value = "";
+  //document.regularization.reg_to.value = "";
 
   if(currentPosition == totalPos)
   {
@@ -182,12 +252,15 @@ function nextToken()
     }
     
   }
+  
+  document.regularization.reg_to.value = reg_toWhole;
 }
 
 function previousToken()
 {
+  var reg_toWhole = document.regularization.reg_to.value;
   document.regularization.reg_this.value = "";
-  document.regularization.reg_to.value = "";
+  //document.regularization.reg_to.value = "";
 
   if(currentPosition == 0)
   {
@@ -254,6 +327,8 @@ function previousToken()
     }
     
   }
+  
+  document.regularization.reg_to.value = reg_toWhole;
 }
 
 function determineClick()
@@ -318,7 +393,7 @@ function findWord(pos, content)
   {
     if(token == allWitnesses.witnesses[i].id)
     {
-      notToken = true;
+      informationWindow(allWitnesses.witnesses[i].id);
     }
   }
 
@@ -326,11 +401,11 @@ function findWord(pos, content)
   {
     notToken = true;
   }
-  else if(token.match(/ORIG:/g))
-  {
-    informationWindow(token);
-    token = " ";
-  }
+//  else if(token.match(/ORIG:/g))
+//  {
+//    informationWindow(token);
+//    token = " ";
+//  }
 
   if(notToken)
   {
@@ -460,6 +535,7 @@ function addRule()
 
   document.regularization.reg_this.value = "";
   //document.regularization.reg_to.value = "";
+  document.regularization.reg_to.value = reg_toWhole;
   
   if(regOn)
   {
@@ -699,7 +775,7 @@ function changeRegularizeLabel(choice, reg_thisWhole, reg_toWhole)
     scope = "all witnesses for this word.";
   }
   
-  var content = "REGULARIZED:: \"" + reg_thisWhole + "\" to \"" + reg_toWhole + "\" in " + scope;
+  var content = "REGULARIZED:: \"" + reg_thisWhole + "\" to \"" + reg_toWhole + "\" in " + scope + "</br>";
   document.getElementById('regularize_label').innerHTML = content;
   
   //alert(content);
@@ -798,7 +874,7 @@ function(jdata) {
   allRules = jdata;
 
   document.regularization.reg_this.value = "";
-  document.regularization.reg_to.value = "";
+  //document.regularization.reg_to.value = "";
 
 
   loadRegTable();
@@ -1805,8 +1881,9 @@ function informationWindow(witnessId)
   var regInfo = { data: [] };
   var context = "";
   var index = "";
-  var position = currentPosition + 1;
+  var position = currentPosition;
   var regRules = "";
+  var token = "";
   
   witnessId = witnessId.split('(')[0];
   
@@ -1843,34 +1920,41 @@ function informationWindow(witnessId)
   {
     var action = regRules.rules[i].action;
     
-    if(allTokens.alignment[index].tokens[currentPosition].origToken != null && allTokens.alignment[index].tokens[currentPosition].origToken != "")
+    if(allTokens.alignment[index].tokens != null && allTokens.alignment[index].tokens[currentPosition] != null)
     {
-      if(allTokens.alignment[index].tokens[currentPosition].origToken == regRules.rules[i].token)
+      if(allTokens.alignment[index].tokens[currentPosition].origToken != null && allTokens.alignment[index].tokens[currentPosition].origToken != "")
       {
-        reg_this = regRules.rules[i].token;
-        reg_to = action.split(', ')[1];
-        reg_to = reg_to.substring(0, reg_to.length-1);
-        choice = regRules.rules[i].scope;
+        if(allTokens.alignment[index].tokens[currentPosition].origToken == regRules.rules[i].token)
+        {
+          reg_this = regRules.rules[i].token;
+          reg_to = action.split(', ')[1];
+          reg_to = reg_to.substring(0, reg_to.length-1);
+          choice = regRules.rules[i].scope;
+        }
+      }
+      else 
+      {
+        if (allTokens.alignment[index].tokens[currentPosition] != null)
+        {
+          token = allTokens.alignment[index].tokens[currentPosition].t;
+        }
+        else
+        {
+          token = "null";
+        }
+
+        if(token == regRules.rules[i].token)
+        {
+          reg_this = regRules.rules[i].token;
+          reg_to = action.split(', ')[1];
+          reg_to = reg_to.substring(0, reg_to.length-1);
+          choice = regRules.rules[i].scope;
+        }
       }
     }
-    else 
+    else
     {
-      if (allTokens.alignment[index].tokens[currentPosition] != null)
-      {
-        token = allTokens.alignment[index].tokens[currentPosition].t;
-      }
-      else
-      {
-        token = "null";
-      }
-      
-      if(token == regRules.rules[i].token)
-      {
-        reg_this = regRules.rules[i].token;
-        reg_to = action.split(', ')[1];
-        reg_to = reg_to.substring(0, reg_to.length-1);
-        choice = regRules.rules[i].scope;
-      }
+      token = "null";
     }
   }
   
@@ -1880,41 +1964,28 @@ function informationWindow(witnessId)
   }
   else if(choice == "this_block")
   {
-    choice = "this block in all witnesses";
+    choice = "this entity in all witnesses";
   }
   else if(choice == "this_word")
   {
-    choice = "this word in all witnesses";
+    choice = "this place in all witnesses";
   }
   
   document.information.style.visibility = "visible";
+  document.reg_information.style.visibility ="hidden";
   document.getElementById('witnessId').innerHTML = witnessId;
   document.getElementById('word').innerHTML = position;
-  document.getElementById('block').innerHTML = 1; //need to change
+  document.getElementById('block').innerHTML = lineNumber; //need to change
   document.getElementById('context').innerHTML = context;
-  document.getElementById('reg_this_info').innerHTML = reg_this;
-  document.getElementById('reg_to_info').innerHTML = reg_to;
-  document.getElementById('choice').innerHTML = choice;
   
-  /*  Send to another page
-regInfo.data.push({
-  	"witnessId": witnessId,
-  	"word": position,
-  	"block": 1, //change this later to apply to more
-  	"context": context,
-  	"reg_this": reg_this,
-  	"reg_to": reg_to,
-  	"choice": choice
-  });
+  if(reg_this != "" && reg_to != "" && choice != "")
+  {
+    document.reg_information.style.visibility = "visible";
+    document.getElementById('reg_this_info').innerHTML = reg_this;
+    document.getElementById('reg_to_info').innerHTML = reg_to;
+    document.getElementById('choice').innerHTML = choice;
+  }
   
-  
-  $.post("http://127.0.0.1:8000/regularization/interface/saveInformationWindow/",
-       JSON.stringify(regInfo), function(){
-       //alert("success");
-       window.location.href = "http://127.0.0.1:8000/regularization/interface/informationWindow/";
-     })
-   .error(function () {alert("error: informationWindow");});
-*/
 }
 
 function loadRegTable()
@@ -2331,27 +2402,22 @@ function automateReg(checkBox)
   }
 }
 
-function backToken()
+function backEntity()
 {
-  alert("backToken");
+  if(lineNumber > 0)
+  {
+    lineNumber--;
+  }
+  getTokensWitnesses(false);
   //shows all previously collated words and allows user to choose one to go to
 }
 
-//function seeCollation()
-//{
-//  var choice = document.regularization.collation_type.value;
-//  
-//  if(choice == "word")
-//  {
-//    //alert("word");
-//    window.location.href = "http://127.0.0.1:8000/regularization/interface/loadWordCollationWindow/";
-//  }
-//  else if(choice == "line")
-//  {
-//    //alert("line");
-//    window.location.href = "http://127.0.0.1:8000/regularization/interface/loadLineCollationWindow/";
-//  }
-//}
+function forwardEntity()
+{
+  lineNumber++;
+  getTokensWitnesses(true);
+}
+
 
 function showOriginals(checkBox)
 {
@@ -2402,7 +2468,7 @@ function showOriginals(checkBox)
 </head>
 
 <body onload="load()">
-<h1>Regularization: Make Modifications</h1>
+  <h1>Collation Interface: for entity MI, line <label for="title_label" id="title_label"></label></h1>
 <label for="regularize_label" id="regularize_label">Single click on the word you want regularized, double click or type in the
 word you want it regularized to.  Select
 combination of Witnesses and Place.  Click OK when
@@ -2424,8 +2490,8 @@ originals)
 
         <p>Regularize Choices:
        <select name="reg_choices">
-	  <option value="this_block">All witnesses, this block</option>
-	  <option value="this_word">All witnesses, this word</option>
+	  <option value="this_block">All witnesses, this entity</option>
+	  <option value="this_word">All witnesses, this place</option>
 	  <option value="all_places">All witnesses, all places</option>
 	  <option value="other">Other ...</option>
 	</select></p>
@@ -2436,9 +2502,11 @@ originals)
 	<input name="reg_on" id="reg_button" type="button" value="Reg. On"
 	onclick="regularize_onoff()">
 	
-	<input name="back" type="button" value="Back" onclick="backToken()">
-	<input name="previous" type="button" value="Previous" onclick="previousToken()">
-	<input name="next" type="button" value="Next" onclick="nextToken()">
+	<input name="back" type="button" value="Back Entity" onclick="backEntity()">
+        <input name="forward" type="button" value="Forward Entity" onclick="forwardEntity()">
+	<input name="previous" type="button" value="Previous Word" onclick="previousToken()">
+	<input name="next" type="button" value="Next Word" onclick="nextToken()">
+        <br />
 	<input name="view" type="button" value="View Entire Reg." onclick="seeWitnesses()">
 	<input name="done" type="button" value="DONE">
 	<br /> Shortcuts:: <br/>"Alt+Right Arrow": Add next word to Regularize This
@@ -2459,7 +2527,7 @@ originals)
 <td valign="top">
 <form action="." method="POST" name="information">
 <h2>Regularization Information</h2>
-Regularization at word <label for="word" id="word"></label> in block <label for="block" id="block"></label>
+Regularization at word <label for="word" id="word"></label> in entity <label for="block" id="block"></label>
 in witness <label for="witnessId" id="witnessId"></label>
 
 <br /><br />
@@ -2469,6 +2537,8 @@ Context:<br/>
 
 <br /><br />
 
+</form>
+<form action="." method="POST" name="reg_information">
 Reg. from:<br/>
 <label for="reg_this_info" id="reg_this_info"></label>
 

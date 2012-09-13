@@ -12,6 +12,7 @@ SETUP:
  - Python modules:
    - httplib2
    - jsonpickle
+   - django_tables2
    - 
 
 urls:

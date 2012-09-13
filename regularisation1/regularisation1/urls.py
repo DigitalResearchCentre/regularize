@@ -6,9 +6,7 @@ from jsRegularize.views import getBaseWitnesses, getBaseTokens, loadInterface
 from jsRegularize.views import saveRules, getRules, recollate, saveRegWitnesses
 from jsRegularize.views import loadViewReg, getRegWitnesses, loadInformationWindow
 from jsRegularize.views import saveInformationWindow, getInformationWindow, changeRule
-from jsRegularize.views import deleteRule, getMillerWitnesses
-from jsRegularize.views import loadWordCollationWindow, loadLineCollationWindow
-from jsRegularize.views import getWordCollation
+from jsRegularize.views import deleteRule, getNextEntity, getPreviousEntity
 from django.conf import settings
 
 # Uncomment the next two lines to enable the admin:
@@ -52,10 +50,8 @@ urlpatterns = patterns('',
     url(r'^regularization/interface/getInformationWindow/$', getInformationWindow),
     url(r'^regularization/interface/changeRule/$', changeRule),
     url(r'^regularization/interface/deleteRule/$', deleteRule),
-    url(r'^regularization/interface/getMillerWitnesses/$', getMillerWitnesses),
-    url(r'^regularization/interface/loadWordCollationWindow/$', loadWordCollationWindow),
-    url(r'^regularization/interface/loadLineCollationWindow/$', loadLineCollationWindow),
-    url(r'^regularization/interface/getWordCollation/$', getWordCollation),
+    url(r'^regularization/interface/getNextEntity/$', getNextEntity),
+    url(r'^regularization/interface/getPreviousEntity/$', getPreviousEntity),
 )
 
 # if settings.DEBUG:
