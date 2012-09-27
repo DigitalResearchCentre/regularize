@@ -1,12 +1,20 @@
 from django.conf.urls import patterns, include, url
-from input.views import regularization, change, show_original
-from birmingham.views import pickText
-from sampleJSON.views import collate, regularize, getWitnesses, getTokens
+
+#from input.views import regularization, change, show_original
+# from birmingham.views import pickText
+# from sampleJSON.views import collate, regularize, getWitnesses, getTokens
 from jsRegularize.views import getBaseWitnesses, getBaseTokens, loadInterface
 from jsRegularize.views import saveRules, getRules, recollate, saveRegWitnesses
 from jsRegularize.views import loadViewReg, getRegWitnesses, loadInformationWindow
 from jsRegularize.views import saveInformationWindow, getInformationWindow, changeRule
 from jsRegularize.views import deleteRule, getNextEntity, getPreviousEntity
+from jsRegularize.views import getEntityApi
+
+
+from jsRegularize.views import regularization, postSelectedWitnesses, chooseRuleSetsInterface
+
+
+
 from django.conf import settings
 
 # Uncomment the next two lines to enable the admin:
@@ -24,16 +32,23 @@ urlpatterns = patterns('',
     # Uncomment the next line to enable the admin:
     # url(r'^admin/', include(admin.site.urls)),
 
+    # url(r'^regularization/$', regularization),
+    # url(r'^regularization/change/(?P<pos>\d{3})/$', change, name='change'),
+    # url(r'^regularization/show/$', show_original),
+    
+    # url(r'^regularization/bible/(?P<chapter>\d)/(?P<verse>\d{2})/$', pickText),
+    
+    # url(r'^regularization/sample/$', collate),
+    # url(r'^regularization/sample/regularize/(?P<pos>\d{3})/$', regularize, name='change'),
+    # url(r'^regularization/sample/getWitnesses/$', getWitnesses),
+    # url(r'^regularization/sample/getTokens/$', getTokens),
+
     url(r'^regularization/$', regularization),
-    url(r'^regularization/change/(?P<pos>\d{3})/$', change, name='change'),
-    url(r'^regularization/show/$', show_original),
-    
-    url(r'^regularization/bible/(?P<chapter>\d)/(?P<verse>\d{2})/$', pickText),
-    
-    url(r'^regularization/sample/$', collate),
-    url(r'^regularization/sample/regularize/(?P<pos>\d{3})/$', regularize, name='change'),
-    url(r'^regularization/sample/getWitnesses/$', getWitnesses),
-    url(r'^regularization/sample/getTokens/$', getTokens),
+    #url(r'^regularization/postSelectedWitnesses/(?P<data>json)$', postSelectedWitnesses),
+    url(r'^regularization/postSelectedWitnesses/$', postSelectedWitnesses),
+    url(r'^regularization/chooseRuleSetsInterface/$', chooseRuleSetsInterface),
+
+
     
     url(r'^regularization/interface/getBaseWitnesses/$', getBaseWitnesses),
     url(r'^regularization/interface/getBaseTokens/$', getBaseTokens),
@@ -52,6 +67,9 @@ urlpatterns = patterns('',
     url(r'^regularization/interface/deleteRule/$', deleteRule),
     url(r'^regularization/interface/getNextEntity/$', getNextEntity),
     url(r'^regularization/interface/getPreviousEntity/$', getPreviousEntity),
+
+    #testing urls
+    url(r'^regularization/interface/getEntityApi/$', getEntityApi),
 )
 
 # if settings.DEBUG:

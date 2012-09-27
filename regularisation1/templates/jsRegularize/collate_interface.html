@@ -68,118 +68,118 @@ function load()
     });
 }
 
-function getTokensWitnesses(isNext)
-{
-  document.getElementById("title_label").innerHTML = lineNumber;
-  
-  if(isNext)
-  {
-    $.ajax({
-          url: "http://127.0.0.1:8000/regularization/interface/getNextEntity/",
-          dataType: 'json',
-          async: false,
-          success: function(jdata){
-            // save the tokens to a global variable
-            allTokens = jdata;
-            console.log(allTokens);
-            origTokens = jdata;
-            //alert("load: " + origTokens.alignment[0].tokens[0].t);
-
-            for(var i in allTokens.alignment)
-            {
-              for(var j in allTokens.alignment[i].tokens)
-              {
-                 if(allTokens.alignment[i].tokens[j] != null)
-                 {
-                   allTokens.alignment[i].tokens[j].origToken = '';
-                   allTokens.alignment[i].tokens[j].reg_to = '';
-                   //allTokens.alignment[i].tokens[j].t.splice(0,0,{origToken: ''});
-                 }
-              }
-            }
-
-            //console.log(allTokens);
-
-            totalPos = -1;
-
-            // find how many positions are in tokens
-            var index = 0;
-            var found = false;
-            while(!found)
-            {
-             if(allTokens.alignment[index] != undefined && allTokens.alignment[index] != null)
-             {
-               found = true;
-             }
-             else
-             {
-               index++;
-             }
-            }
-
-            for (var i in allTokens.alignment[0].tokens)
-            {
-               totalPos++;
-            }
-
-            // put distinct tokens at position 0 into interface
-            currentPosition = 0;
-            regularize(newRules);
-          }});
-  }
-  else
-  {
-    $.ajax({
-          url: "http://127.0.0.1:8000/regularization/interface/getPreviousEntity/",
-          dataType: 'json',
-          async: false,
-          success: function(jdata){
-            // save the tokens to a global variable
-            allTokens = jdata;
-            origTokens = jdata;
-            //alert("load: " + origTokens.alignment[0].tokens[0].t);
-
-            for(var i in allTokens.alignment)
-            {
-              for(var j in allTokens.alignment[i].tokens)
-              {
-                 if(allTokens.alignment[i].tokens[j] != null)
-                 {
-                   allTokens.alignment[i].tokens[j].origToken = '';
-                   allTokens.alignment[i].tokens[j].reg_to = '';
-                   //allTokens.alignment[i].tokens[j].t.splice(0,0,{origToken: ''});
-                 }
-              }
-            }
-
-            //console.log(allTokens);
-
-            totalPos = -1;
-
-            // find how many positions are in tokens
-            for (var i in allTokens.alignment[0].tokens)
-            {
-               totalPos++;
-            }
-
-            // put distinct tokens at position 0 into interface
-            currentPosition = 0;
-            regularize(newRules);
-          }});
-  
-  }
-  
-
-  $.ajax({
-    	url: "http://127.0.0.1:8000/regularization/interface/getBaseWitnesses/",
-    	dataType: 'json',
-    	async: false,
-    	success: function(jdata){
-    		allWitnesses = jdata;
-    	
-    	}});
-
-}
+//function getTokensWitnesses(isNext)
+//{
+//  document.getElementById("title_label").innerHTML = lineNumber;
+//  
+//  if(isNext)
+//  {
+//    $.ajax({
+//          url: "http://127.0.0.1:8000/regularization/interface/getNextEntity/",
+//          dataType: 'json',
+//          async: false,
+//          success: function(jdata){
+//            // save the tokens to a global variable
+//            allTokens = jdata;
+//            console.log(allTokens);
+//            origTokens = jdata;
+//            //alert("load: " + origTokens.alignment[0].tokens[0].t);
+//
+//            for(var i in allTokens.alignment)
+//            {
+//              for(var j in allTokens.alignment[i].tokens)
+//              {
+//                 if(allTokens.alignment[i].tokens[j] != null)
+//                 {
+//                   allTokens.alignment[i].tokens[j].origToken = '';
+//                   allTokens.alignment[i].tokens[j].reg_to = '';
+//                   //allTokens.alignment[i].tokens[j].t.splice(0,0,{origToken: ''});
+//                 }
+//              }
+//            }
+//
+//            //console.log(allTokens);
+//
+//            totalPos = -1;
+//
+//            // find how many positions are in tokens
+//            var index = 0;
+//            var found = false;
+//            while(!found)
+//            {
+//             if(allTokens.alignment[index] != undefined && allTokens.alignment[index] != null)
+//             {
+//               found = true;
+//             }
+//             else
+//             {
+//               index++;
+//             }
+//            }
+//
+//            for (var i in allTokens.alignment[0].tokens)
+//            {
+//               totalPos++;
+//            }
+//
+//            // put distinct tokens at position 0 into interface
+//            currentPosition = 0;
+//            regularize(newRules);
+//          }});
+//  }
+//  else
+//  {
+//    $.ajax({
+//          url: "http://127.0.0.1:8000/regularization/interface/getPreviousEntity/",
+//          dataType: 'json',
+//          async: false,
+//          success: function(jdata){
+//            // save the tokens to a global variable
+//            allTokens = jdata;
+//            origTokens = jdata;
+//            //alert("load: " + origTokens.alignment[0].tokens[0].t);
+//
+//            for(var i in allTokens.alignment)
+//            {
+//              for(var j in allTokens.alignment[i].tokens)
+//              {
+//                 if(allTokens.alignment[i].tokens[j] != null)
+//                 {
+//                   allTokens.alignment[i].tokens[j].origToken = '';
+//                   allTokens.alignment[i].tokens[j].reg_to = '';
+//                   //allTokens.alignment[i].tokens[j].t.splice(0,0,{origToken: ''});
+//                 }
+//              }
+//            }
+//
+//            //console.log(allTokens);
+//
+//            totalPos = -1;
+//
+//            // find how many positions are in tokens
+//            for (var i in allTokens.alignment[0].tokens)
+//            {
+//               totalPos++;
+//            }
+//
+//            // put distinct tokens at position 0 into interface
+//            currentPosition = 0;
+//            regularize(newRules);
+//          }});
+//  
+//  }
+//  
+//
+//  $.ajax({
+//    	url: "http://127.0.0.1:8000/regularization/interface/getBaseWitnesses/",
+//    	dataType: 'json',
+//    	async: false,
+//    	success: function(jdata){
+//    		allWitnesses = jdata;
+//    	
+//    	}});
+//
+//}
 
 function nextToken()
 {

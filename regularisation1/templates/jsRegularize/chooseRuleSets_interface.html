@@ -1,0 +1,47 @@
+<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML//EN">
+<html> <head>
+<title>Choose Rule Sets</title>
+<script src="http://code.jquery.com/jquery-1.7.2.min.js"></script>
+<script type="text/javascript">
+  var allWitnesses;
+  var userName = "{{ userName }}";
+  var urn = "{{ urn }}";
+  var witnessData = (("{{ witnesses}}")).replace(/&(l|g|quo)t;/g, function(a,b)
+  {
+    return {
+      l : '<',
+      g : '>',
+      quo : '"'
+    }[b];
+  });
+  
+  function load()
+  { 
+    allWitnesses = { witnesses: [] };
+    witnessData = witnessData.replace(/u'/g, '\'');
+    witnessData = witnessData.replace(/'/g, '\"');
+    witnessData = JSON.parse(witnessData);
+  }
+  
+  function create()
+  {
+    $.ajax({
+    url: "http://127.0.0.1:8000/regularization/postSelectedWitnesses/",
+    dataType: 'json',
+    type: 'POST',
+    async: false,
+    data: JSON.stringify(newWitnesses),
+    success: function(data){
+    }});
+  
+    window.location.href = "http://127.0.0.1:8000/regularization/chooseRuleSetsInterface/";
+  }
+</script>
+</head>
+
+<body onload="load()">
+<h1>Choose Rule Sets</h1>
+
+<input name="create" type="button" value="Create New" onclick="create()">
+
+</body> </html>

@@ -1,0 +1,124 @@
+<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML//EN">
+<html> <head>
+<title>Choose Texts for Collation</title>
+<script type ="text/javascript" src="{{ STATIC_URL }}js/jquery.js"></script>
+<script type="text/javascript">
+  
+  var selectedIds;
+  var userName = "{{ userName }}";
+  var urn = "{{ urn }}";
+  var witnessData = (("{{ witnesses}}")).replace(/&(l|g|quo)t;/g, function(a,b)
+  {
+    return {
+      l : '<',
+      g : '>',
+      quo : '"'
+    }[b];
+  });
+  
+  function load()
+  {
+    selectedIds = [];
+    
+    witnessData = witnessData.replace(/u'/g, '\'');
+    witnessData = witnessData.replace(/'/g, '\"');
+    witnessData = JSON.parse(witnessData);
+    
+    witnessList = document.getElementById("witnessList");
+    var option = document.createElement("option");
+    option.text = "All";
+    witnessList.options.add(option);
+    
+    for(var i in witnessData.witnesses)
+    {
+      option = document.createElement("option");
+      option.text = witnessData.witnesses[i].id;
+      witnessList.options.add(option);
+    }
+  }
+  
+  function add()
+  {
+    id = document.getElementById("witnessList").value;
+    
+    if(id == "All")
+    {
+      done(true);
+    }
+    else
+    {
+      var found = false;
+      for (var i in selectedIds)
+      {
+        if(selectedIds[i] == id)
+        {
+          found = true;
+        }
+      }
+      
+      if(!found)
+      {
+        selectedIds.push(id);
+        var label = document.getElementById("list_label").innerHTML;
+        document.getElementById("list_label").innerHTML += id + " ";
+        
+      }
+    }
+    
+  }
+  
+  function done(isAll)
+  {
+    
+    var newWitnesses = { witnesses: [] };
+    var id = document.getElementById("witnessList").value;
+    
+    if(isAll && id == "All")
+    {
+      newWitnesses = witnessData;
+    }
+    else
+    {
+      for(var i in witnessData.witnesses)
+      {
+        for(var j in selectedIds)
+        {
+          if(witnessData.witnesses[i].id == selectedIds[j])
+          {
+            newWitnesses.witnesses.push(witnessData.witnesses[i]);
+          }
+        }
+      }
+    }
+    
+    newWitnesses.urn = urn;
+    newWitnesses.userName = userName;
+     
+     $.ajax({
+    url: "http://127.0.0.1:8000/regularization/postSelectedWitnesses/",
+    dataType: 'json',
+    type: 'POST',
+    async: false,
+    data: JSON.stringify(newWitnesses),
+    success: function(data){
+    }});
+  
+    window.location.href = "http://127.0.0.1:8000/regularization/chooseRuleSetsInterface/";  
+  }
+  
+</script>
+</head>
+
+<body onload="load()">
+<h1>Choose Texts for Collation</h1>
+<select id="witnessList">
+</select>
+<br/>
+<label id="list_label">Witnesses Selected: </label>
+<br/>
+<input name="add" type="button" value="Add" onclick="add()">
+<input name="done" type="button" value="Done" onclick="done(false)">
+
+
+
+</body> </html>
