@@ -3,16 +3,17 @@ from django.conf.urls import patterns, include, url
 #from input.views import regularization, change, show_original
 # from birmingham.views import pickText
 # from sampleJSON.views import collate, regularize, getWitnesses, getTokens
-from jsRegularize.views import getBaseWitnesses, getBaseTokens, loadInterface
-from jsRegularize.views import saveRules, getRules, recollate, saveRegWitnesses
-from jsRegularize.views import loadViewReg, getRegWitnesses, loadInformationWindow
-from jsRegularize.views import saveInformationWindow, getInformationWindow, changeRule
-from jsRegularize.views import deleteRule, getNextEntity, getPreviousEntity
-from jsRegularize.views import getEntityApi
+# from jsRegularize.views import getBaseWitnesses, getBaseTokens, loadInterface
+# from jsRegularize.views import saveRules, getRules, recollate, saveRegWitnesses
+# from jsRegularize.views import loadViewReg, getRegWitnesses, loadInformationWindow
+# from jsRegularize.views import saveInformationWindow, getInformationWindow, changeRule
+# from jsRegularize.views import deleteRule, getNextEntity, getPreviousEntity
+# from jsRegularize.views import getEntityApi
 
 
 from jsRegularize.views import regularization, postSelectedWitnesses, chooseRuleSetsInterface
-
+from jsRegularize.views import postSelectedRuleSets, loadRegularizationInterface
+from jsRegularize.views import postNewRule, postEntireReg, viewEntireReg
 
 
 from django.conf import settings
@@ -32,44 +33,37 @@ urlpatterns = patterns('',
     # Uncomment the next line to enable the admin:
     # url(r'^admin/', include(admin.site.urls)),
 
-    # url(r'^regularization/$', regularization),
-    # url(r'^regularization/change/(?P<pos>\d{3})/$', change, name='change'),
-    # url(r'^regularization/show/$', show_original),
-    
-    # url(r'^regularization/bible/(?P<chapter>\d)/(?P<verse>\d{2})/$', pickText),
-    
-    # url(r'^regularization/sample/$', collate),
-    # url(r'^regularization/sample/regularize/(?P<pos>\d{3})/$', regularize, name='change'),
-    # url(r'^regularization/sample/getWitnesses/$', getWitnesses),
-    # url(r'^regularization/sample/getTokens/$', getTokens),
-
     url(r'^regularization/$', regularization),
-    #url(r'^regularization/postSelectedWitnesses/(?P<data>json)$', postSelectedWitnesses),
     url(r'^regularization/postSelectedWitnesses/$', postSelectedWitnesses),
     url(r'^regularization/chooseRuleSetsInterface/$', chooseRuleSetsInterface),
+    url(r'^regularization/postSelectedRuleSets/$', postSelectedRuleSets),
+    url(r'^regularization/loadRegularizationInterface/$', loadRegularizationInterface),
+    url(r'^regularization/postNewRule/$', postNewRule),
+    url(r'^regularization/postEntireReg/$', postEntireReg),
+    url(r'^regularization/viewEntireReg/$', viewEntireReg),
 
 
     
-    url(r'^regularization/interface/getBaseWitnesses/$', getBaseWitnesses),
-    url(r'^regularization/interface/getBaseTokens/$', getBaseTokens),
-    url(r'^regularization/interface/$', loadInterface),
+    # url(r'^regularization/interface/getBaseWitnesses/$', getBaseWitnesses),
+    # url(r'^regularization/interface/getBaseTokens/$', getBaseTokens),
+    # url(r'^regularization/interface/$', loadInterface),
 
-    url(r'^regularization/interface/saveRules/$', saveRules),
-    url(r'^regularization/interface/getRules/$', getRules),
-    url(r'^regularization/interface/recollate/$', recollate),
-    url(r'^regularization/interface/saveRegWitnesses/$', saveRegWitnesses),
-    url(r'^regularization/interface/view/$', loadViewReg),
-    url(r'^regularization/interface/getRegWitnesses/$', getRegWitnesses),
-    url(r'^regularization/interface/informationWindow/$', loadInformationWindow),
-    url(r'^regularization/interface/saveInformationWindow/$', saveInformationWindow),
-    url(r'^regularization/interface/getInformationWindow/$', getInformationWindow),
-    url(r'^regularization/interface/changeRule/$', changeRule),
-    url(r'^regularization/interface/deleteRule/$', deleteRule),
-    url(r'^regularization/interface/getNextEntity/$', getNextEntity),
-    url(r'^regularization/interface/getPreviousEntity/$', getPreviousEntity),
+    # url(r'^regularization/interface/saveRules/$', saveRules),
+    # url(r'^regularization/interface/getRules/$', getRules),
+    # url(r'^regularization/interface/recollate/$', recollate),
+    # url(r'^regularization/interface/saveRegWitnesses/$', saveRegWitnesses),
+    # url(r'^regularization/interface/view/$', loadViewReg),
+    # url(r'^regularization/interface/getRegWitnesses/$', getRegWitnesses),
+    # url(r'^regularization/interface/informationWindow/$', loadInformationWindow),
+    # url(r'^regularization/interface/saveInformationWindow/$', saveInformationWindow),
+    # url(r'^regularization/interface/getInformationWindow/$', getInformationWindow),
+    # url(r'^regularization/interface/changeRule/$', changeRule),
+    # url(r'^regularization/interface/deleteRule/$', deleteRule),
+    # url(r'^regularization/interface/getNextEntity/$', getNextEntity),
+    # url(r'^regularization/interface/getPreviousEntity/$', getPreviousEntity),
 
-    #testing urls
-    url(r'^regularization/interface/getEntityApi/$', getEntityApi),
+    # #testing urls
+    # url(r'^regularization/interface/getEntityApi/$', getEntityApi),
 )
 
 # if settings.DEBUG:

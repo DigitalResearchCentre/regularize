@@ -3,7 +3,6 @@
 <title>Choose Rule Sets</title>
 <script src="http://code.jquery.com/jquery-1.7.2.min.js"></script>
 <script type="text/javascript">
-  var allWitnesses;
   var userName = "{{ userName }}";
   var urn = "{{ urn }}";
   var witnessData = (("{{ witnesses}}")).replace(/&(l|g|quo)t;/g, function(a,b)
@@ -14,27 +13,116 @@
       quo : '"'
     }[b];
   });
+  var ruleSetData = (("{{ ruleSetData }}")).replace(/&(l|g|quo)t;/g, function(a,b)
+  {
+    return {
+      l : '<',
+      g : '>',
+      quo : '"'
+    }[b];
+  });
   
   function load()
   { 
-    allWitnesses = { witnesses: [] };
     witnessData = witnessData.replace(/u'/g, '\'');
     witnessData = witnessData.replace(/'/g, '\"');
     witnessData = JSON.parse(witnessData);
+    
+    ruleSetData = ruleSetData.replace(/u'/g, '\'');
+    ruleSetData = ruleSetData.replace(/'/g, '\"');
+    ruleSetData = JSON.parse(ruleSetData);
+    
+    loadTables();
+    
+  }
+  
+  function loadTables()
+  {
+    var number = 0;
+    var html = '';
+    
+    for(var i in ruleSetData.ruleSets)
+    {
+      html += createTable(ruleSetData.ruleSets[i], number);
+      number++;
+    }
+    
+    document.getElementById("wrapper").innerHTML = html;
+    
+  }
+  
+  function createTable(ruleSet, number)
+  {
+    var theader = '<table border="1">';
+    var tbody = '';
+    var tfooter = '</table>';
+    var selectButton = '<input type="button" value = "Select" onclick="chooseRuleSet('+number+')"/><br/>';
+    
+    tbody += '<font color="#A52A2A"><tr><td> RULE SET: </td> <td> Name: </td> <td> Applies To: </td> <td> Owner </td><td></td><td></td>';
+    tbody += '<tr> <td> </td> <td>' +  ruleSet.name + ' </td> <td>' + ruleSet.appliesTo + '</td> <td>';
+    tbody += ruleSet.userId + ' </td> <td></td><td></td></tr></font>';
+    tbody += '<tr> </tr><tr><td></td><td> RULES: </td> <td> Applies To: </td> <td> Action: </td>'
+    tbody += '<td> Scope: </td> <td> Token: </td> </tr>';
+    
+    var ruleNumber = 1;
+    for (var i in ruleSet.rules)
+    {
+      tbody += '<tr> <td></td><td>Rule #' + ruleNumber +'</td><td>' + ruleSet.rules[i].appliesTo + '</td><td>' + ruleSet.rules[i].action;
+      tbody += '</td><td>' + ruleSet.rules[i].scope + '</td><td>' + ruleSet.rules[i].token + '</td></tr>';
+      tbody += '<tr> <td></td><td></td><td> MODIFICATIONS: </td> <td> Type: </td> <td> Owner </td> <td> Timestamp: </td></tr>';
+      
+      for (var j in ruleSet.rules[i].modifications)
+      {
+        tbody += '<tr><td></td><td></td><td></td><td>' + ruleSet.rules[i].modifications[j].modification_type;
+        tbody += '</td><td>' + ruleSet.rules[i].modifications[j].userId + '</td><td>';
+        tbody += ruleSet.rules[i].modifications[j].dateTime + '</td></tr>';
+      }
+      ruleNumber++;
+    }
+    
+    return theader + tbody + tfooter + selectButton;
+  }
+  
+  function chooseRuleSet(number)
+  {
+    ruleSet = ruleSetData.ruleSets[number];
+    witnessData.ruleSetName = ruleSet.name;
+    witnessData.ruleSet = ruleSet;
+    sendJSON();
   }
   
   function create()
   {
-    $.ajax({
-    url: "http://127.0.0.1:8000/regularization/postSelectedWitnesses/",
-    dataType: 'json',
-    type: 'POST',
-    async: false,
-    data: JSON.stringify(newWitnesses),
-    success: function(data){
-    }});
+    if(document.getElementById("name").value == "")
+    {
+      alert("Please enter a name!");
+    }
+    else
+    {
+      
+      witnessData.ruleSetName = document.getElementById("name").value;
+      witnessData.ruleSet = [];
+      sendJSON();
+    }
+  }
   
-    window.location.href = "http://127.0.0.1:8000/regularization/chooseRuleSetsInterface/";
+  function sendJSON()
+  {
+    witnessData.userName = userName;
+    witnessData.urn = urn;
+    
+    console.log(witnessData);
+    
+    $.ajax({
+      url: "http://127.0.0.1:8000/regularization/postSelectedRuleSets/",
+      dataType: 'json',
+      type: 'POST',
+      async: false,
+      data: JSON.stringify(witnessData),
+      success: function(data){
+      }});
+
+    window.location.href = "http://127.0.0.1:8000/regularization/loadRegularizationInterface/";
   }
 </script>
 </head>
@@ -42,6 +130,9 @@
 <body onload="load()">
 <h1>Choose Rule Sets</h1>
 
-<input name="create" type="button" value="Create New" onclick="create()">
+<div id="wrapper"></div><br/><br/>
+
+Name: <input name="name" type="text" id="name" value="MI:MI:IR">
+<br/><input name="create" type="button" value="Create New" onclick="create()">
 
 </body> </html>
