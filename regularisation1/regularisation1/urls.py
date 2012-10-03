@@ -14,6 +14,7 @@ from django.conf.urls import patterns, include, url
 from jsRegularize.views import regularization, postSelectedWitnesses, chooseRuleSetsInterface
 from jsRegularize.views import postSelectedRuleSets, loadRegularizationInterface
 from jsRegularize.views import postNewRule, postEntireReg, viewEntireReg
+from jsRegularize.views import reloadRegularizationInterface
 
 
 from django.conf import settings
@@ -41,6 +42,7 @@ urlpatterns = patterns('',
     url(r'^regularization/postNewRule/$', postNewRule),
     url(r'^regularization/postEntireReg/$', postEntireReg),
     url(r'^regularization/viewEntireReg/$', viewEntireReg),
+    url(r'^regularization/reloadRegularizationInterface/$', reloadRegularizationInterface),
 
 
     

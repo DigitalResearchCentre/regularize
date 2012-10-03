@@ -37,7 +37,7 @@ var newRules;
 var contextStruct;
 var allTokens;
 var totalPos;
-var currentPosition;
+var currentPosition = "{{ position }}";
 var regOn;
 var iTimeoutId = null;
 var allRules;
@@ -106,7 +106,6 @@ function load()
       addRule();
     });
     
-  currentPosition = 0;
   allTokens = witnessDataTokens;
   origTokens = witnessDataTokens;
   allWitnesses = witnessDataLines;
@@ -319,14 +318,24 @@ function findWord(pos, content)
   var token = content.substr(startPos, length);
   token = token.split(" ");
   token = token.join("");
+  var origToken = token;
+  token = token.split("(")[0];
 
   var notToken = false;
+  var isId = false;
   for(var i in allWitnesses.witnesses)
   {
     if(token == allWitnesses.witnesses[i].id)
     {
       informationWindow(allWitnesses.witnesses[i].id);
+      isId = true;
+      token = "isId";
     }
+  }
+  
+  if(!isId)
+  {
+    token = origToken;
   }
 
   if(token == "///" || token == "" || token == "null")
@@ -359,7 +368,7 @@ function selectToken()
     {
       alert("Invalid selection");
     }
-    else
+    else if(token != "isId")
     {
       document.regularization.reg_this.value = token;
       reg_thisBox = token;
@@ -784,81 +793,8 @@ function regularize_onoff()
        newRules = { rules: [] };
        regularize(newRules);
      }
-     
-//     $.ajax({
-//    url: "http://127.0.0.1:8000/regularization/interface/getBaseTokens/",
-//    dataType: 'json',
-//    async: false,
-//    success: function(data){
-//    	//alert("success");
-//    	origTokens = data;
-//    	
-//    	allTokens = origTokens;
-//        
-//        regularize({rules:[]});
-        
-        //console.log(allTokens);
-    	
-//    	if(isCustomRules)
-//    	{
-//    	  regularize(customRules);
-//    	}
-//    	else
-//    	{
-//          newRules = { rules: []};
-//    	  regularize(newRules);
-//    	}
-    
-//    }});
-     
-       
-//     $.getJSON("http://127.0.0.1:8000/regularization/interface/getBaseTokens/",
-//function(jdata) {
-//        origTokens = jdata;
-//        
-//        allTokens = origTokens;
-//        regularize(newRules);
-//
-//      })
-//      .error(function () {alert("error: getBaseTokens2");});
   }
 }
-
-//function getRules()
-//{
-//
-//  // all rules should be in db
-//  // if want to see new rules added without
-//  newRules = { rules: [] };
-//  var regRules = { rules: [] };
-//  
-//  $.getJSON("http://127.0.0.1:8000/regularization/interface/getRules/",
-//function(jdata) {
-//
-//  allRules = jdata;
-//
-//  document.regularization.reg_this.value = "";
-//  //document.regularization.reg_to.value = "";
-//
-//
-//  loadRegTable();
-//  
-//  if(isCustomRules)
-//  {
-//      regRules = customRules;
-//      ///alert("isCustom: getRules");
-//  }
-//  else
-//  {
-//      regRules = allRules;
-//  }
-//  
-//  regularize(regRules);
-//  //alert("success");
-//})
-//.error(function() { alert("error: getRules"); });
-//
-//}
 
 function regularize(regRules)
 {
@@ -1534,6 +1470,13 @@ function seeWitnesses()
 {
 
   newWitnesses = buildWitnesses();
+  newWitnesses.userName = userName;
+  newWitnesses.urn = urn;
+  newWitnesses.ruleSetName = ruleSetName;
+  newWitnesses.witnessesTokens = witnessDataTokens;
+  newWitnesses.witnessesLines = witnessDataLines;
+  newWitnesses.ruleSet = ruleSet;
+  newWitnesses.position = currentPosition;
 
   $.ajax({
     url: "http://127.0.0.1:8000/regularization/postEntireReg/",
@@ -1861,21 +1804,14 @@ function informationWindow(witnessId)
     }
   }
   
-  $.ajax({
-    url: "http://127.0.0.1:8000/regularization/interface/getRules/",
-    dataType: 'json',
-    async: false,
-    success: function(jdata){
-
-    regRules = jdata;
-    
-    if(isCustomRules)
-    {
-      regRules = customRules;
-    }
-
-  }});
-  
+  if(isCustomRules)
+  {
+    regRules = customRules;
+  }
+  else
+  {
+    regRules = allRules;
+  }
   
   var reg_this = "";
   var reg_to = "";

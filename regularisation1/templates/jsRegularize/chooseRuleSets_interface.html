@@ -33,7 +33,6 @@
     ruleSetData = JSON.parse(ruleSetData);
     
     loadTables();
-    
   }
   
   function loadTables()
@@ -55,7 +54,7 @@
   {
     var theader = '<table border="1">';
     var tbody = '';
-    var tfooter = '</table>';
+    var tfooter = '</table><br/>';
     var selectButton = '<input type="button" value = "Select" onclick="chooseRuleSet('+number+')"/><br/>';
     
     tbody += '<font color="#A52A2A"><tr><td> RULE SET: </td> <td> Name: </td> <td> Applies To: </td> <td> Owner </td><td></td><td></td>';
@@ -111,8 +110,6 @@
     witnessData.userName = userName;
     witnessData.urn = urn;
     
-    console.log(witnessData);
-    
     $.ajax({
       url: "http://127.0.0.1:8000/regularization/postSelectedRuleSets/",
       dataType: 'json',
@@ -130,7 +127,7 @@
 <body onload="load()">
 <h1>Choose Rule Sets</h1>
 
-<div id="wrapper"></div><br/><br/>
+<div id="wrapper"></div><br/>
 
 Name: <input name="name" type="text" id="name" value="MI:MI:IR">
 <br/><input name="create" type="button" value="Create New" onclick="create()">

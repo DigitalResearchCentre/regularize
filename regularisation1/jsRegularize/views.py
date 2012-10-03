@@ -206,7 +206,7 @@ def loadRegularizationInterface(request):
         send = httplib2.Http()
         response, content = send.request(urlCollation, 'POST', witnesses, headers)
         
-        return render_to_response('jsRegularize/collate_interface.html', {"userName" : userName, "urn" : urn, "witnessesTokens" : content, "witnessesLines": witnesses, "ruleSetName": ruleSetName, "ruleSet": ruleSet}, context_instance=RequestContext(request))
+        return render_to_response('jsRegularize/collate_interface.html', {"userName" : userName, "urn" : urn, "witnessesTokens" : content, "witnessesLines": witnesses, "ruleSetName": ruleSetName, "ruleSet": ruleSet, "position": 0}, context_instance=RequestContext(request))
 
 @csrf_exempt
 def postNewRule(request):
@@ -252,7 +252,6 @@ def postNewRule(request):
                     print "error: filteredModifications OR filteredRules"
             else:
                 print "error: filteredRuleSet"
-               
                 
     return HttpResponse("OK")
 
@@ -267,10 +266,24 @@ def postEntireReg(request):
 def viewEntireReg(request):
     if request.session.get('entireReg'):
         jdata = request.session.pop('entireReg')
-        #jdata = json.loads(jdata)
-        print jdata
+        #print jdata
 
     return render_to_response('jsRegularize/view_reg.html', {"witnesses": jdata}, context_instance=RequestContext(request))
+
+def reloadRegularizationInterface(request):
+    if request.session.get('entireReg'):
+        jdata = request.session.pop('entireReg')
+        jdata = json.loads(jdata)
+        userName = jdata['userName']
+        urn = jdata['urn']
+        ruleSetName = jdata['ruleSetName']
+        position = jdata['position']
+        ruleSet = json.dumps({'ruleSet': jdata['ruleSet']})
+        witnesses = json.dumps({'witnesses': jdata['witnesses'][0]})
+        content = json.dumps(jdata['witnessesTokens'])
+
+    return render_to_response('jsRegularize/collate_interface.html', {"userName" : userName, "urn" : urn, "witnessesTokens" : content, "witnessesLines": witnesses, "ruleSetName": ruleSetName, "ruleSet": ruleSet, "position": position}, context_instance=RequestContext(request))
+    
 
 def getTestData():
     contentEl = 'Heere bigynneth the Miller; his tale'
