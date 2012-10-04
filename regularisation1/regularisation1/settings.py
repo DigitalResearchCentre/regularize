@@ -83,10 +83,6 @@ INSTALLED_APPS = (
     'django.contrib.sites',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'input',
-    'django_tables2',
-    'birmingham',
-    'sampleJSON',
     'jsRegularize',
     # Uncomment the next line to enable the admin:
     # 'django.contrib.admin',
