@@ -1,29 +1,14 @@
 SETUP:
  - need postgresql server running locally
- - python manage.py syncdb <- create db tables
+ - python manage.py syncdb 
  - python manage.py runserver
 
  - need collatex engine running locally
- - OR change:
-   - input.views line 18 and 99 
-   - birmingham.views line 170
-   - to: http://gregor.middell.net/collatex/api/collate
+ - OR change to: http://gregor.middell.net/collatex/api/collate
 
  - Python modules:
    - httplib2
    - jsonpickle
-   - django_tables2
-   - 
 
 urls:
-
-Birmingham bible texts:
-http://127.0.0.1:8000/regularization/bible/0/00/
-
-Collation/Regularization:
 http://127.0.0.1:8000/regularization/
-
-http://127.0.0.1:8000/regularization/sample/
-
-Javascript Interface:
-http://127.0.0.1:8000/regularization/interface/
