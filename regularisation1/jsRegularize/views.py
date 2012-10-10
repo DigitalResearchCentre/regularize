@@ -160,14 +160,14 @@ def chooseRuleSetsInterface(request):
                         jdata = jdata + '"modification_type": ' + \
                             jsonpickle.encode(m.modification_type) + ','
                         jdata = jdata + '"dateTime": ' + jsonpickle.encode(m.dateTime) + '}'
-                        modificationNum = modificationNum = 0
+                        modificationNum = modificationNum + 1
                     jdata = jdata + ']}'
                     ruleNum = ruleNum + 1
                 jdata = jdata + ']}'
             ruleSetNum = ruleSetNum + 1
 
         jdata = jdata + ']}'
-        print jdata
+        #print jdata
         
         return render_to_response('jsRegularize/chooseRuleSets_interface.html', {"userName" : userName, "urn" : urn, "witnesses" : witnesses, "ruleSetData": jdata}, context_instance=RequestContext(request))
 
@@ -283,7 +283,87 @@ def reloadRegularizationInterface(request):
         content = json.dumps(jdata['witnessesTokens'])
 
     return render_to_response('jsRegularize/collate_interface.html', {"userName" : userName, "urn" : urn, "witnessesTokens" : content, "witnessesLines": witnesses, "ruleSetName": ruleSetName, "ruleSet": ruleSet, "position": position}, context_instance=RequestContext(request))
-    
+
+@csrf_exempt
+def changeRules(request):
+    if request.is_ajax():
+       if request.method == 'POST':
+           jdata = json.loads(request.raw_post_data)
+           print jdata
+
+           filteredRuleSet = RuleSet.objects.filter(userId=jdata['userName']).filter(\
+                                appliesTo=jdata['urn']).filter(name=jdata['ruleSetName'])
+
+           if filteredRuleSet and filteredRuleSet.count() == 1:
+               for modification in jdata['rules']:
+                    found = False
+                    for rule in filteredRuleSet[0].rules.all():
+                        if (rule.appliesTo == jdata['urn'] and rule.action == \
+                            modification['action'] and rule.scope == modification['scope'] \
+                            and rule.token == modification['token']):
+                            found = True
+                            modifiedRule = rule
+                        
+                    if found:
+                        m = Modification()
+                        m.userId = jdata['userName']
+                        m.modification_type = modification['modifications'][-1]['modification_type']
+                        m.dateTime = modification['modifications'][-1]['dateTime']
+                        m.save()
+                        modifiedRule.modifications.add(m)
+                        
+                        modify = modification['modifications'][-1]['modification_type']
+                        print modify
+                        if modify != 'delete':
+                            modify = modify.split("modify(")
+                            modify = "".join(modify)
+                            modify = modify.split(")")
+                            modify = "".join(modify)
+                            modify = modify.split(",")
+                            modType = modify[0]
+                            modFrom = modify[1]
+                            modTo = modify[2]
+
+                            if(modType == 'scope'):
+                                modifiedRule.scope = modTo
+
+                            if(modType == 'reg_this'):
+                                modifiedRule.token = modTo
+                                regTo = modifedRule.action.split(",")[-1]
+                                regTo = "".join(regTo)
+                                regTo = regTo.split(")")[0]
+                                regTo = "".join(regTo)
+                                modifiedRule.action = "regularize(" + modTo + "," + regTo + ")";
+
+                            if(modType == 'reg_to'):
+                                regThis = modifieRule.action.split(",")[0]
+                                regThis = "".join(regThis)
+                                regThis = regThis.split("(")[-1]
+                                regThis = "".join(regThis)
+                                modifedRule.action = "regularize(" + regThis + "," + modTo + ")";
+                                
+                            modifiedRule.save()
+                        
+    return HttpResponse("OK")
+
+@csrf_exempt
+def postRecollate(request):
+    if request.is_ajax():
+       if request.method == 'POST':
+           request.session['recollate'] = request.raw_post_data
+
+    return HttpResponse("OK")
+
+def sendRecollate(request):
+    if request.session.get('recollate'):
+        jdata = request.session.pop('recollate')
+
+    url = 'http://127.0.0.1:8080/collatex-web-0.9.1-RC2/api/collate'
+    headers = {'Content-Type': 'application/json', 'Accept': 'application/json'}
+
+    send = httplib2.Http()
+    response, content = send.request(url, 'POST', jdata, headers)
+    return HttpResponse(content, mimetype="application/json")
 
 def getTestData():
     contentEl = 'Heere bigynneth the Miller; his tale'

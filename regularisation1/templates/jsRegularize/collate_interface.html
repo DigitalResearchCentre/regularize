@@ -67,7 +67,11 @@ function load()
   ruleSet = ruleSet.replace(/'/g, '\"');
   ruleSet = JSON.parse(ruleSet);
   
-  document.getElementById("title_label").innerHTML = urn;
+  var temp = urn.split("entity=")[1];
+  var entity = temp.split(":", 1)[0];
+  var line = temp.split("Line=")[1];
+  document.getElementById("title_label").innerHTML = "entity " + entity + ", line " + line;
+  
   document.information.style.visibility = "hidden";
   document.reg_information.style.visibility ="hidden";
   document.edit_reg.style.visibility = "hidden";
@@ -77,6 +81,7 @@ function load()
   lineNumber = 0;
   newRules = { rules: [] };
   customRules = { rules: [] };
+  console.log(ruleSet.ruleSet.rules);
   allRules = { rules: ruleSet.ruleSet.rules};
 
   contextStruct = { witnesses: [] };
@@ -270,7 +275,8 @@ function determineClick()
   }
   else
   {
-    window.clearTimeout(iTimeoutId);
+    //window.clearTimeout(iTimeoutId);
+    clearTimeout(iTimeoutId);
     iTimeoutId = null;
     selectNew();
   }
@@ -323,6 +329,7 @@ function findWord(pos, content)
 
   var notToken = false;
   var isId = false;
+  console.log(allWitnesses);
   for(var i in allWitnesses.witnesses)
   {
     if(token == allWitnesses.witnesses[i].id)
@@ -421,7 +428,7 @@ function addRule()
 
   if (reg_word != "" && reg_to != "")
   {
-    if(choice == "this_word")
+    if(choice == "this_place")
     {
       for (var i in distinct.witnesses)
       {
@@ -475,7 +482,7 @@ function addRule()
   
   if(regOn)
   {
-    if(choice != "this_word")
+    if(choice != "this_place")
     {
       insertRegTable(choice, reg_thisWhole, reg_toWhole);
     }
@@ -497,7 +504,6 @@ function addRule()
 
 function addRuleList(newRule)
 { 
-  console.log(newRule);
   sendRule(newRule);
   
   if(isCustomRules)
@@ -517,6 +523,7 @@ function addRuleList(newRule)
   }
   else
   {
+    allRules.rules.push(newRule);
     newRules.rules.push(newRule);
     regularize(newRules);
   }
@@ -529,9 +536,6 @@ function addRuleList(newRule)
  */
 function getContext(id, index)
 { 
-  //alert("getContext");
-  
-  //console.log(contextStruct);
   
   var needMoreContext = false;
   var context = "";
@@ -551,7 +555,6 @@ function getContext(id, index)
     }
   }
   var re = new RegExp(context, 'g');
-  //alert(re);
   
   // find if the context matches any witnesses
   // if it matches any witnesses that are not to be 
@@ -575,7 +578,6 @@ function getContext(id, index)
           if(result.length > 1)
           {
             needMoreContext = true;
-            //alert(allWitnesses.witnesses[i].id + ": found token match");
           }
         }
       }
@@ -583,7 +585,6 @@ function getContext(id, index)
       if(!isId)
       {
         needMoreContext = true;
-        //alert(allWitnesses.witnesses[i].id + ": found witness match");
       }
     }
   }
@@ -599,12 +600,9 @@ function getContext(id, index)
     {
       return origContext;
     }
-    //alert("getMoreContext()");
-    //return context; // get rid of
   }
   else
   {
-    //alert("noMoreContextNeeded");
     return origContext;
   }
   
@@ -670,8 +668,6 @@ function getMoreContext(id, index, witnessIndex)
     }
   }
 
-  //console.log(contextStruct);
-
   return true;
 }
 
@@ -688,23 +684,11 @@ function sendRule(newRule)
        //alert("success");
      })
    .error(function () {alert("error: saveRules");})
-  
-  //alert("sendRule");
-//  var sendRules = {rules:[]};
-//  sendRules.rules.push(newRule);
-//
-//  $.post("http://127.0.0.1:8000/regularization/interface/saveRules/",
-//       JSON.stringify(sendRules), function(data){
-//       //alert("success");
-//     })
-//   .error(function () {alert("error: saveRules");});
 
 }
 
 function changeRegularizeLabel(choice, reg_thisWhole, reg_toWhole)
 {
-
-  //alert("changeRegularizeLabel");
   
   changeLabelTimer = null;
   
@@ -713,23 +697,21 @@ function changeRegularizeLabel(choice, reg_thisWhole, reg_toWhole)
   {
     scope = "all places in all witnesses.";
   }
-  else if (choice == "this_block")
+  else if (choice == "this_entity")
   {
-    scope = "all witnesses in this block.";
+    scope = "all witnesses in this entity.";
   }
   else
   {
-    scope = "all witnesses for this word.";
+    scope = "all witnesses for this place.";
   }
   
   var content = "REGULARIZED:: \"" + reg_thisWhole + "\" to \"" + reg_toWhole + "\" in " + scope + "</br>";
-  document.getElementById('regularize_label').innerHTML = content;
-  
-  //alert(content);
+  document.getElementById('newRegInfo').innerHTML = content;
   
   if (changeLabelTimer == null || !changeLabelTimer)
   {
-    changeLabelTimer = setTimeout(function() {document.getElementById('regularize_label').innerHTML = "Double click on the word you want regularized, single click or type in the word you want it regularized to.  Select combination of Witnesses and Place.  Click OK when finished.";}, 5000);
+    changeLabelTimer = setTimeout(function() {document.getElementById('newRegInfo').innerHTML = "";}, 5000);
   }
   
 }
@@ -753,14 +735,12 @@ function regularize_onoff()
        isRecollate = false;
      }
 
-     //getRules();
      loadRegTable();
   
      var regRules = { rules: []};
       if(isCustomRules)
       {
           regRules = customRules;
-          ///alert("isCustom: getRules");
       }
       else
       {
@@ -932,6 +912,10 @@ function regularize(regRules)
         for(var k in distinct.witnesses[i].originals[j].id)
         {
           content += " " + distinct.witnesses[i].originals[j].id[k];
+        }
+        if(isOriginals)
+        {
+          content += ",";
         }
       }
     }
@@ -1166,9 +1150,6 @@ shortcut = {
 
 function findNextVariant()
 {
-
-  //alert("Tab");
-
   var reg_to = document.regularization.reg_to.value;
 
   var position = currentPosition;
@@ -1197,7 +1178,6 @@ function findNextVariant()
   }
   else
   {
-     //alert("tokenSelected");
      reg_to = reg_to.split(" ", 1);
      var found = false;
      var foundVariant = false;
@@ -1208,7 +1188,6 @@ function findNextVariant()
 
        if (token == reg_to && !found)
        {
-         //alert(token);
          found = true;
        }
        else if (found && reg_to != token && !foundVariant)
@@ -1216,7 +1195,6 @@ function findNextVariant()
            foundVariant = true;
            variant = token;
            reg_thisBox = token;
-           //alert(variant);
        }
      }
      if(foundVariant)
@@ -1286,7 +1264,6 @@ function addTokenTo()
 
      for (var i in allTokens.alignment)
      {
-       //alert(allTokens.alignment[i].witness);
        var token = getToken(regRules, i, position);
         
         if(token == reg_this)
@@ -1298,11 +1275,9 @@ function addTokenTo()
           {
            	found = true;
            	newToken = rToken;
-           	//alert(newToken);
           }
           else if(found && rToken != newToken)
           {
-            //alert("here");
             add = false;
           }
          }
@@ -1375,7 +1350,6 @@ function addTokenThis()
 
      for (var i in allTokens.alignment)
      {
-       //alert(allTokens.alignment[i].witness);
        var token = getToken(regRules, i, position);
         
         
@@ -1388,11 +1362,9 @@ function addTokenThis()
           {
            	found = true;
            	newToken = rToken;
-           	//alert(newToken);
           }
           else if(found && rToken != newToken)
           {
-            //alert("here");
             add = false;
           }
          }
@@ -1413,34 +1385,17 @@ function buildWitnesses()
 {
   //alert("buildWitnesses");
   newWitnesses = { witnesses: [] };
-  var regRules = allRules;
+  var regRules;
+  if(isCustomRules)
+  {
+    regRules = customRules;
+  }
+  else
+  {
+    regRules = allRules;
+  }
   isBuildWitnesses = true;
   allTokens = origTokens;
-
-//  $.ajax({
-//    url: "http://127.0.0.1:8000/regularization/interface/getRules/",
-//    dataType: 'json',
-//    async: false,
-//    success: function(jdata){
-//
-//    regRules = jdata;
-//    
-//    if(isCustomRules)
-//    {
-//      regRules = customRules;
-//      $.ajax({
-//    	url: "http://127.0.0.1:8000/regularization/interface/getBaseTokens/",
-//    	dataType: 'json',
-//    	async: false,
-//    	success: function(jdata){
-//    		origTokens = jdata;
-//    		allTokens = origTokens;
-//    	
-//    	}});
-//      
-//    }
-//
-//  }});
 
   for (var i in allTokens.alignment)
   {
@@ -1492,24 +1447,26 @@ function seeWitnesses()
 }
 
 function recollate()
-{
-  //alert("recollate");
-  
+{  
   isRecollate = false;
   var newWitnesses = buildWitnesses();
   newWitnesses = JSON.stringify(newWitnesses);
   
-  console.log(allTokens);
-  console.log(newWitnesses);
-  
   $.ajax({
-    url: "http://127.0.0.1:8000/regularization/interface/recollate/",
+    url: "http://127.0.0.1:8000/regularization/postRecollate/",
     dataType: 'json',
     type: 'post',
     async: false,
     data: newWitnesses,
     success: function(data){
- 
+    }});
+  
+  
+  $.ajax({
+    url: "http://127.0.0.1:8000/regularization/sendRecollate/",
+    dataType: 'json',
+    async: false,
+    success: function(data){
       for(var i in data.alignment)
       {
         for(var j in data.alignment[i].tokens)
@@ -1536,12 +1493,6 @@ function recollate()
         totalPos++;
       }
       
-      $.getJSON("http://127.0.0.1:8000/regularization/interface/getBaseTokens/",
-function(jdata) {
-        origTokens = jdata;
-
-      })
-      .error(function () {alert("error: getBaseTokens2");});
  }});
 }
 
@@ -1578,8 +1529,6 @@ function getToken(regRules, witnessId, position)
    var token = "";
    var collate = false;
    var origToken = "";
-   //var wholeToToken = "";
-   //var nonRegToken = "";
   
    if(allTokens.alignment[witnessId].tokens[position] == null)
    {
@@ -1588,16 +1537,17 @@ function getToken(regRules, witnessId, position)
    else
    {
      token = allTokens.alignment[witnessId].tokens[position].t;
-     //nonRegToken = token;
    }
-   
-   //console.log(regRules);
 
    for (var k in regRules.rules)
    {
-     if (token == regRules.rules[k].token)
+     var modifications = regRules.rules[k].modifications;
+     if (modifications[modifications.length-1].modification_type == "delete")
      {
-        //alert(token);
+      isDisabled = true; 
+     }
+     else if (token == regRules.rules[k].token)
+     {
         action = regRules.rules[k].action;
         reg_this = action.split(',')[0];
         reg_this = reg_this.substring(11,reg_this.length);
@@ -1606,7 +1556,7 @@ function getToken(regRules, witnessId, position)
         wholeToToken = reg_to;
         choice = regRules.rules[k].scope;
         
-        if(choice == "this_word")
+        if(choice == "this_place")
         {
           var found = false;
           var reg_thisIndex = -1;
@@ -1626,7 +1576,6 @@ function getToken(regRules, witnessId, position)
           }
           origToken = reg_thisArray[0];
           reg_thisArray = reg_thisArray.join(" ");
-          //alert(reg_thisArray);
           
           found = false;
           var reg_thisArray2 = reg_this.split(" ");
@@ -1646,7 +1595,6 @@ function getToken(regRules, witnessId, position)
             reg_toArray.splice(0, reg_toIndex);
           }
           reg_toArray = reg_toArray.join(" ");
-          //alert(reg_toArray);
           
           reg_this = reg_thisArray;
           reg_to = reg_toArray;
@@ -1701,10 +1649,6 @@ function getToken(regRules, witnessId, position)
         else
         {
           token = reg_to;
-//          if(isRecollate)
-//          {
-//            token = nonRegToken;
-//          }
         }
         
         if(spacesTo != false && !isBuildWitnesses)
@@ -1747,9 +1691,7 @@ function getToken(regRules, witnessId, position)
                 position++;
               }
 
-              //console.log(allTokens);
               reg_to = reg_to.split(' ')[0];
-              //alert("reg_to: " + reg_to);
               collate = true;
               token = reg_to;
 
@@ -1758,7 +1700,6 @@ function getToken(regRules, witnessId, position)
         else if(spacesTo != false && isBuildWitnesses)
         {
           token = wholeToToken;
-          //alert(allTokens.alignment[witnessId].witness + " " + token);
         }
         else
         {
@@ -1785,7 +1726,6 @@ function getToken(regRules, witnessId, position)
 
 function informationWindow(witnessId)
 {
-  //alert("informationWindow");
   var regInfo = { data: [] };
   var context = "";
   var index = "";
@@ -1804,11 +1744,11 @@ function informationWindow(witnessId)
     }
   }
   
-  if(isCustomRules)
+  if(isCustomRules && regOn)
   {
     regRules = customRules;
   }
-  else
+  else if(regOn)
   {
     regRules = allRules;
   }
@@ -1863,11 +1803,11 @@ function informationWindow(witnessId)
   {
     choice = "all places in all witnesses";
   }
-  else if(choice == "this_block")
+  else if(choice == "this_entity")
   {
     choice = "this entity in all witnesses";
   }
-  else if(choice == "this_word")
+  else if(choice == "this_place")
   {
     choice = "this place in all witnesses";
   }
@@ -1894,6 +1834,11 @@ function loadRegTable()
   var regRules = { rules: [] };
   
   regRules = allRules;
+  
+//  for(var i in newRules.rules)
+//  {
+//    regRules.rules.push(newRules.rules[i]);
+//  }
 
   //delete everything out of reg_table
    var table = document.getElementById('reg_table');
@@ -1930,8 +1875,14 @@ function loadRegTable()
     reg_this = reg_this.substring(11,reg_this.length);
     reg_to = action.split(', ')[1];
     reg_to = reg_to.substring(0, reg_to.length-1);
+    var modifications = regRules.rules[i].modifications;
+    var isDisabled = false;
+    if (modifications[modifications.length-1].modification_type == "delete")
+    {
+      isDisabled = true; 
+    }
     
-    insertRegTable(scope, reg_this, reg_to);
+    insertRegTable(scope, reg_this, reg_to, isDisabled);
   	
   	rowCount++;
   }
@@ -1939,7 +1890,7 @@ function loadRegTable()
   document.edit_reg.style.visibility = "visible";
 }
 
-function insertRegTable(scope, reg_this, reg_to)
+function insertRegTable(scope, reg_this, reg_to, isDisabled)
 {
     if(reg_this == null)
     {
@@ -1967,7 +1918,6 @@ function insertRegTable(scope, reg_this, reg_to)
         reg_toRule = reg_toRule.substring(0, reg_toRule.length-1);
         var scopeRule = customRules.rules[i].scope;
 	  	
-	  	//alert(customScope + " " + scope + " " + reg_thisRule + " " + reg_this + " "+ reg_toRule + " " + reg_to);
         //TODO: add more when completed rules
         if(customScope == scope && reg_this == reg_thisRule && reg_to == reg_toRule)
         {
@@ -1988,12 +1938,20 @@ function insertRegTable(scope, reg_this, reg_to)
   	{
   	  element1.checked = "checked";
   	}
+        if(isDisabled)
+        {
+          element1.disabled = true;
+        }
   	checkCell.appendChild(element1);
   	
   	var scopeCell = row.insertCell(1);
   	var element2 = document.createElement("select");
   	var option1 = document.createElement("option");
   	option1.text = "All witnesses, this entity";
+        if(isDisabled)
+        {
+          element2.disabled = true;
+        }
   	element2.options.add(option1);
   	var option2 = document.createElement("option");
   	option2.text = "All witnesses, this place";
@@ -2005,7 +1963,7 @@ function insertRegTable(scope, reg_this, reg_to)
   	{
   	  element2.selectedIndex = 2; 
   	}
-  	else if (scope == "this_word")
+  	else if (scope == "this_place")
   	{
   	  element2.selectedIndex = 1;
   	}
@@ -2017,6 +1975,10 @@ function insertRegTable(scope, reg_this, reg_to)
   	element3.size = "40";
   	//regThisCell.innerHTML = reg_this;
   	element3.value = reg_this;
+        if(isDisabled)
+        {
+          element3.disabled = true;
+        }
   	regThisCell.appendChild(element3);
   	
   	var regToCell = row.insertCell(3);
@@ -2024,6 +1986,10 @@ function insertRegTable(scope, reg_this, reg_to)
   	element4.type = "text";
   	element4.size = "40";
   	element4.value = reg_to;
+        if(isDisabled)
+        {
+          element4.disabled = true;
+        }
   	regToCell.appendChild(element4);
   	
   	
@@ -2032,8 +1998,12 @@ function insertRegTable(scope, reg_this, reg_to)
   	var element5 = document.createElement("input");
   	element5.type = "checkbox";
   	//element5.checked = "checked";
+        if(isDisabled)
+        {
+          element5.disabled = true;
+        }
   	deleteCell.appendChild(element5);
-  	
+        
   	/*
 var deleteRegCell = row.insertCell(4);
   	var element5 = document.createElement("input");
@@ -2046,7 +2016,6 @@ var deleteRegCell = row.insertCell(4);
 
 function submitCustomReg()
 {
-  //alert("submitCustomReg");
   isCustomRules = true;  // ??!! <----
   var table = document.getElementById('reg_table');
   var rowCount = table.rows.length;
@@ -2054,9 +2023,12 @@ function submitCustomReg()
   customRules = { rules: [] };
   //first one is one to delete; second is new reg
   var sendRules = { rules: [] };
-  var deleteJSON = { rules: [] };
   
   var regRules = allRules;
+//  for(var i in newRules.rules)
+//  {
+//    regRules.rules.push(newRules.rules[i]);
+//  }
   //console.log(regRules);
   
   for(var i=1; i<rowCount; i++)
@@ -2069,13 +2041,13 @@ function submitCustomReg()
     var reg_this = row.cells[2].childNodes[0].value;
     var reg_to = row.cells[3].childNodes[0].value;
 
-    if(scope == "All witnesses, this block")
+    if(scope == "All witnesses, this entity")
     {
-      scope = "this_block";
+      scope = "this_entity";
     }
-    else if(scope == "All witnesses, this word")
+    else if(scope == "All witnesses, this place")
     {
-      scope = "this_word";
+      scope = "this_place";
     }
     else
     {
@@ -2092,97 +2064,105 @@ function submitCustomReg()
     if(deleteRule != null && deleteRule.checked)
     {
       // delete from database
-      //var newRule = createRule(scope, reg_this, reg_to, regRules.rules[index].token);
       var newRule = allRules.rules[index];
-      deleteJSON.rules.push(newRule);
-      check.checked = false;
+      newRule.modifications.push({
+        "userId " : userName,
+        "modification_type" : "delete",
+        "dateTime" : getDateTime()
+      });
+      customRules.rules.push(newRule);
+      sendRules.rules.push(newRule);
     }
-    
-    if(check != null && check.checked)
+    else if(check != null && check.checked)
     {
-      //alert(reg_this);
-
       if(reg_this == reg_thisRule && reg_to == reg_toRule && scope == scopeRule)
       {
         //add to customReg
         customRules.rules.push(regRules.rules[index]);
-        //alert("match");
       }
       else
       {
-        //delete from database
-        // save new rule
-        //update rules
-
-        //isCustomRules = true;
-        sendRules.rules.push(regRules.rules[index]);
-
-        var newRule = createRule(scope, reg_this, reg_to, regRules.rules[index].token);
-        sendRules.rules.push(newRule);
-        customRules.rules.push(newRule);
+        var rule = allRules.rules[index];
+        var thisChange = false;
+        if(reg_this != reg_thisRule)
+        {
+          rule.modifications.push({
+            "userId": userName,
+            "modification_type": "modify(reg_this," + reg_thisRule + "," + reg_this + ")",
+            "dateTime": getDateTime()
+          });
+          sendRules.rules.push(rule);
+          //rule.action = "regularize(" + reg_this + "," + reg_toRule + ")";
+          thisChange = true;
+        }
+        
+        if(reg_to != reg_toRule)
+        {
+          rule.modifications.push({
+            "userId": userName,
+            "modification_type": "modify(reg_to," + reg_toRule + "," + reg_to + ")",
+            "dateTime": getDateTime()
+          });
+          sendRules.rules.push(rule);
+          if(thisChange)
+          {
+            //rule.action = "regularize(" + reg_thisRule + "," + reg_to + ")";
+          }
+          else
+          {
+            //rule.action = "regularize(" + reg_this + "," + reg_to + ")"; 
+          }
+        }
+        
+        if(scope != scopeRule)
+        {
+          rule.modifications.push({
+            "userId": userName,
+            "modification_type": "modify(scope," + scopeRule + "," + scope + ")",
+            "dateTime": getDateTime()
+          });
+          sendRules.rules.push(rule);
+          //rule.scope = scope;
+        }
+        
+        customRules.rules.push(rule)
 
       }
     }
+    
+    sendRules.urn = urn;
+    sendRules.userName = userName;
+    sendRules.ruleSetName = ruleSetName;
+
+    // send changed rules to server
+    $.ajax({
+        url: "http://127.0.0.1:8000/regularization/changeRules/",
+        dataType: 'json',
+        type: 'POST',
+        async: false,
+        data: JSON.stringify(sendRules),
+        success: function(data){
+    }});
   }
   
-   $.ajax({
-	    	url: "http://127.0.0.1:8000/regularization/interface/deleteRule/",
-	    	dataType: 'json',
-	    	type: 'post',
-	    	async: false,
-	    	data: JSON.stringify(deleteJSON),
-	    	success: function(data){
-	    	
-	    	  alert("success");
-	    	
-	    	}
-	    });
-	 
-	 $.ajax({
-	    	url: "http://127.0.0.1:8000/regularization/interface/changeRule/",
-	    	dataType: 'json',
-	    	type: 'post',
-	    	async: false,
-	    	data: JSON.stringify(sendRules),
-	    	success: function(data){
-	    	
-	    	  alert("success");
-	    	
-	    	}
-	    });
-            
-      
-   // get new/all rules and reload reg_table
-   $.ajax({
-    	url: "http://127.0.0.1:8000/regularization/interface/getBaseTokens/",
-    	dataType: 'json',
-    	async: false,
-    	success: function(jdata){
-    		origTokens = jdata;
-    		allTokens = origTokens;
-    	
-    	}});
-
-   getRules();
-   
-   //console.log(customRules);
-   //console.log(allRules);
+  // get new/all rules and reload reg_table
+  allTokens = origTokens;
+  regularize(customRules);
+  loadRegTable();
 }
 
-function getId(witnessId)
+function getDateTime()
 {
-  var re = new RegExp('ORIG', 'g');
-  var result = witnessId.match(re);
+  var currentDate = new Date();
+  var day = currentDate.getDate();
+  var month = currentDate.getMonth() + 1;
+  var year = currentDate.getFullYear();
+  var hours = currentDate.getHours();
+  var minutes = currentDate.getMinutes();
+  var seconds = currentDate.getSeconds();
+  var dateTime = hours + ":" + minutes + ":" + seconds + " " + month + "/" + day + "/" + year
   
-  if(result)
-  {
-    return witnessId.split('(ORIG:')[0];
-  }
-  else
-  {
-    return witnessId;
-  }
-  
+  return dateTime;
 }
 
   function createRule(scope, reg_this, reg_to, token, id, index)
@@ -2201,7 +2181,7 @@ function getId(witnessId)
     goForward = true;
   }
   
-  if(scope == "this_word")
+  if(scope == "this_place")
   {
       contextStruct.witnesses.push({
         "id": id,
@@ -2214,24 +2194,13 @@ function getId(witnessId)
         "switchDirections": true
         
       });
-      //alert("before getContext: " + context);
       context = getContext(id, index);
-      //alert("after getContext: " + context);
       
       var contextRegTo = context.replace(reg_this, reg_to);
       reg_to = contextRegTo;
-      //alert("reg_to: " + reg_to);
   }
   
-  var currentDate = new Date();
-  var day = currentDate.getDate();
-  var month = currentDate.getMonth() + 1;
-  var year = currentDate.getFullYear();
-  var hours = currentDate.getHours();
-  var minutes = currentDate.getMinutes();
-  var seconds = currentDate.getSeconds();
-  var dateTime = hours + ":" + minutes + ":" + seconds + " " + month + "/" + day + "/" + year
-  //alert(dateTime);
+  dateTime = getDateTime();
   
   var action = "regularize(" + context + ", " + reg_to + ")";
   newRule = {
@@ -2313,27 +2282,25 @@ function automateReg(checkBox)
   }
 }
 
-function backEntity()
-{
-  if(lineNumber > 0)
-  {
-    lineNumber--;
-  }
-  getTokensWitnesses(false);
-  //shows all previously collated words and allows user to choose one to go to
-}
-
-function forwardEntity()
-{
-  lineNumber++;
-  getTokensWitnesses(true);
-}
+//function backEntity()
+//{
+//  if(lineNumber > 0)
+//  {
+//    lineNumber--;
+//  }
+//  getTokensWitnesses(false);
+//  //shows all previously collated words and allows user to choose one to go to
+//}
+//
+//function forwardEntity()
+//{
+//  lineNumber++;
+//  getTokensWitnesses(true);
+//}
 
 
 function showOriginals(checkBox)
-{
-  //var checkBox = document.getElementById("originals");
-  
+{ 
   if(checkBox.checked)
   {
     isOriginals = true;
@@ -2347,10 +2314,10 @@ function showOriginals(checkBox)
       var regRules = allRules;
     }
 
-    for(var i in newRules.rules)
-    {
-      regRules.rules.push(newRules.rules[i]);
-    }
+//    for(var i in newRules.rules)
+//    {
+//      regRules.rules.push(newRules.rules[i]);
+//    }
     regularize(regRules);
     
   }
@@ -2367,10 +2334,10 @@ function showOriginals(checkBox)
       var regRules = allRules;
     }
 
-    for(var i in newRules.rules)
-    {
-      regRules.rules.push(newRules.rules[i]);
-    }
+//    for(var i in newRules.rules)
+//    {
+//      regRules.rules.push(newRules.rules[i]);
+//    }
     regularize(regRules);
   }
 }
@@ -2381,9 +2348,7 @@ function showOriginals(checkBox)
 <body onload="load()">
   <h1>Collation Interface: for <label for="title_label" id="title_label"></label></h1>
 <label for="regularize_label" id="regularize_label">Single click on the word you want regularized, double click or type in the
-word you want it regularized to.  Select
-combination of Witnesses and Place.  Click OK when
-finished.</label>
+word you want it regularized to.  <br/>Select combination of Witnesses and Place.  Click OK when finished.</label>
 <br /><br /><label for="reg_on" id="reg_on">Regularization is off! (Showing
 originals)
 </label>
@@ -2401,8 +2366,8 @@ originals)
 
         <p>Regularize Choices:
        <select name="reg_choices">
-	  <option value="this_block">All witnesses, this entity</option>
-	  <option value="this_word">All witnesses, this place</option>
+	  <option value="this_entity">All witnesses, this entity</option>
+	  <option value="this_place">All witnesses, this place</option>
 	  <option value="all_places">All witnesses, all places</option>
 	  <option value="other">Other ...</option>
 	</select></p>
@@ -2417,9 +2382,10 @@ originals)
         <input name="forward" type="button" value="Forward Entity" onclick="forwardEntity()">
 	<input name="previous" type="button" value="Previous Word" onclick="previousToken()">
 	<input name="next" type="button" value="Next Word" onclick="nextToken()">
-        <br />
+        <br/>
+        <input name="recollateTokens" type="button" value="Recollate" onclick="recollate()"/>
 	<input name="view" type="button" value="View Entire Reg." onclick="seeWitnesses()">
-	<input name="done" type="button" value="DONE">
+	<!--<input name="done" type="button" value="Done">-->
 	<br /> Shortcuts:: <br/>"Alt+Right Arrow": Add next word to Regularize This
 	<br /> "Shift+Right Arrow": Add next word to Regularize To
 	<br /> "Tab": Find next variant to regularize
@@ -2436,6 +2402,7 @@ originals)
     </form>
 </td>
 <td valign="top">
+  <label id="newRegInfo"></label><br/>
 <form action="." method="POST" name="information">
 <h2>Regularization Information</h2>
 Regularization at word <label for="word" id="word"></label> in entity <label for="block" id="block"></label>
