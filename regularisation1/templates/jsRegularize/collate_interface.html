@@ -772,10 +772,13 @@ function regularize_onoff()
   
   if (regOn == false)
   {
-    
-     document.regularization.originals.style.visibility = "visible";
-     document.getElementById("showOriginals").style.visibility = "visible";
-  
+     if(document.regularization.reg_checkbox.checked)
+     {
+       document.regularization.originals.style.visibility = "visible";
+       document.getElementById("showOriginals").style.visibility = "visible";
+       document.getElementById("showOriginals").innerHTML = "Show originals";
+       document.edit_reg.style.visibility = "hidden";
+     }
      regOn = true;
      document.getElementById('reg_on').innerHTML = "Regularization is on! Click on a witness for a regularized word to see more detail.";
      document.getElementById('reg_button').value = "Reg. Off";
@@ -788,29 +791,30 @@ function regularize_onoff()
 
      loadRegTable();
   
-     var regRules = { rules: []};
-      if(isCustomRules)
+     if(isCustomRules)
       {
-          regRules = customRules;
+          regularize(customRules);
       }
       else
       {
-          regRules = allRules;
+          regularize(allRules);
       }
 
-      regularize(regRules);
   }
   else
   {
-     document.regularization.originals.style.visibility = "hidden";
-     document.getElementById("showOriginals").style.visibility = "hidden";
-    
+     if(document.regularization.reg_checkbox.checked)
+     {
+       document.regularization.originals.style.visibility = "hidden";
+       document.getElementById("showOriginals").style.visibility = "hidden";
+     }
+     
      regOn = false;
      string = "Regularization is off! (Showing originals)";
      document.getElementById('reg_on').innerHTML = string;
      document.getElementById('reg_button').value = "Reg. On";
      
-     document.information.style.visibility = "hidden";
+     //document.information.style.visibility = "hidden";
      document.edit_reg.style.visibility = "hidden";
      
      //TODO: getBaseTokens!!
@@ -1735,9 +1739,18 @@ function getToken(regRules, witnessId, position)
                   {
                     origToken = reg_this;
                   }
-                  allTokens.alignment[witnessId].tokens[position].t = insertTokens[k];
-                  allTokens.alignment[witnessId].tokens[position].origToken = origToken;
-                  allTokens.alignment[witnessId].tokens[position].reg_to = reg_to;
+                  
+                  if(allTokens.alignment[witnessId].tokens[position] != null)
+                  {
+                    allTokens.alignment[witnessId].tokens[position].t = insertTokens[k];
+                    allTokens.alignment[witnessId].tokens[position].origToken = origToken;
+                    allTokens.alignment[witnessId].tokens[position].reg_to = reg_to;
+                  }
+                  else
+                  {
+                    var insertTok = { "t" : insertTokens[k], "n" : insertTokens[k], "origToken" : origToken, "reg_to" : reg_to};
+                    allTokens.alignment[witnessId].tokens.splice(position,1,insertTok);
+                  }
                 }
                 else
                 {
@@ -2429,14 +2442,6 @@ function showRegularization(checkBox)
     regHTML += "</select></p>";
     regHTML += "<input name='ok' type='button' value='Add Rule'";
     regHTML += "onclick='addRule()'>";
-    regHTML += "<input name='edit_reg' type='button' value='Edit Reg.'> ";
-    regHTML += "<input name='reg_on' id='reg_button' type='button' value='Reg. On'";
-    regHTML += "onclick='regularize_onoff()'>";
-    regHTML += "<input name='back' type='button' value='Back Entity' onclick='backEntity()'>";
-    regHTML += "<input name='forward' type='button' value='Forward Entity' onclick='forwardEntity()'>";
-    regHTML += "<input name='previous' type='button' value='Previous Word' onclick='previousToken()'>";
-    regHTML += "<input name='next' type='button' value='Next Word' onclick='nextToken()'>";
-    regHTML += "<br/>";
     regHTML += "<input name='recollateTokens' type='button' value='Recollate' onclick='recollate()'/>";
     regHTML += "<input name='view' type='button' value='View Entire Reg.' onclick='seeWitnesses()'>";
     regHTML += "<input name='done' type='button' value='Done'>";
@@ -2451,7 +2456,16 @@ function showRegularization(checkBox)
 
     document.getElementById('reg_wrapper').innerHTML = regHTML;
     document.regularization.originals.style.visibility = "hidden";
-    document.getElementById('showOriginals').innerHTML = "";
+    if(regOn)
+    {
+      document.edit_reg.style.visibility = "visible";
+      document.getElementById("showOriginals").innerHTML = "Show originals";
+      document.regularization.originals.style.visibility = "visible";
+    }
+    else
+    {
+      document.getElementById('showOriginals').innerHTML = "";
+    }
   }
 }
 
@@ -2484,6 +2498,7 @@ function showRealign(checkBox)
     document.getElementById("align_wrapper").innerHTML = alignHTML;
     document.getElementById("forward_select").style.visibility = "hidden";
     document.getElementById("backward_select").style.visibility = "hidden";
+    document.edit_reg.style.visibility = "hidden";
   }
   else
   {
@@ -2535,6 +2550,19 @@ function realign()
   var token = document.realign_token.token.value;
   var forward = document.getElementById("forward_select").value;
   var backward = document.getElementById("backward_select").value;
+  
+  if(token == "")
+  {
+    alert("Please select a token");
+    return;
+  }
+  
+  if(!regOn)
+  {
+    alert("Regularization must be on to change alignment");
+    return;
+  }
+  
   if (token != "")
   {
     var ids = [];
@@ -2585,7 +2613,8 @@ function realign()
         {
           for(var k = 0; k < forward; k++)
           {
-            allTokens.alignment[i].tokens.splice(totalPos, 0, null);
+            newPosition = totalPos + 1;
+            allTokens.alignment[i].tokens.splice(newPosition, 0, null);
           }
         }
       }
@@ -2606,13 +2635,15 @@ function realign()
           }
         }
         
+//       var position = currentPosition - 1;
         if(foundId)
         {
-          // TODO: for number of positions
-          var position = currentPosition + 1;
+          newPosition = totalPos + 1;
           for(var k = 0; k < backward; k++)
           {
-            allTokens.alignment[i].tokens.splice(position, 0, "null");
+            console.log(newPosition);
+            allTokens.alignment[i].tokens.splice(newPosition, 0, "null");
+            newPosition++;
           }
           
           for(var k in allTokens.alignment[i].tokens)
@@ -2625,10 +2656,11 @@ function realign()
         }
         else
         {
+          
           for(var k = 0; k < backward; k++)
           {
-            allTokens.alignment[i].tokens.splice(currentPosition, 0, "null");
-            allTokens.alignment[i].tokens[currentPosition] = null;
+            allTokens.alignment[i].tokens.splice(0, 0, "null");
+            allTokens.alignment[i].tokens[0] = null;
           }
         }
       }
@@ -2636,7 +2668,7 @@ function realign()
   }
   
   //TODO: customRules, regOn etc
-  //console.log(allTokens);
+  console.log(allTokens);
   regularize(allRules);
 }
 
@@ -2655,6 +2687,12 @@ function getRealign()
     return;
   }
   
+  if(!regOn)
+  {
+    alert("Regularization must be on to change alignment");
+    return;
+  }
+  
   var newTokens = createNewAllTokens();
   var oldTokens = allTokens;
   allTokens = newTokens;
@@ -2665,7 +2703,7 @@ function getRealign()
     forward++;
     for(var i = 0; i<forward; i++)
     {
-      if(position < totalPos)
+      if(position <= totalPos)
       { 
         //TODO: APPLY RULES DIFF -> IF CUSTOMRULES, etc
         oldAlign += findDistinct(position, allRules) + "<br />&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;";
@@ -2684,7 +2722,7 @@ function getRealign()
     position = currentPosition;
     for(var i = 0; i<forward; i++)
     {
-      if(position < totalPos)
+      if(position <= totalPos)
       { 
         //TODO: APPLY RULES DIFF -> IF CUSTOMRULES, etc
         newAlign += findDistinct(position, allRules) + "<br />&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;";
@@ -2807,6 +2845,12 @@ originals)
        <br /> <input type="checkbox" name="change" value="change" onchange="showRealign(this)"/>
         Change alignment of token
        <br />
+       
+       <input name="reg_on" id="reg_button" type="button" value="Reg. On" onclick="regularize_onoff()">
+       <input name="back" type="button" value="Back Entity" onclick="backEntity()">
+       <input name="forward" type="button" value="Forward Entity" onclick="forwardEntity()">
+       <input name="previous" type="button" value="Previous Word" onclick="previousToken()">
+       <input name="next" type="button" value="Next Word" onclick="nextToken()"><br />
     
        <div id="reg_wrapper"></div><br />
        
