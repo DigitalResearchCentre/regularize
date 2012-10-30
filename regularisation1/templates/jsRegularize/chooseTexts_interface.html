@@ -24,70 +24,39 @@
     witnessData = witnessData.replace(/'/g, '\"');
     witnessData = JSON.parse(witnessData);
     
-    witnessList = document.getElementById("witnessList");
-    var option = document.createElement("option");
-    option.text = "All";
-    witnessList.options.add(option);
-    
     for(var i in witnessData.witnesses)
     {
-      option = document.createElement("option");
-      option.text = witnessData.witnesses[i].id;
-      witnessList.options.add(option);
-    }
-  }
-  
-  function add()
-  {
-    id = document.getElementById("witnessList").value;
-    
-    if(id == "All")
-    {
-      done(true);
-    }
-    else
-    {
-      var found = false;
-      for (var i in selectedIds)
-      {
-        if(selectedIds[i] == id)
-        {
-          found = true;
-        }
-      }
+      var checkbox = document.createElement('input');
+      checkbox.type = "checkbox";
+      checkbox.name = witnessData.witnesses[i].id;
+      checkbox.value = witnessData.witnesses[i].id;
+      checkbox.id = witnessData.witnesses[i].id;
       
-      if(!found)
-      {
-        selectedIds.push(id);
-        var label = document.getElementById("list_label").innerHTML;
-        document.getElementById("list_label").innerHTML += id + " ";
-        
-      }
+      var label = document.createElement('label');
+      //label.htmlFor = witnessData.witnesses[i].id;
+      label.appendChild(document.createTextNode(witnessData.witnesses[i].id))
+      
+      document.getElementById('wrapper').appendChild(checkbox);
+      document.getElementById('wrapper').appendChild(label);
+      document.getElementById('wrapper').innerHTML += "<br/>"
     }
     
+    for (var i in witnessData.witnesses)
+    {
+      document.getElementById(witnessData.witnesses[i].id).checked = true;
+    }
   }
   
-  function done(isAll)
+  function done()
   {
     
     var newWitnesses = { witnesses: [] };
-    var id = document.getElementById("witnessList").value;
     
-    if(isAll && id == "All")
+    for(var i in witnessData.witnesses)
     {
-      newWitnesses = witnessData;
-    }
-    else
-    {
-      for(var i in witnessData.witnesses)
+      if(document.getElementById(witnessData.witnesses[i].id).checked == true)
       {
-        for(var j in selectedIds)
-        {
-          if(witnessData.witnesses[i].id == selectedIds[j])
-          {
-            newWitnesses.witnesses.push(witnessData.witnesses[i]);
-          }
-        }
+        newWitnesses.witnesses.push(witnessData.witnesses[i]);
       }
     }
     
@@ -111,14 +80,6 @@
 
 <body onload="load()">
 <h1>Choose Texts for Collation</h1>
-<select id="witnessList">
-</select>
-<br/>
-<label id="list_label">Witnesses Selected: </label>
-<br/>
-<input name="add" type="button" value="Add" onclick="add()">
-<input name="done" type="button" value="Done" onclick="done(false)">
-
-
-
+<div id="wrapper"></div><br/>
+<input name="done" type="button" value="Done" onclick="done()">
 </body> </html>

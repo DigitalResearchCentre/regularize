@@ -52,6 +52,7 @@ var autoReg;
 var distinct;
 var changeLabelTimer = null;
 var isOriginals;
+var isRealign;
 
 function load()
 {
@@ -75,15 +76,18 @@ function load()
   document.information.style.visibility = "hidden";
   document.reg_information.style.visibility ="hidden";
   document.edit_reg.style.visibility = "hidden";
-  document.regularization.originals.style.visibility = "hidden";
-  document.getElementById("showOriginals").style.visibility = "hidden";
+  document.regularization.reg_checkbox.checked = true;
+  showRegularization(document.regularization.reg_checkbox);
+  
   isOriginals = false;
-  lineNumber = 0;
+  isRealign = false;
   newRules = { rules: [] };
   customRules = { rules: [] };
-  console.log(ruleSet.ruleSet.rules);
-  allRules = { rules: ruleSet.ruleSet.rules};
-
+  allRules = { rules: [] };
+  for(var i in ruleSet.ruleSet.rules)
+  {
+    allRules.rules.push(ruleSet.ruleSet.rules[i]);
+  }
   contextStruct = { witnesses: [] };
 
   regOn = false;
@@ -114,6 +118,9 @@ function load()
   allTokens = witnessDataTokens;
   origTokens = witnessDataTokens;
   allWitnesses = witnessDataLines;
+  
+  totalPos = allTokens.alignment[0].tokens.length;
+  
   regularize(newRules);
 }
 
@@ -269,16 +276,41 @@ function previousToken()
 
 function determineClick()
 {
-  if (iTimeoutId == null || !iTimeoutId)
+  if(!isRealign)
   {
-    iTimeoutId = setTimeout("selectToken()", 500);
+    if (iTimeoutId == null || !iTimeoutId)
+    {
+      iTimeoutId = setTimeout("selectToken()", 500);
+    }
+    else
+    {
+      //window.clearTimeout(iTimeoutId);
+      clearTimeout(iTimeoutId);
+      iTimeoutId = null;
+      selectNew();
+    }
   }
   else
   {
-    //window.clearTimeout(iTimeoutId);
-    clearTimeout(iTimeoutId);
-    iTimeoutId = null;
-    selectNew();
+    selectRealignToken();
+  }
+}
+
+function selectRealignToken()
+{
+  var content = document.regularization.reg.value;
+  var txt = document.regularization.reg;
+  var pos = txt.selectionStart;
+
+  var token = findWord(pos, content);
+
+  if(!token)
+  {
+    alert("Invalid selection");
+  }
+  else if(token != "isId")
+  {
+    document.realign_token.token.value = token;
   }
 }
 
@@ -329,7 +361,6 @@ function findWord(pos, content)
 
   var notToken = false;
   var isId = false;
-  console.log(allWitnesses);
   for(var i in allWitnesses.witnesses)
   {
     if(token == allWitnesses.witnesses[i].id)
@@ -397,7 +428,7 @@ function selectNew()
   {
     alert("Invalid selection");
   }
-  else
+  else if(token != "isId")
   {
     document.regularization.reg_to.value = token;
     reg_toBox = token;
@@ -406,100 +437,117 @@ function selectNew()
 
 function addRule()
 {
-  var reg_word = reg_thisBox;
-  var reg_to = reg_toBox;
   var reg_thisWhole = document.regularization.reg_this.value;
   var reg_toWhole = document.regularization.reg_to.value;
-  var choice = document.regularization.reg_choices.value;
-  var newRule = "";
-  var index = "";
-  var rulesToAdd = {rules:[]};
-  
-  if(reg_thisWhole == "" || reg_toWhole == "")
+    
+  if(regOn && reg_thisWhole != reg_toWhole)
   {
-    alert("Invalid Rule");
-    return false;
-  }
-  
-  if(reg_toWhole[reg_toWhole.length] == " ")
-  {
-    reg_toWhole = reg_toWhole.substring(0, reg_toWhole.length-1);
-  }
+    var reg_word = reg_thisBox;
+    var reg_to = reg_toBox;
+    var reg_thisWhole = document.regularization.reg_this.value;
+    var reg_toWhole = document.regularization.reg_to.value;
+    var choice = document.regularization.reg_choices.value;
+    var newRule = "";
+    var index = "";
+    var rulesToAdd = {rules:[]};
 
-  if (reg_word != "" && reg_to != "")
-  {
-    if(choice == "this_place")
+    if(reg_thisWhole == "" || reg_toWhole == "")
     {
-      for (var i in distinct.witnesses)
+      alert("Invalid Rule");
+      return false;
+    }
+
+    if(reg_toWhole[reg_toWhole.length] == " ")
+    {
+      reg_toWhole = reg_toWhole.substring(0, reg_toWhole.length-1);
+    }
+
+    if (reg_word != "" && reg_to != "")
+    {
+      if(choice == "this_place")
       {
-        if(reg_word == distinct.witnesses[i].token)
+        for (var i in distinct.witnesses)
         {
-           index = i;
-        }
-      }
-      
-      // get rule for each of the witnesses with this token
-      for(var i in distinct.witnesses[index].id)
-      {
-        var id = getId(distinct.witnesses[index].id[i]);
-        //alert(id);
-        newRule = createRule(choice, reg_thisWhole, reg_toWhole, reg_word, id, index);
-        
-        var add = true;
-        for(var i in rulesToAdd.rules)
-        {
-          if(rulesToAdd.rules[i].scope == newRule.scope && rulesToAdd.rules[i].action == newRule.action && 
-              rulesToAdd.rules[i].token == newRule.token)
+          if(reg_word == distinct.witnesses[i].token)
           {
-            add = false;
+             index = i;
           }
         }
-        
-        if(add)
+
+        // get rule for each of the witnesses with this token
+        for(var i in distinct.witnesses[index].originals)
         {
-          rulesToAdd.rules.push(newRule);
+          for(var j in distinct.witnesses[index].originals[i].id)
+          {
+            //alert(id);
+            id = distinct.witnesses[index].originals[i].id[j];
+            newRule = createRule(choice, reg_thisWhole, reg_toWhole, reg_word, id, index);
+
+            var add = true;
+            for(var i in rulesToAdd.rules)
+            {
+              if(rulesToAdd.rules[i].scope == newRule.scope && rulesToAdd.rules[i].action == newRule.action && 
+                  rulesToAdd.rules[i].token == newRule.token)
+              {
+                add = false;
+              }
+            }
+
+            if(add)
+            {
+              rulesToAdd.rules.push(newRule);
+            }
+          }
+        }
+
+        for(var i in rulesToAdd.rules)
+        {
+          addRuleList(rulesToAdd.rules[i]);
         }
       }
-      
-      for(var i in rulesToAdd.rules)
+      else
       {
-        addRuleList(rulesToAdd.rules[i]);
+        newRule = createRule(choice, reg_thisWhole, reg_toWhole, reg_word, "", "");
+        addRuleList(newRule);
       }
-    }
-    else
-    {
-      newRule = createRule(choice, reg_thisWhole, reg_toWhole, reg_word, "", "");
-      addRuleList(newRule);
-    }
-      
-  }
 
-  contextStruct = { witnesses: [] };
+    }
 
-  document.regularization.reg_this.value = "";
-  //document.regularization.reg_to.value = "";
-  document.regularization.reg_to.value = reg_toWhole;
-  
-  if(regOn)
-  {
-    if(choice != "this_place")
+    contextStruct = { witnesses: [] };
+
+    document.regularization.reg_this.value = "";
+    //document.regularization.reg_to.value = "";
+    document.regularization.reg_to.value = reg_toWhole;
+
+    if(regOn)
     {
       insertRegTable(choice, reg_thisWhole, reg_toWhole);
+      // without showing context --> may need to do for each rule added
+      // if there are different ones for different witnesess 
+      // (different context)
+//      if(choice != "this_place")
+//      {
+//        insertRegTable(choice, reg_thisWhole, reg_toWhole);
+//      }
+//      else
+//      {
+//        action = newRule.action;
+//        reg_this = action.split(',')[0];
+//        reg_this = reg_this.substring(11,reg_this.length);
+//        reg_to = action.split(', ')[1];
+//        reg_to = reg_to.substring(0, reg_to.length-1);
+//        insertRegTable(choice, reg_this, reg_to);
+//      }
     }
-    else
-    {
-      action = newRule.action;
-      reg_this = action.split(',')[0];
-      reg_this = reg_this.substring(11,reg_this.length);
-      reg_to = action.split(', ')[1];
-      reg_to = reg_to.substring(0, reg_to.length-1);
-      insertRegTable(choice, reg_this, reg_to);
-    }
+
+    //console.log(newRules);
+
+    changeRegularizeLabel(choice, reg_thisWhole, reg_toWhole);
   }
-  
-  //console.log(newRules);
-  
-  changeRegularizeLabel(choice, reg_thisWhole, reg_toWhole);
+  else
+  {
+    alert("Turn regularization on to add new rules");
+  }
 }
 
 function addRuleList(newRule)
@@ -569,15 +617,18 @@ function getContext(id, index)
     
     if(result)
     {
-      for(var j in distinct.witnesses[index].id)
+      for(var j in distinct.witnesses[index].originals)
       {
-        dWid = getId(distinct.witnesses[index].id[j]);
-        if(dWid == allWitnesses.witnesses[i].id)
+        for(var k in distinct.witnesses[index].originals[j].id)
         {
-          isId = true;
-          if(result.length > 1)
+          dWid = distinct.witnesses[index].originals[j].id[k];
+          if(dWid == allWitnesses.witnesses[i].id)
           {
-            needMoreContext = true;
+            isId = true;
+            if(result.length > 1)
+            {
+              needMoreContext = true;
+            }
           }
         }
       }
@@ -762,6 +813,7 @@ function regularize_onoff()
      document.information.style.visibility = "hidden";
      document.edit_reg.style.visibility = "hidden";
      
+     //TODO: getBaseTokens!!
      allTokens = origTokens;
      
      if(isCustomRules)
@@ -778,11 +830,26 @@ function regularize_onoff()
 
 function regularize(regRules)
 {
-  
-  distinct = {witnesses:[]};
 
   var position = currentPosition;
+  
+  content = findDistinct(position, regRules);
+  
+  if(!isRealign)
+  {
+    automateReg(document.getElementById("automate"));
+  }
+  
+  //console.log(distinct);
 
+  document.regularization.reg.value = content;
+  
+}
+
+function findDistinct(position, regRules)
+{
+  distinct = {witnesses:[]};
+  
   for (var i in allTokens.alignment)
   {
     var regToken = false;
@@ -922,10 +989,8 @@ function regularize(regRules)
     
     content += " /// "; 
   }
-  
-  automateReg(document.getElementById("automate"));
-
-  document.regularization.reg.value = content;
+ 
+  return content;
   
 }
 
@@ -1430,7 +1495,7 @@ function seeWitnesses()
   newWitnesses.ruleSetName = ruleSetName;
   newWitnesses.witnessesTokens = witnessDataTokens;
   newWitnesses.witnessesLines = witnessDataLines;
-  newWitnesses.ruleSet = ruleSet;
+  newWitnesses.ruleSet = {ruleSet : allRules};
   newWitnesses.position = currentPosition;
 
   $.ajax({
@@ -1486,12 +1551,7 @@ function recollate()
       
       allTokens = data;
       
-      totalPos = -1;
-      // find how many positions are in tokens
-      for (var i in allTokens.alignment[0].tokens)
-      {
-        totalPos++;
-      }
+      totalPos = allTokens.alignment[0].tokens.length;
       
  }});
 }
@@ -1732,6 +1792,9 @@ function informationWindow(witnessId)
   var position = currentPosition;
   var regRules = "";
   var token = "";
+  var temp = urn.split("entity=")[1];
+  var entity = temp.split(":", 1)[0];
+  var line = temp.split("Line=")[1];
   
   witnessId = witnessId.split('(')[0];
   
@@ -1752,6 +1815,10 @@ function informationWindow(witnessId)
   {
     regRules = allRules;
   }
+  else
+  {
+    regRules = {rules: []};
+  }
   
   var reg_this = "";
   var reg_to = "";
@@ -1765,9 +1832,10 @@ function informationWindow(witnessId)
     {
       if(allTokens.alignment[index].tokens[currentPosition].origToken != null && allTokens.alignment[index].tokens[currentPosition].origToken != "")
       {
-        if(allTokens.alignment[index].tokens[currentPosition].origToken == regRules.rules[i].token)
+        reg_this = action.split(', ')[0];
+        reg_this = reg_this.substring(11, reg_this.length);
+        if(allTokens.alignment[index].tokens[currentPosition].origToken == reg_this)
         {
-          reg_this = regRules.rules[i].token;
           reg_to = action.split(', ')[1];
           reg_to = reg_to.substring(0, reg_to.length-1);
           choice = regRules.rules[i].scope;
@@ -1816,7 +1884,8 @@ function informationWindow(witnessId)
   document.reg_information.style.visibility ="hidden";
   document.getElementById('witnessId').innerHTML = witnessId;
   document.getElementById('word').innerHTML = position;
-  document.getElementById('block').innerHTML = lineNumber; //need to change
+  document.getElementById('line').innerHTML = line;
+  document.getElementById('block').innerHTML = entity; 
   document.getElementById('context').innerHTML = context;
   
   if(reg_this != "" && reg_to != "" && choice != "")
@@ -2092,7 +2161,7 @@ function submitCustomReg()
             "dateTime": getDateTime()
           });
           sendRules.rules.push(rule);
-          //rule.action = "regularize(" + reg_this + "," + reg_toRule + ")";
+          rule.action = "regularize(" + reg_this + "," + reg_toRule + ")";
           thisChange = true;
         }
         
@@ -2106,11 +2175,11 @@ function submitCustomReg()
           sendRules.rules.push(rule);
           if(thisChange)
           {
-            //rule.action = "regularize(" + reg_thisRule + "," + reg_to + ")";
+            rule.action = "regularize(" + reg_thisRule + "," + reg_to + ")";
           }
           else
           {
-            //rule.action = "regularize(" + reg_this + "," + reg_to + ")"; 
+            rule.action = "regularize(" + reg_this + "," + reg_to + ")"; 
           }
         }
         
@@ -2122,7 +2191,7 @@ function submitCustomReg()
             "dateTime": getDateTime()
           });
           sendRules.rules.push(rule);
-          //rule.scope = scope;
+          rule.scope = scope;
         }
         
         customRules.rules.push(rule)
@@ -2143,10 +2212,19 @@ function submitCustomReg()
         data: JSON.stringify(sendRules),
         success: function(data){
     }});
+  
+    sendRules = {rules:[]};
   }
   
   // get new/all rules and reload reg_table
-  allTokens = origTokens;
+  $.ajax({
+        url: "http://127.0.0.1:8000/regularization/getBaseTokens/",
+        dataType: 'json',
+        async: false,
+        success: function(data){
+          allTokens = data;
+        }
+  });
   regularize(customRules);
   loadRegTable();
 }
@@ -2217,6 +2295,7 @@ function getDateTime()
            };
            
            
+  console.log(newRule);
   return newRule;
 
 }
@@ -2313,11 +2392,6 @@ function showOriginals(checkBox)
     {
       var regRules = allRules;
     }
-
-//    for(var i in newRules.rules)
-//    {
-//      regRules.rules.push(newRules.rules[i]);
-//    }
     regularize(regRules);
     
   }
@@ -2333,13 +2407,382 @@ function showOriginals(checkBox)
     {
       var regRules = allRules;
     }
-
-//    for(var i in newRules.rules)
-//    {
-//      regRules.rules.push(newRules.rules[i]);
-//    }
     regularize(regRules);
   }
+}
+
+function showRegularization(checkBox)
+{
+  if(checkBox.checked)
+  {
+    document.getElementById("align_wrapper").innerHTML = "";
+    document.regularization.change.checked = false;
+    var regHTML = "<br /><br /><label id='reg_this'>Regularize This:</label>";
+    regHTML += "<input type='text' name='reg_this' size='82'/> <br /><label id='reg_to'>To This:</label>";
+    regHTML += "<input type='text' name='reg_to' size='92'/>";
+    regHTML += "<p>Regularize Choices:";
+    regHTML += "<select name='reg_choices'>";
+    regHTML += "<option value='this_entity'>All witnesses, this entity</option>";
+    regHTML += "<option value='this_place'>All witnesses, this place</option>";
+    regHTML += "<option value='all_places'>All witnesses, all places</option>";
+    regHTML += "<option value='other'>Other ...</option>";
+    regHTML += "</select></p>";
+    regHTML += "<input name='ok' type='button' value='Add Rule'";
+    regHTML += "onclick='addRule()'>";
+    regHTML += "<input name='edit_reg' type='button' value='Edit Reg.'> ";
+    regHTML += "<input name='reg_on' id='reg_button' type='button' value='Reg. On'";
+    regHTML += "onclick='regularize_onoff()'>";
+    regHTML += "<input name='back' type='button' value='Back Entity' onclick='backEntity()'>";
+    regHTML += "<input name='forward' type='button' value='Forward Entity' onclick='forwardEntity()'>";
+    regHTML += "<input name='previous' type='button' value='Previous Word' onclick='previousToken()'>";
+    regHTML += "<input name='next' type='button' value='Next Word' onclick='nextToken()'>";
+    regHTML += "<br/>";
+    regHTML += "<input name='recollateTokens' type='button' value='Recollate' onclick='recollate()'/>";
+    regHTML += "<input name='view' type='button' value='View Entire Reg.' onclick='seeWitnesses()'>";
+    regHTML += "<input name='done' type='button' value='Done'>";
+    regHTML += "<br /> Shortcuts:: <br/>'Alt+Right Arrow': Add next word to Regularize This";
+    regHTML += "<br /> 'Shift+Right Arrow': Add next word to Regularize To";
+    regHTML += "<br /> 'Tab': Find next variant to regularize";
+    regHTML += "<br /> 'Enter': Add rule";
+    regHTML += "<br /> <input type='checkbox' name='automate' value='automate' id='automate'";
+    regHTML += "onchange='automateReg(this)'/> Automate regularization selection";
+    regHTML += "<br /> <input type='checkbox' name='originals' value='originals' onchange='showOriginals(this)'/>";
+    regHTML += "<label id='showOriginals'>Show originals</label>";
+
+    document.getElementById('reg_wrapper').innerHTML = regHTML;
+    document.regularization.originals.style.visibility = "hidden";
+    document.getElementById('showOriginals').innerHTML = "";
+  }
+}
+
+function showRealign(checkBox)
+{
+  
+  if(checkBox.checked)
+  {
+    isRealign = true;
+    //document.realign_token.style.visibility = "visible";
+    document.regularization.reg_checkbox.checked = false;
+    document.getElementById("reg_wrapper").innerHTML = "";
+    
+    var alignHTML = "Change token alignment: <input type='text' name='token' size='20'/>";
+    alignHTML += "<br/>";
+    alignHTML += "<input type='checkbox' name='forward_realign' value='forward_realign' id='forward_realign'";
+    alignHTML += "onchange='alignmentDirection(this)'/> Forward";
+    alignHTML += "<select name='forward_select' id='forward_select' onchange='getRealign()'></select>";
+    alignHTML += "<br />";
+    alignHTML += "<input type='checkbox' name='backward_realign' value='bacward_realign' id='backward_realign'";
+    alignHTML += "onchange='alignmentDirection(this)'/> Backward";
+    alignHTML += "<select name='backward_select' id='backward_select' onchange='getRealign()'></select>";
+    alignHTML += "<br />";
+    alignHTML += "Old alignment: <label id='realign_this'></label>";
+    alignHTML += "<br />";
+    alignHTML += "New alignment: <label id='realign_to'></label>";
+    alignHTML += "<br />";
+    alignHTML += "<input name='submitRealign' type='button' value='Change' onclick='realign()'>";
+    
+    document.getElementById("align_wrapper").innerHTML = alignHTML;
+    document.getElementById("forward_select").style.visibility = "hidden";
+    document.getElementById("backward_select").style.visibility = "hidden";
+  }
+  else
+  {
+    isRealign = false;
+  }
+}
+
+function alignmentDirection(checkBox)
+{
+  if(checkBox.value == "forward_realign")
+  {
+    document.getElementById("backward_realign").checked = false;
+    document.getElementById("forward_select").style.visibility = "visible";
+    document.getElementById("backward_select").style.visibility = "hidden";
+    
+    document.getElementById("forward_select").options.length = 0;
+    var option = document.createElement("option");
+    option.text = "--";
+    document.getElementById("forward_select").add(option);
+    var numPos = totalPos - currentPosition;
+    for(var i = 0; i < numPos; i++)
+    {
+      var option = document.createElement("option");
+      option.text = i+1;
+      document.getElementById("forward_select").add(option);
+    }
+  }
+  else
+  {
+    document.getElementById("forward_realign").checked = false;
+    document.getElementById("forward_select").style.visibility = "hidden";
+    document.getElementById("backward_select").style.visibility = "visible";
+    
+    document.getElementById("backward_select").options.length = 0;
+    var option = document.createElement("option");
+    option.text = "--";
+    document.getElementById("backward_select").add(option);
+    for(var i = 0; i <= currentPosition; i++)
+    {
+      var option = document.createElement("option");
+      option.text = i+1;
+      document.getElementById("backward_select").add(option);
+    }
+  }
+}
+
+function realign()
+{
+  var token = document.realign_token.token.value;
+  var forward = document.getElementById("forward_select").value;
+  var backward = document.getElementById("backward_select").value;
+  if (token != "")
+  {
+    var ids = [];
+    //console.log(distinct);
+
+    for (var i in distinct.witnesses)
+    {
+      if(token == distinct.witnesses[i].token)
+      {
+        for (var j in distinct.witnesses[i].originals)
+        {
+          for (var k in distinct.witnesses[i].originals[j].id)
+          {
+            ids.push(distinct.witnesses[i].originals[j].id[k]);
+          }
+        }
+      }
+    }
+
+    console.log(ids);
+
+    if(document.getElementById("forward_realign").checked)
+    {
+      // add a null at currentPosition for this token(one to align), in each witness
+      // **pushing this token to next position
+      // add a null at end of tokens for each other witness
+      // splice(index, howmany(0), item)
+      for(var i in allTokens.alignment)
+      {
+        var foundId = false;
+        for (var j in ids)
+        {
+          if(allTokens.alignment[i].witness == ids[j])
+          {
+            foundId = true;
+          }
+        }
+        
+        if(foundId)
+        {
+          // TODO: for number of positions
+          for(var k = 0; k < forward; k++)
+          {
+            allTokens.alignment[i].tokens.splice(currentPosition, 0, null);
+          }
+        }
+        else
+        {
+          for(var k = 0; k < forward; k++)
+          {
+            allTokens.alignment[i].tokens.splice(totalPos, 0, null);
+          }
+        }
+      }
+    }
+    else
+    {
+      // add a null at currentPosition for this token, in each witness
+      // **pushin this token to previous position
+      // add a null at currentPosition-1 for each other witness
+      for(var i in allTokens.alignment)
+      {
+        var foundId = false;
+        for (var j in ids)
+        {
+          if(allTokens.alignment[i].witness == ids[j])
+          {
+            foundId = true;
+          }
+        }
+        
+        if(foundId)
+        {
+          // TODO: for number of positions
+          var position = currentPosition + 1;
+          for(var k = 0; k < backward; k++)
+          {
+            allTokens.alignment[i].tokens.splice(position, 0, "null");
+          }
+          
+          for(var k in allTokens.alignment[i].tokens)
+          {
+            if(allTokens.alignment[i].tokens[k] == "null")
+            {
+              allTokens.alignment[i].tokens[k] = null;
+            }
+          }
+        }
+        else
+        {
+          for(var k = 0; k < backward; k++)
+          {
+            allTokens.alignment[i].tokens.splice(currentPosition, 0, "null");
+            allTokens.alignment[i].tokens[currentPosition] = null;
+          }
+        }
+      }
+    }
+  }
+  
+  //TODO: customRules, regOn etc
+  //console.log(allTokens);
+  regularize(allRules);
+}
+
+function getRealign()
+{
+  var token = document.realign_token.token.value;
+  var oldAlign = "";
+  var newAlign = "";
+  var forward = document.getElementById("forward_select").value;
+  var backward = document.getElementById("backward_select").value;
+  var position = currentPosition;
+  
+  if(token == "")
+  {
+    alert("Please select a token");
+    return;
+  }
+  
+  var newTokens = createNewAllTokens();
+  var oldTokens = allTokens;
+  allTokens = newTokens;
+  
+  if(document.getElementById("forward_realign").checked)
+  {
+    //OLDALIGN
+    forward++;
+    for(var i = 0; i<forward; i++)
+    {
+      if(position < totalPos)
+      { 
+        //TODO: APPLY RULES DIFF -> IF CUSTOMRULES, etc
+        oldAlign += findDistinct(position, allRules) + "<br />&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;";
+      }
+      else
+      {
+        oldAlign += getNullContent() + "<br />&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;";
+      }
+      position++;
+    }
+    
+    //NEWALIGN
+    //TODO: change for customRules, etc
+    regularize(allRules);
+    realign();
+    position = currentPosition;
+    for(var i = 0; i<forward; i++)
+    {
+      if(position < totalPos)
+      { 
+        //TODO: APPLY RULES DIFF -> IF CUSTOMRULES, etc
+        newAlign += findDistinct(position, allRules) + "<br />&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;";
+      }
+      else
+      {
+        newAlign += getNullContent() + "<br />&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;";
+      }
+      position++;
+    }
+  }
+  else
+  {
+    //OLDALIGN
+    position = position - backward;
+    for(var i = 0; i <= backward; i++)
+    {
+      if(position >= -1)
+      {
+        // TODO: APPLY RULES DIFF -> IF CUSTOMRULES, etc
+        oldAlign += findDistinct(position, allRules) + "<br />&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;";
+      }
+      else
+      {
+        oldAlign += getNullContent() + "<br />&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;";
+      }
+      position++;
+    }
+    
+    //NEWALIGN
+    position = currentPosition - backward + 1;
+    //TODO: change for customRules, etc
+    regularize(allRules);
+    realign();
+    for(var i = 0; i <= backward; i++)
+    {
+      if(position >= -1)
+      {
+        // TODO: APPLY RULES DIFF -> IF CUSTOMRULES, etc
+        newAlign += findDistinct(position, allRules) + "<br />&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;";
+      }
+      else
+      {
+        newAlign += getNullContent() + "<br />&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;";
+      }
+      position++;
+    }
+  }
+  
+  document.getElementById("realign_this").innerHTML = oldAlign;
+  document.getElementById("realign_to").innerHTML = newAlign;
+  
+  
+  //TODO: apply rules diff
+  // make distinct object correct
+  allTokens = oldTokens;
+  regularize(allRules);
+}
+
+function getNullContent()
+{
+  var content = "null ";
+  
+  for(var i in allTokens.alignment)
+  {
+    content += allTokens.alignment[i].witness + " ";
+  }
+  content += "///";
+  return content;
+}
+
+function createNewAllTokens()
+{
+  var newTokens = { alignment: [] };
+  
+  for(var i in allTokens.alignment)
+  {
+    newTokens.alignment.push({
+      "witness": allTokens.alignment[i].witness,
+      "tokens": []
+    });
+    
+    for(var j in allTokens.alignment[i].tokens)
+    {
+      if(allTokens.alignment[i].tokens[j] == null)
+      {
+        newTokens.alignment[i].tokens.push(null);
+      }
+      else
+      {
+        newTokens.alignment[i].tokens.push({
+          "t": allTokens.alignment[i].tokens[j].t
+        });
+      }
+    }
+  }
+  
+  return newTokens;
 }
 
 </script>
@@ -2358,54 +2801,26 @@ originals)
 <td>
 <form action="." method="POST" name="regularization">
        <br /><textarea rows="10" cols="75" name="reg" onclick="determineClick()"></textarea>
-           
-       <br /><label id="reg_this">Regularize This:</label>
-           <input type="text" name="reg_this" size="82"/>
-       <br /><label id="reg_to">To This:</label>
-           <input type="text" name="reg_to" size="92"/>
+       
+       <br /> <input type="checkbox" name="reg_checkbox" value="reg_checkbox" onchange="showRegularization(this)"/>
+        Add regularization rules
+       <br /> <input type="checkbox" name="change" value="change" onchange="showRealign(this)"/>
+        Change alignment of token
+       <br />
+    
+       <div id="reg_wrapper"></div><br />
+       
+</form>
 
-        <p>Regularize Choices:
-       <select name="reg_choices">
-	  <option value="this_entity">All witnesses, this entity</option>
-	  <option value="this_place">All witnesses, this place</option>
-	  <option value="all_places">All witnesses, all places</option>
-	  <option value="other">Other ...</option>
-	</select></p>
-
-	<input name="ok" type="button" value="Add Rule"
-	onclick="addRule()">
-	<!-- <input name="edit_reg" type="button" value="Edit Reg."> -->
-	<input name="reg_on" id="reg_button" type="button" value="Reg. On"
-	onclick="regularize_onoff()">
-	
-	<input name="back" type="button" value="Back Entity" onclick="backEntity()">
-        <input name="forward" type="button" value="Forward Entity" onclick="forwardEntity()">
-	<input name="previous" type="button" value="Previous Word" onclick="previousToken()">
-	<input name="next" type="button" value="Next Word" onclick="nextToken()">
-        <br/>
-        <input name="recollateTokens" type="button" value="Recollate" onclick="recollate()"/>
-	<input name="view" type="button" value="View Entire Reg." onclick="seeWitnesses()">
-	<!--<input name="done" type="button" value="Done">-->
-	<br /> Shortcuts:: <br/>"Alt+Right Arrow": Add next word to Regularize This
-	<br /> "Shift+Right Arrow": Add next word to Regularize To
-	<br /> "Tab": Find next variant to regularize
-        <br /> "Enter": Add rule
-	<br /> <input type="checkbox" name="automate" value="automate" id="automate"
-	onchange="automateReg(this)"/> Automate regularization selection
-        <br /> <input type="checkbox" name="originals" value="originals" onchange="showOriginals(this)"/>
-        <label id="showOriginals">Show originals</label>
-<!--        <br /> <select name="collation_type">
-          <option value="word">Word collation</option>
-          <option value="line">Line collation</option>
-        </select>
-        <input name="see_collation" type="button" value="Go!" onclick="seeCollation()"/>-->
+  <form name="realign_token" id="realign_token">
+    <div id="align_wrapper"></div><br/>
     </form>
 </td>
 <td valign="top">
   <label id="newRegInfo"></label><br/>
 <form action="." method="POST" name="information">
-<h2>Regularization Information</h2>
-Regularization at word <label for="word" id="word"></label> in entity <label for="block" id="block"></label>
+<h2>Witness Information</h2>
+Word <label for="word" id="word"></label> in line <label for="line" id="line"></label> in entity <label for="block" id="block"></label>
 in witness <label for="witnessId" id="witnessId"></label>
 
 <br /><br />
@@ -2417,12 +2832,12 @@ Context:<br/>
 
 </form>
 <form action="." method="POST" name="reg_information">
-Reg. from:<br/>
+Regularization from:<br/>
 <label for="reg_this_info" id="reg_this_info"></label>
 
 <br /><br />
 
-Reg. to:<br/>
+Regularization to:<br/>
 <label for="reg_to_info" id="reg_to_info"></label>
 
 <br /><br />
@@ -2431,8 +2846,9 @@ This regularization set for <label for="choice" id="choice"></label>
 </form>
 </td>
 </tr>
-</table>
 
+<tr>
+  <td>
 <form name="edit_reg">
 <h2>Regularizations</h2>
 
@@ -2443,5 +2859,7 @@ This regularization set for <label for="choice" id="choice"></label>
 <input name="submit" type="button" value="Submit" onclick="submitCustomReg()">
 
 </form>
-
+  </td>
+</tr>
+</table>
 </body> </html>

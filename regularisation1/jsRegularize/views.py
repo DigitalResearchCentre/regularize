@@ -274,11 +274,12 @@ def reloadRegularizationInterface(request):
     if request.session.get('entireReg'):
         jdata = request.session.pop('entireReg')
         jdata = json.loads(jdata)
+        print jdata
         userName = jdata['userName']
         urn = jdata['urn']
         ruleSetName = jdata['ruleSetName']
         position = jdata['position']
-        ruleSet = json.dumps({'ruleSet': jdata['ruleSet']})
+        ruleSet = json.dumps({'ruleSet': jdata['ruleSet']['ruleSet']})
         witnesses = json.dumps({'witnesses': jdata['witnesses'][0]})
         content = json.dumps(jdata['witnessesTokens'])
 
@@ -298,6 +299,10 @@ def changeRules(request):
                for modification in jdata['rules']:
                     found = False
                     for rule in filteredRuleSet[0].rules.all():
+                        # filteredModifications = Modification.objects.filter(userId=jdata['userName']\
+                        #                 ).filter(modification_type=jdata['modification']['modifications']\
+                        #                 [0]['modification_type']).filter(dateTime=jdata['rules'][0]\
+                        #                 ['modifications'][0]['dateTime'])
                         if (rule.appliesTo == jdata['urn'] and rule.action == \
                             modification['action'] and rule.scope == modification['scope'] \
                             and rule.token == modification['token']):
@@ -357,6 +362,16 @@ def postRecollate(request):
 def sendRecollate(request):
     if request.session.get('recollate'):
         jdata = request.session.pop('recollate')
+
+    url = 'http://127.0.0.1:8080/collatex-web-0.9.1-RC2/api/collate'
+    headers = {'Content-Type': 'application/json', 'Accept': 'application/json'}
+
+    send = httplib2.Http()
+    response, content = send.request(url, 'POST', jdata, headers)
+    return HttpResponse(content, mimetype="application/json")
+
+def getBaseTokens(request):
+    jdata = getTestData()
 
     url = 'http://127.0.0.1:8080/collatex-web-0.9.1-RC2/api/collate'
     headers = {'Content-Type': 'application/json', 'Accept': 'application/json'}
