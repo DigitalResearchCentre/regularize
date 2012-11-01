@@ -437,6 +437,8 @@ function selectNew()
 
 function addRule()
 {
+  console.log(distinct);
+  
   var reg_thisWhole = document.regularization.reg_this.value;
   var reg_toWhole = document.regularization.reg_to.value;
     
@@ -1493,32 +1495,24 @@ function buildWitnesses()
 function seeWitnesses()
 {
 
-  newWitnesses = buildWitnesses();
-  newWitnesses.userName = userName;
-  newWitnesses.urn = urn;
-  newWitnesses.ruleSetName = ruleSetName;
-  newWitnesses.witnessesTokens = witnessDataTokens;
-  newWitnesses.witnessesLines = witnessDataLines;
-  newWitnesses.ruleSet = {ruleSet : allRules};
-  newWitnesses.position = currentPosition;
+  var newWitnesses = buildWitnesses();
+  
+  var content = "";
 
-  $.ajax({
-    url: "http://127.0.0.1:8000/regularization/postEntireReg/",
-    dataType: 'json',
-    type: 'POST',
-    async: false,
-    data: JSON.stringify(newWitnesses),
-    success: function(data){
-    }});
+  for(var i in newWitnesses.witnesses)
+  {
+    content += newWitnesses.witnesses[i].id + ": " + newWitnesses.witnesses[i].content + "<br />";
+  }
   
-  window.location.href = "http://127.0.0.1:8000/regularization/viewEntireReg/";
-  
+  document.getElementById('newRegInfo').innerHTML = content;
 }
 
 function recollate()
 {  
+  isRecollate = true;
+  //var newWitnesses = buildWitnesses();
+  var newWitnesses = createNewAllTokens();
   isRecollate = false;
-  var newWitnesses = buildWitnesses();
   newWitnesses = JSON.stringify(newWitnesses);
   
   $.ajax({
@@ -1809,6 +1803,8 @@ function informationWindow(witnessId)
   var entity = temp.split(":", 1)[0];
   var line = temp.split("Line=")[1];
   
+  document.getElementById('newRegInfo').style.visibility = "hidden";
+  
   witnessId = witnessId.split('(')[0];
   
   for (var i in allWitnesses.witnesses)
@@ -1916,11 +1912,6 @@ function loadRegTable()
   var regRules = { rules: [] };
   
   regRules = allRules;
-  
-//  for(var i in newRules.rules)
-//  {
-//    regRules.rules.push(newRules.rules[i]);
-//  }
 
   //delete everything out of reg_table
    var table = document.getElementById('reg_table');
@@ -2054,7 +2045,7 @@ function insertRegTable(scope, reg_this, reg_to, isDisabled)
   	var regThisCell = row.insertCell(2);
   	var element3 = document.createElement("input");
   	element3.type = "text";
-  	element3.size = "40";
+  	element3.size = "25";
   	//regThisCell.innerHTML = reg_this;
   	element3.value = reg_this;
         if(isDisabled)
@@ -2066,7 +2057,7 @@ function insertRegTable(scope, reg_this, reg_to, isDisabled)
   	var regToCell = row.insertCell(3);
   	var element4 = document.createElement("input");
   	element4.type = "text";
-  	element4.size = "40";
+  	element4.size = "25";
   	element4.value = reg_to;
         if(isDisabled)
         {
@@ -2466,6 +2457,7 @@ function showRegularization(checkBox)
     {
       document.getElementById('showOriginals').innerHTML = "";
     }
+    isRealign = false;
   }
 }
 
@@ -2800,6 +2792,7 @@ function createNewAllTokens()
   
   for(var i in allTokens.alignment)
   {
+    
     newTokens.alignment.push({
       "witness": allTokens.alignment[i].witness,
       "tokens": []

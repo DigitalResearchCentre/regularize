@@ -216,7 +216,7 @@ def postNewRule(request):
     if request.is_ajax():
         if request.method == 'POST':
             jdata = json.loads(request.raw_post_data)
-            #print jdata
+            print jdata
 
             filteredRuleSet = RuleSet.objects.filter(userId=jdata['userName']).filter(\
                                 appliesTo=jdata['urn']).filter(name=jdata['ruleSetName'])

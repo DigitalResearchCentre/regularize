@@ -13,7 +13,16 @@ middleware here, or combine a Django application with an application of another
 framework.
 
 """
-import os
+import os, sys
+APP_PATH = os.path.dirname(os.path.abspath(__file__))
+ROOT_PATH = os.path.dirname(APP_PATH)
+VENV_PATH = os.path.join(ROOT_PATH, 'venv/lib/python2.6/site-packages')
+
+if not VENV_PATH in sys.path:
+    sys.path.insert(0, VENV_PATH)
+
+if not ROOT_PATH in sys.path:
+    sys.path.insert(0, ROOT_PATH)
 
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "regularisation1.settings")
 
