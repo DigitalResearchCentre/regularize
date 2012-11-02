@@ -89,8 +89,6 @@ function load()
     allRules.rules.push(ruleSet.ruleSet.rules[i]);
   }
   contextStruct = { witnesses: [] };
-
-  regOn = false;
   
   isBuildWitnesses = false;
   isRecollate = false;
@@ -122,6 +120,9 @@ function load()
   totalPos = allTokens.alignment[0].tokens.length;
   
   regularize(newRules);
+  
+  regOn = false;
+  regularize_onoff();
 }
 
 function nextToken()
@@ -779,6 +780,9 @@ function regularize_onoff()
        document.regularization.originals.style.visibility = "visible";
        document.getElementById("showOriginals").style.visibility = "visible";
        document.getElementById("showOriginals").innerHTML = "Show originals";
+       document.regularization.automate.style.visibility = "visible";
+       document.getElementById("automateLabel").style.visibility = "visible";
+       document.getElementById("automateLabel").innerHTML = "Automate regularization"
        document.edit_reg.style.visibility = "hidden";
      }
      regOn = true;
@@ -809,6 +813,8 @@ function regularize_onoff()
      {
        document.regularization.originals.style.visibility = "hidden";
        document.getElementById("showOriginals").style.visibility = "hidden";
+       document.regularization.automate.style.visibility = "hidden";
+       document.getElementById("automateLabel").style.visibility = "hidden";
      }
      
      regOn = false;
@@ -2441,7 +2447,7 @@ function showRegularization(checkBox)
     regHTML += "<br /> 'Tab': Find next variant to regularize";
     regHTML += "<br /> 'Enter': Add rule";
     regHTML += "<br /> <input type='checkbox' name='automate' value='automate' id='automate'";
-    regHTML += "onchange='automateReg(this)'/> Automate regularization selection";
+    regHTML += "onchange='automateReg(this)'/> <label id='automateLabel'>Automate regularization selection</label>";
     regHTML += "<br /> <input type='checkbox' name='originals' value='originals' onchange='showOriginals(this)'/>";
     regHTML += "<label id='showOriginals'>Show originals</label>";
 
@@ -2472,7 +2478,9 @@ function showRealign(checkBox)
     document.getElementById("reg_wrapper").innerHTML = "";
     
     var alignHTML = "Change token alignment: <input type='text' name='token' size='20'/>";
-    alignHTML += "<br/>";
+    alignHTML += "<br/> <input type='checkbox' id='move_realign' value='move_realign' onchange='changeKindCheckbox(this)'/> Move tokens";
+    alignHTML += "<br/> <input type='checkbox' id='insert_realign' value='insert_realign' onchange='changeKindCheckbox(this)'/> Insert into tokens";
+    alignHTML += "<br/>Direction:<br/>";
     alignHTML += "<input type='checkbox' name='forward_realign' value='forward_realign' id='forward_realign'";
     alignHTML += "onchange='alignmentDirection(this)'/> Forward";
     alignHTML += "<select name='forward_select' id='forward_select' onchange='getRealign()'></select>";
@@ -2491,10 +2499,23 @@ function showRealign(checkBox)
     document.getElementById("forward_select").style.visibility = "hidden";
     document.getElementById("backward_select").style.visibility = "hidden";
     document.edit_reg.style.visibility = "hidden";
+    document.getElementById("move_realign").checked = true;
   }
   else
   {
     isRealign = false;
+  }
+}
+
+function changeKindCheckbox(checkBox)
+{
+  if(checkBox.value == "move_realign")
+  {
+    document.getElementById("insert_realign").checked = false;
+  }
+  else
+  {
+    document.getElementById("move_realign").checked = false;
   }
 }
 
@@ -2542,6 +2563,7 @@ function realign()
   var token = document.realign_token.token.value;
   var forward = document.getElementById("forward_select").value;
   var backward = document.getElementById("backward_select").value;
+  var isMove = document.getElementById("move_realign").checked;
   
   if(token == "")
   {
@@ -2578,90 +2600,172 @@ function realign()
 
     if(document.getElementById("forward_realign").checked)
     {
+      // INSERT INTO
       // add a null at currentPosition for this token(one to align), in each witness
       // **pushing this token to next position
       // add a null at end of tokens for each other witness
       // splice(index, howmany(0), item)
-      for(var i in allTokens.alignment)
+      if(!isMove)
       {
-        var foundId = false;
-        for (var j in ids)
+        for(var i in allTokens.alignment)
         {
-          if(allTokens.alignment[i].witness == ids[j])
+          var foundId = false;
+          for (var j in ids)
           {
-            foundId = true;
+            if(allTokens.alignment[i].witness == ids[j])
+            {
+              foundId = true;
+            }
+          }
+
+          if(foundId)
+          {
+            for(var k = 0; k < forward; k++)
+            {
+              allTokens.alignment[i].tokens.splice(currentPosition, 0, null);
+            }
+          }
+          else
+          { 
+            var newPosition = totalPos + 1;
+            for(var k = 0; k < forward; k++)
+            {
+              allTokens.alignment[i].tokens.splice(newPosition, 0, null);
+              newPosition++;
+            }
+          }
+        }
+      }
+      else
+      {
+        // MOVE
+        for(var i in allTokens.alignment)
+        {
+          var foundId = false;
+          for (var j in ids)
+          {
+            if(allTokens.alignment[i].witness == ids[j])
+            {
+              foundId = true;
+            }
+          }
+
+          if(foundId)
+          {
+            for(var k = 0; k < forward; k++)
+            {
+              allTokens.alignment[i].tokens.splice(0, 0, "null");
+              allTokens.alignment[i].tokens[0] = null;
+            }
+          }
+          else
+          { 
+            var newPosition = totalPos + 1;
+            for(var k = 0; k < forward; k++)
+            {
+              allTokens.alignment[i].tokens.splice(newPosition, 0, null);
+              newPosition++;
+            }
           }
         }
         
-        if(foundId)
-        {
-          // TODO: for number of positions
-          for(var k = 0; k < forward; k++)
-          {
-            allTokens.alignment[i].tokens.splice(currentPosition, 0, null);
-          }
-        }
-        else
-        {
-          for(var k = 0; k < forward; k++)
-          {
-            newPosition = totalPos + 1;
-            allTokens.alignment[i].tokens.splice(newPosition, 0, null);
-          }
-        }
       }
     }
     else
     {
-      // add a null at currentPosition for this token, in each witness
-      // **pushin this token to previous position
-      // add a null at currentPosition-1 for each other witness
-      for(var i in allTokens.alignment)
+      if(isMove)
       {
-        var foundId = false;
-        for (var j in ids)
+        // MOVE
+        for(var i in allTokens.alignment)
         {
-          if(allTokens.alignment[i].witness == ids[j])
+          var foundId = false;
+          for (var j in ids)
           {
-            foundId = true;
-          }
-        }
-        
-//       var position = currentPosition - 1;
-        if(foundId)
-        {
-          newPosition = totalPos + 1;
-          for(var k = 0; k < backward; k++)
-          {
-            console.log(newPosition);
-            allTokens.alignment[i].tokens.splice(newPosition, 0, "null");
-            newPosition++;
-          }
-          
-          for(var k in allTokens.alignment[i].tokens)
-          {
-            if(allTokens.alignment[i].tokens[k] == "null")
+            if(allTokens.alignment[i].witness == ids[j])
             {
-              allTokens.alignment[i].tokens[k] = null;
+              foundId = true;
+            }
+          }
+
+          if(foundId)
+          {
+            newPosition = totalPos + 1;
+            for(var k = 0; k < backward; k++)
+            {
+              allTokens.alignment[i].tokens.splice(newPosition, 0, "null");
+              newPosition++;
+            }
+
+            for(var k in allTokens.alignment[i].tokens)
+            {
+              if(allTokens.alignment[i].tokens[k] == "null")
+              {
+                allTokens.alignment[i].tokens[k] = null;
+              }
+            }
+          }
+          else
+          {
+            for(var k = 0; k < backward; k++)
+            {
+              allTokens.alignment[i].tokens.splice(0, 0, "null");
+              allTokens.alignment[i].tokens[0] = null;
             }
           }
         }
-        else
+      }
+      else
+      {
+        // INSERT INTO
+        for(var i in allTokens.alignment)
         {
-          
-          for(var k = 0; k < backward; k++)
+          var foundId = false;
+          for (var j in ids)
           {
-            allTokens.alignment[i].tokens.splice(0, 0, "null");
-            allTokens.alignment[i].tokens[0] = null;
+            if(allTokens.alignment[i].witness == ids[j])
+            {
+              foundId = true;
+            }
+          }
+
+          if(foundId)
+          {
+            var newPosition = currentPosition;
+            newPosition++;
+            for(var k = 0; k < backward; k++)
+            {
+              allTokens.alignment[i].tokens.splice(newPosition, 0, "null");
+            }
+
+            for(var k in allTokens.alignment[i].tokens)
+            {
+              if(allTokens.alignment[i].tokens[k] == "null")
+              {
+                allTokens.alignment[i].tokens[k] = null;
+              }
+            }
+          }
+          else
+          {
+            for(var k = 0; k < backward; k++)
+            {
+              allTokens.alignment[i].tokens.splice(0, 0, "null");
+              allTokens.alignment[i].tokens[0] = null;
+            }
           }
         }
       }
     }
   }
   
-  //TODO: customRules, regOn etc
   console.log(allTokens);
-  regularize(allRules);
+  if(isCustomRules)
+  {
+    regularize(customRules);
+  }
+  {
+    regularize(allRules);
+  }
 }
 
 function getRealign()
@@ -2671,7 +2775,8 @@ function getRealign()
   var newAlign = "";
   var forward = document.getElementById("forward_select").value;
   var backward = document.getElementById("backward_select").value;
-  var position = currentPosition;
+  var isMove = document.getElementById("move_realign").checked;
+  var oldTotalPos = totalPos;
   
   if(token == "")
   {
@@ -2692,9 +2797,10 @@ function getRealign()
   if(document.getElementById("forward_realign").checked)
   {
     //OLDALIGN
-    forward++;
-    for(var i = 0; i<forward; i++)
+    var numTokens = totalPos + parseInt(forward);
+    for(var i=0; i<numTokens; i++)
     {
+      var position = i;
       if(position <= totalPos)
       { 
         //TODO: APPLY RULES DIFF -> IF CUSTOMRULES, etc
@@ -2704,16 +2810,16 @@ function getRealign()
       {
         oldAlign += getNullContent() + "<br />&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;";
       }
-      position++;
     }
-    
+
     //NEWALIGN
     //TODO: change for customRules, etc
     regularize(allRules);
     realign();
-    position = currentPosition;
-    for(var i = 0; i<forward; i++)
+    var numTokens = totalPos + parseInt(forward);
+    for(var i = 0; i<numTokens; i++)
     {
+      var position = i;
       if(position <= totalPos)
       { 
         //TODO: APPLY RULES DIFF -> IF CUSTOMRULES, etc
@@ -2723,44 +2829,90 @@ function getRealign()
       {
         newAlign += getNullContent() + "<br />&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;";
       }
-      position++;
     }
   }
   else
   {
+    //if(isMove)
+    //{
+      // MOVE
+      // 
+      //OLDALIGN
+//      position = position - backward;
+//      for(var i = 0; i <= backward; i++)
+//      {
+//        if(position >= -1)
+//        {
+//          // TODO: APPLY RULES DIFF -> IF CUSTOMRULES, etc
+//          oldAlign += findDistinct(position, allRules) + "<br />&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;";
+//        }
+//        else
+//        {
+//          oldAlign += getNullContent() + "<br />&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;";
+//        }
+//        position++;
+//      }
+//
+//      //NEWALIGN
+//      position = currentPosition - backward + 1;
+//      //TODO: change for customRules, etc
+//      regularize(allRules);
+//      realign();
+//      for(var i = 0; i <= backward; i++)
+//      {
+//        if(position >= -1)
+//        {
+//          // TODO: APPLY RULES DIFF -> IF CUSTOMRULES, etc
+//          newAlign += findDistinct(position, allRules) + "<br />&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;";
+//        }
+//        else
+//        {
+//          newAlign += getNullContent() + "<br />&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;";
+//        }
+//        position++;
+//      }
+    //}
+//    else
+//    {
+//      // INSERT INTO
+//    }
     //OLDALIGN
-    position = position - backward;
-    for(var i = 0; i <= backward; i++)
+    var numTokens = totalPos + parseInt(backward);
+    var endPosition = 0 - parseInt(backward);
+    var position = 0;
+    for(var i=numTokens; i>endPosition; i--)
     {
-      if(position >= -1)
-      {
-        // TODO: APPLY RULES DIFF -> IF CUSTOMRULES, etc
+      if(i >= -1)
+      { 
+        //TODO: APPLY RULES DIFF -> IF CUSTOMRULES, etc
         oldAlign += findDistinct(position, allRules) + "<br />&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;";
+        position++;
       }
       else
       {
         oldAlign += getNullContent() + "<br />&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;";
       }
-      position++;
     }
-    
+
     //NEWALIGN
-    position = currentPosition - backward + 1;
     //TODO: change for customRules, etc
     regularize(allRules);
     realign();
-    for(var i = 0; i <= backward; i++)
+    var numTokens = totalPos + parseInt(backward);
+    var endPosition = 0 - parseInt(backward);
+    var position = 0;
+    for(var i = numTokens; i>endPosition; i--)
     {
-      if(position >= -1)
-      {
-        // TODO: APPLY RULES DIFF -> IF CUSTOMRULES, etc
+      if(i >= -1)
+      { 
+        //TODO: APPLY RULES DIFF -> IF CUSTOMRULES, etc
         newAlign += findDistinct(position, allRules) + "<br />&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;";
+        position++;
       }
       else
       {
         newAlign += getNullContent() + "<br />&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;";
       }
-      position++;
     }
   }
   
@@ -2772,6 +2924,8 @@ function getRealign()
   // make distinct object correct
   allTokens = oldTokens;
   regularize(allRules);
+  totalPos = oldTotalPos;
+  console.log(totalPos);
 }
 
 function getNullContent()
@@ -2788,27 +2942,69 @@ function getNullContent()
 
 function createNewAllTokens()
 {
-  var newTokens = { alignment: [] };
+  var newTokens;
+  
+  if(!isRecollate)
+  {
+    newTokens = {alignment: []};
+  }
+  else
+  {
+    newTokens = {witnesses:[]};
+  }
   
   for(var i in allTokens.alignment)
   {
     
-    newTokens.alignment.push({
-      "witness": allTokens.alignment[i].witness,
-      "tokens": []
-    });
-    
-    for(var j in allTokens.alignment[i].tokens)
+    if(!isRecollate)
     {
-      if(allTokens.alignment[i].tokens[j] == null)
+      newTokens.alignment.push({
+        "witness": allTokens.alignment[i].witness,
+        "tokens": []
+      });
+
+      for(var j in allTokens.alignment[i].tokens)
       {
-        newTokens.alignment[i].tokens.push(null);
+        if(allTokens.alignment[i].tokens[j] == null)
+        {
+          newTokens.alignment[i].tokens.push(null);
+        }
+        else
+        {
+          newTokens.alignment[i].tokens.push({
+            "t": allTokens.alignment[i].tokens[j].t
+          });
+        }
       }
-      else
+    }
+    else
+    {
+      newTokens.witnesses.push({
+        "id": allTokens.alignment[i].witness,
+        "tokens": []
+      });
+      
+      for(var j in allTokens.alignment[i].tokens)
       {
-        newTokens.alignment[i].tokens.push({
-          "t": allTokens.alignment[i].tokens[j].t
-        });
+        if(allTokens.alignment[i].tokens[j] == null)
+        {
+          newTokens.witnesses[i].tokens.push(null);
+        }
+        else
+        {
+          var token = "";
+          if(regOn && isCustomRules)
+          {
+            token = getToken(customRules, i, j);
+          }
+          else if (regOn)
+          {
+            token = getToken(allRules, i, j);
+          }
+          newTokens.witnesses[i].tokens.push({
+            "t": token
+          });
+        }
       }
     }
   }

@@ -16,7 +16,7 @@ def regularization(request):
     # request should contain json with username and urn
 
     urn = "urn:det:TCUSASK:CTP2:entity=MI:Tale=MI:Line=IR"
-    userName = "eks691@mail.usask.ca"
+    userName = "user@mail.usask.ca"
 
     #sendChooseTexts(username, urn)
     jdata = getWitnessData(urn)
@@ -170,6 +170,8 @@ def chooseRuleSetsInterface(request):
         #print jdata
         
         return render_to_response('jsRegularize/chooseRuleSets_interface.html', {"userName" : userName, "urn" : urn, "witnesses" : witnesses, "ruleSetData": jdata}, context_instance=RequestContext(request))
+    else:
+       return HttpResponse(status=500) 
 
 @csrf_exempt
 def postSelectedRuleSets(request):
@@ -254,36 +256,6 @@ def postNewRule(request):
                 print "error: filteredRuleSet"
                 
     return HttpResponse("OK")
-
-@csrf_exempt
-def postEntireReg(request):
-    if request.is_ajax():
-       if request.method == 'POST':
-           request.session['entireReg'] = request.raw_post_data
-
-    return HttpResponse("OK")
-
-def viewEntireReg(request):
-    if request.session.get('entireReg'):
-        jdata = request.session.pop('entireReg')
-        #print jdata
-
-    return render_to_response('jsRegularize/view_reg.html', {"witnesses": jdata}, context_instance=RequestContext(request))
-
-def reloadRegularizationInterface(request):
-    if request.session.get('entireReg'):
-        jdata = request.session.pop('entireReg')
-        jdata = json.loads(jdata)
-        print jdata
-        userName = jdata['userName']
-        urn = jdata['urn']
-        ruleSetName = jdata['ruleSetName']
-        position = jdata['position']
-        ruleSet = json.dumps({'ruleSet': jdata['ruleSet']['ruleSet']})
-        witnesses = json.dumps({'witnesses': jdata['witnesses'][0]})
-        content = json.dumps(jdata['witnessesTokens'])
-
-    return render_to_response('jsRegularize/collate_interface.html', {"userName" : userName, "urn" : urn, "witnessesTokens" : content, "witnessesLines": witnesses, "ruleSetName": ruleSetName, "ruleSet": ruleSet, "position": position}, context_instance=RequestContext(request))
 
 @csrf_exempt
 def changeRules(request):
