@@ -2,7 +2,7 @@ from django.conf.urls import patterns, include, url
 from jsRegularize.views import regularization, postSelectedWitnesses, chooseRuleSetsInterface
 from jsRegularize.views import postSelectedRuleSets, loadRegularizationInterface
 from jsRegularize.views import postNewRule, changeRules, postRecollate
-from jsRegularize.views import sendRecollate, getBaseTokens
+from jsRegularize.views import sendRecollate, getBaseTokens, postEntity, sendEntity
 
 from django.conf import settings
 
@@ -31,6 +31,8 @@ urlpatterns = patterns('',
     url(r'^regularization/postRecollate/$', postRecollate),
     url(r'^regularization/sendRecollate/$', sendRecollate),
     url(r'^regularization/getBaseTokens/$', getBaseTokens),
+    url(r'^regularization/postEntity/$', postEntity),
+    url(r'^regularization/sendEntity/$', sendEntity),
 )
 
 # if settings.DEBUG:

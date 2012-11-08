@@ -18,7 +18,6 @@ def regularization(request):
     urn = "urn:det:TCUSASK:CTP2:entity=MI:Tale=MI:Line=IR"
     userName = "user@mail.usask.ca"
 
-    #sendChooseTexts(username, urn)
     jdata = getWitnessData(urn)
 
     return render_to_response('jsRegularize/chooseTexts_interface.html', {"userName" : userName, "urn" : urn, "witnesses" : jdata}, context_instance=RequestContext(request))
@@ -33,15 +32,22 @@ def getWitnessData(urn):
     urlDet = "http://textualcommunities.usask.ca/drc/api/det/"
 
     ## comment out if urls start working again
-    jdata = getTestData()
-    return jdata
+    #jdata = getTestData()
+    #return jdata
 
     send = httplib2.Http()
     response, content = send.request(urlDoc, 'GET')
 
     documentInfo = json.loads(content)
-    
+
+    length = len(documentInfo['hastextof'])
+    #print length
+    numberLength = 0
     for witness in documentInfo['hastextof']:
+        if(number == length):
+            break
+        numberLength = numberLength + 1
+        #print numberLength
         url = urlText + str(witness) + "/"
         response, content = send.request(url, 'GET')
         text = json.loads(content)
@@ -52,10 +58,10 @@ def getWitnessData(urn):
         try:
             response, content = send.request(url, 'GET')
             det = json.loads(content)
-
+            
             if number != 0:
                 jdata = jdata + ','
-            jdata = jdata + '{"urn": ' + jsonpickle.encode(det['urn']) + ','
+            #jdata = jdata + '{"urn": ' + jsonpickle.encode(det['urn']) + ','
             #print det['urn']
             
             _id = det['urn'].split("document=")[1]
@@ -63,7 +69,7 @@ def getWitnessData(urn):
             _id = _id.split(":")[0]
             _id = "".join(_id)
             #jdata = jdata + '"id": ' + jsonpickle.encode(_id) + ','
-            jdata = jdata + '"id": ' + jsonpickle.encode(_id) + '}'
+            jdata = jdata + '{"id": ' + jsonpickle.encode(_id) + ','
             # print _id
 
             #jdata = jdata + '"img": ' + jsonpickle.encode(det['img']) + ','
@@ -101,8 +107,8 @@ def getWitnessData(urn):
             # x = "".join(x)
             x = x.replace("&amp;", "&")
             x = parser.unescape(x)
-            #jdata = jdata + '"content": ' + jsonpickle.encode(x) + '}'
-            #print x
+            jdata = jdata + '"content": ' + jsonpickle.encode(x) + '}'
+            # print x
 
             number = number + 1
             #print text['istextin']
@@ -341,6 +347,50 @@ def sendRecollate(request):
     send = httplib2.Http()
     response, content = send.request(url, 'POST', jdata, headers)
     return HttpResponse(content, mimetype="application/json")
+
+@csrf_exempt
+def postEntity(request):
+    if request.is_ajax():
+        if request.method == 'POST':
+            request.session['entity'] = request.raw_post_data
+
+    return HttpResponse("OK")
+
+def sendEntity(request):
+    if request.session.get('entity'):
+        jdata = request.session.pop('entity')
+        jdata = json.loads(jdata)
+
+    urn = jdata['urn']
+    jdata = getWitnessData(urn)
+    allWitnesses = jdata
+    jdata = json.loads(jdata)
+    #print jdata
+    indexId = 0
+    
+    for data in jdata['witnesses']:
+        indexNew = 0
+        for data2 in jdata['witnesses']:
+            if data['id'] == data2['id'] and indexId != indexNew:
+                del jdata['witnesses'][indexNew]
+            indexNew = indexNew + 1
+        indexId = indexId + 1
+
+    jdata = json.dumps(jdata)
+    
+    url = 'http://127.0.0.1:8080/collatex-web-0.9.1-RC2/api/collate'
+    headers = {'Content-Type': 'application/json', 'Accept': 'application/json'}
+
+    try:
+        send = httplib2.Http()
+        response, content = send.request(url, 'POST', jdata, headers)
+        #print content
+        data = '{"allWitnesses" : ' + allWitnesses + ', "allTokens" : ' + content + '}'
+        print data
+        return HttpResponse(data, mimetype="application/json")
+    except:
+        return HttpResponse("OK")
+    
 
 def getBaseTokens(request):
     jdata = getTestData()
