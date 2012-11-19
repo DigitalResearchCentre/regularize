@@ -16,7 +16,7 @@ class Rule(models.Model):
 class Alignment(models.Model):
     alignmentID = models.CharField(max_length=100)
     appliesTo = models.CharField(max_length=100)
-    witnessID = models.CharField(max_length=100)
+    witnessId = models.CharField(max_length=100)
     context = models.CharField(max_length=1000)
     isMove = models.BooleanField()
     isForward = models.BooleanField()

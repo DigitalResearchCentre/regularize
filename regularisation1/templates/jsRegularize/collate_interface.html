@@ -1985,6 +1985,21 @@ function insertRegTable(scope, reg_this, reg_to, isDisabled)
   	deleteCell.appendChild(element5);
 }
 
+function getBaseTokens()
+{
+  var newTokens = { alignment: [] };
+  $.ajax({
+        url: "http://127.0.0.1:8000/regularization/getBaseTokens/",
+        dataType: 'json',
+        async: false,
+        success: function(data){
+          newTokens = data;
+        }
+    });
+    
+  return newTokens;
+}
+
 function submitCustomReg()
 {
   // for alignments
@@ -2045,15 +2060,9 @@ function submitCustomReg()
   
     sendAligns = {alignments:[]};
     
-    $.ajax({
-        url: "http://127.0.0.1:8000/regularization/getBaseTokens/",
-        dataType: 'json',
-        async: false,
-        success: function(data){
-          allTokens = data;
-          origTokens = createNewAllTokens();
-        }
-    });
+    allTokens = getBaseTokens();
+    origTokens = createNewAllTokens();
+    
     regularize();
     //applyAlign();
     loadAlignTable();
@@ -2191,14 +2200,8 @@ function submitCustomReg()
   }
   
   // get new/all rules and reload reg_table
-  $.ajax({
-        url: "http://127.0.0.1:8000/regularization/getBaseTokens/",
-        dataType: 'json',
-        async: false,
-        success: function(data){
-          allTokens = data;
-        }
-  });
+  allTokens = getBaseTokens();
+  
   regularize();
   if(alignOn)
   {
@@ -3032,7 +3035,7 @@ function loadAlignTable()
   var tokenCellTitle = row.insertCell(1);
   tokenCellTitle.innerHTML = "Token or Phrase";
   var positionCellTitle = row.insertCell(2);
-  positionCellTitle.innerHTML = "Position";
+  positionCellTitle.innerHTML = "Witness ID";
   var typeCellTitle = row.insertCell(3);
   typeCellTitle.innerHTML = "Type";
   var directionCellTitle = row.insertCell(4);
@@ -3047,7 +3050,7 @@ function loadAlignTable()
   for(var i in allAlign.alignments)
   {
     var token = allAlign.alignments[i].token;
-    var position = allAlign.alignments[i].position;
+    var witnessId = allAlign.alignments[i].witnessId;
     var type = allAlign.alignments[i].isMove;
     var direction = allAlign.alignments[i].isForward;
     var numPos = allAlign.alignments[i].numPos;
@@ -3058,14 +3061,14 @@ function loadAlignTable()
       isDisabled = true; 
     }
     
-    insertAlignTable(token, position, type, direction, numPos, isDisabled);
+    insertAlignTable(token, witnessId, type, direction, numPos, isDisabled);
     rowCount++;
   }
   
   document.edit_reg.style.visibility = "visible";
 }
 
-function insertAlignTable(token, position, isMove, isForward, numPos, isDisabled)
+function insertAlignTable(token, witnessId, isMove, isForward, numPos, isDisabled)
 {
   var table = document.getElementById('reg_table');
 
@@ -3080,11 +3083,11 @@ function insertAlignTable(token, position, isMove, isForward, numPos, isDisabled
   for(var i in customAligns.alignments)
   {
     var customToken = customAligns.alignments[i].token;
-    var customPosition = customAligns.alignments[i].position;
+    var customID = customAligns.alignments[i].witnessID;
     var customMove = customAligns.alignments[i].isMove;
     var customForward = customAligns.alignments[i].isForward;
     var customNumPos = customAligns.alignments[i].numPos;
-    if(customToken == token && customPosition == position && isMove == customMove && isForward == customForward && numPos == customNumPos)
+    if(customToken == token && customID == witnessId && isMove == customMove && isForward == customForward && numPos == customNumPos)
     {
       found = true;
     }
@@ -3106,7 +3109,7 @@ function insertAlignTable(token, position, isMove, isForward, numPos, isDisabled
   
   var positionCell = row.insertCell(2);
   var element3 = document.createElement("label");
-  element3.innerHTML = position;
+  element3.innerHTML = witnessId;
   positionCell.appendChild(element3);
   
   var typeCell = row.insertCell(3);
@@ -3183,6 +3186,9 @@ function align_onoff()
 
 function createAlignment(token, isMove, isForward, numPos)
 {
+  var allNewAlign = { alignments: [] };
+  origTokens = getBaseTokens();
+  
   if(isForward == null)
   {
     isForward = false;
@@ -3193,23 +3199,73 @@ function createAlignment(token, isMove, isForward, numPos)
     numPos = 0;
   }
   
-  var newAlign = {
-    "token": token,
-    "appliesTo": urn,
-    "position": currentPosition,
-    "isMove": isMove,
-    "isForward": isForward,
-    "numPos": numPos,
-    "modifications": []
-  };
+  if(token[token.length-1] == " ")
+  {
+    token.splice(token.length-1, 1);
+  }
+
+  token = token.split(" ");
+  var witnessId = "";
+  var context = "";
+
+  for(var i in origTokens.alignment)
+  {
+    var match = true;
+    var index = currentPosition;
+    context = "";
+    for (var j in token)
+    {
+      if(getToken(i, index) != token[j])
+      {
+        match = false;
+      }
+      index++;
+    }
+
+    if(match)
+    {
+      witnessId = origTokens.alignment[i].witness;
+      var number = 0;
+      
+      for( var j in origTokens.alignment[i].tokens)
+      {
+        if(number != 0)
+        {
+          context += " ";
+        }
+        if(origTokens.alignment[i].tokens[j] != null)
+        {
+          context += origTokens.alignment[i].tokens[j].t;
+        }
+        else
+        {
+          context += "null"
+        }
+        number++;
+      }
+      
+      var newAlign = {
+        "token": token.join(" "),
+        "appliesTo": urn,
+        "witnessId": witnessId,
+        "context": context,
+        "isMove": isMove,
+        "isForward": isForward,
+        "numPos": numPos,
+        "modifications": []
+      };
+
+      newAlign.modifications.push({
+        "modification_type": "create",
+        "userName": userName,
+        "dateTime": getDateTime()
+      });
+      
+      allNewAlign.alignments.push(newAlign);
+    }
+  }
   
-  newAlign.modifications.push({
-    "modification_type": "create",
-    "userName": userName,
-    "dateTime": getDateTime()
-  });
-  
-  return newAlign;
+  return allNewAlign;
 }
 
 function addAlign()
@@ -3236,7 +3292,13 @@ function addAlign()
   }
   
   newAlign = createAlignment(token, isMove, isForward, numPos);
-  allAlign.alignments.push(newAlign);
+  
+  for(var i in newAlign.alignments)
+  {
+    allAlign.alignments.push(newAlign.alignments[i]);
+    // add to table
+    insertAlignTable(newAlign.alignments[i].token, newAlign.alignments[i].witnessId, newAlign.alignments[i].isMove, newAlign.alignments[i].isForward, newAlign.alignments[i].numPos, false);
+  }
   
   //send to server
   sendAlign(newAlign);
@@ -3244,15 +3306,17 @@ function addAlign()
   // do alignment
   realign(token, isMove, isForward, numPos);
   
-  // add to table
-  insertAlignTable(token, currentPosition, isMove, isForward, numPos, false);
-  
 }
 
 function sendAlign(newAlign)
 {
   var sendAligns = {alignments: []};
-  sendAligns.alignments.push(newAlign);
+  
+  for(var i in newAlign.alignments)
+  {
+    sendAligns.alignments.push(newAlign.alignments[i]);
+  }
+  console.log(sendAligns);
   sendAligns.urn = urn;
   sendAligns.userName = userName;
   sendAligns.ruleSetName = ruleSetName;
@@ -3282,18 +3346,47 @@ function applyAlign()
     return;
   }
   
+  origTokens = getBaseTokens();
+  
   for (var i in aligns.alignments)
   {
     var token = aligns.alignments[i].token;
-    var position = aligns.alignments[i].position;
     var isMove = aligns.alignments[i].isMove;
     var isForward = aligns.alignments[i].isForward;
     var numPos = aligns.alignments[i].numPos;
+    var currentContext = "";
+    var context = aligns.alignment[i].context;
+    var witnessId = aligns.alignment[i].witnessId;
     if(aligns.alignments[i].modifications[aligns.alignments[i].modifications.length-1].modification_type != "delete")
     {
-      if(position == currentPosition)
+      for(var j in origTokens.alignment)
       {
-        realign(token, isMove, isForward, numPos);
+        if(origTokens.alignment[j].witnessId == witnessId)
+        {
+          var number = 0;
+          for(var k in origTokens.alignment[j].tokens)
+          {
+            if(number != 0)
+            {
+              currentContext += " ";
+            }
+            
+            if(origTokens.alignment[j].tokens[k] != null)
+            {
+              currentContext += origTokens.alignment[j].tokens[k].t;
+            }
+            else
+            {
+              currentContext += "null";
+            }
+            number++;
+          }
+        }
+        
+        if(currentContext == context)
+        {
+          realign(token, isMove, isForward, numPos);
+        }
       }
     }
   }

@@ -82,7 +82,7 @@
     }
     
     tbody += '<tr> </tr><tr><td></td><td> ALIGNMENTS: </td> <td> Applies To: </td> <td> Token: </td>'
-    tbody += '<td> Position: </td> <td> Type: </td> <td> Direction: </td> <td> Number of Positions: </td> </tr>';
+    tbody += '<td> Witness ID: </td> <td> Type: </td> <td> Direction: </td> <td> Number of Positions: </td> </tr>';
     var alignNumber = 1;
     for(var i in ruleSet.alignments)
     {
@@ -107,7 +107,7 @@
       }
       
       tbody += '<tr> <td></td><td>Alignment #' + alignNumber +'</td><td>' + ruleSet.alignments[i].appliesTo + '</td><td>' + ruleSet.alignments[i].token;
-      tbody += '</td><td>' + ruleSet.alignments[i].position + '</td><td>' + type + '</td><td>' + direction + '</td><td>' + ruleSet.alignments[i].numPos + '</td></tr>';
+      tbody += '</td><td>' + ruleSet.alignments[i].witnessId + '</td><td>' + type + '</td><td>' + direction + '</td><td>' + ruleSet.alignments[i].numPos + '</td></tr>';
       tbody += '<tr> <td></td><td></td><td> MODIFICATIONS: </td> <td> Type: </td> <td> Owner </td> <td> Timestamp: </td><td></td><td></td></tr>';
       
       for (var j in ruleSet.alignments[i].modifications)

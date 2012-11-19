@@ -176,11 +176,12 @@ def chooseRuleSetsInterface(request):
                     if(alignNum != 0):
                         jdata = jdata + ","
                     jdata = jdata + '{"appliesTo":' + jsonpickle.encode(a.appliesTo) + ','
-                    jdata = jdata + '"position": ' + jsonpickle.encode(a.position) + ','
+                    jdata = jdata + '"witnessId": ' + jsonpickle.encode(a.witnessId) + ','
                     jdata = jdata + '"isForward": ' + jsonpickle.encode(a.isForward) + ','
                     jdata = jdata + '"isMove": ' + jsonpickle.encode(a.isMove) + ','
                     jdata = jdata + '"token": ' + jsonpickle.encode(a.token) + ','
                     jdata = jdata + '"numPos": ' + jsonpickle.encode(a.numPos) + ','
+                    jdata = jdata + '"context": ' + jsonpickle.encode(a.context) + ','
                     jdata = jdata + '"modifications": ['
                     modificationNum = 0
                     for m in a.modifications.all():
@@ -448,46 +449,52 @@ def postNewAlign(request):
     if request.is_ajax():
         if request.method == 'POST':
             jdata = json.loads(request.raw_post_data)
-            print jdata
+            #print jdata
 
             filteredRuleSet = RuleSet.objects.filter(userId=jdata['userName']).filter(\
                                 appliesTo=jdata['urn']).filter(name=jdata['ruleSetName'])
 
             if filteredRuleSet and filteredRuleSet.count() == 1:
-                filteredModifications = Modification.objects.filter(userId=jdata['userName']).filter(\
-                    modification_type=jdata['alignments'][0]['modifications'][0]['modification_type'])\
-                    .filter(dateTime=jdata['alignments'][0]['modifications'][0]['dateTime'])
-                
-                found = False
-                for align in filteredRuleSet[0].alignments.all():
-                    if (align.appliesTo == jdata['urn'] and align.appliesTo == \
-                        jdata['alignments'][0]['appliesTo'] and align.position == \
-                        jdata['alignments'][0]['position'] and align.isForward == \
-                        jdata['alignments'][0]['isForward'] and align.isMove == \
-                        jdata['alignments'][0]['isMove'] and align.numPos == \
-                        jdata['alignments'][0]['numPos'] and align.token == \
-                        jdata['alignments'][0]['token']):
-                        found = True
-                        
-                if not filteredModifications and not found:
-                    m = Modification()
-                    m.userId = jdata['userName']
-                    m.modification_type = jdata['alignments'][0]['modifications'][0]['modification_type']
-                    m.dateTime = jdata['alignments'][0]['modifications'][0]['dateTime']
-                    m.save()
+                # filteredModifications = Modification.objects.filter(userId=jdata['userName']).filter(\
+                #     modification_type=jdata['alignments'][0]['modifications'][0]['modification_type'])\
+                #     .filter(dateTime=jdata['alignments'][0]['modifications'][0]['dateTime'])
 
-                    a = Alignment()
-                    a.appliesTo = jdata['urn']
-                    a.position = jdata['alignments'][0]['position']
-                    a.isMove = jdata['alignments'][0]['isMove']
-                    a.isForward = jdata['alignments'][0]['isForward']
-                    a.token = jdata['alignments'][0]['token']
-                    a.numPos = jdata['alignments'][0]['numPos']
-                    a.save()
-                    a.modifications.add(m)
-                    filteredRuleSet[0].alignments.add(a)
-                else:
-                    print "error: filteredModifications OR filteredRules"
+                for newAlign in jdata['alignments']:
+                    found = False
+                    print newAlign
+                    for align in filteredRuleSet[0].alignments.all():
+                        if (align.appliesTo == jdata['urn'] and align.appliesTo == \
+                            newAlign['appliesTo'] and align.witnessId == \
+                            newAlign['witnessId'] and align.isForward == \
+                            newAlign['isForward'] and align.isMove == \
+                            newAlign['isMove'] and align.numPos == \
+                            newAlign['numPos'] and align.token == \
+                            newAlign['token'] and align.context == \
+                            newAlign['context']):
+                            print "hereFound"
+                            found = True
+                        
+                    if not found:
+                        print "here"
+                        m = Modification()
+                        m.userId = jdata['userName']
+                        m.modification_type = newAlign['modifications'][0]\
+                            ['modification_type']
+                        m.dateTime = newAlign['modifications'][0]['dateTime']
+                        m.save()
+
+                        a = Alignment()
+                        a.appliesTo = jdata['urn']
+                        a.witnessId = newAlign['witnessId']
+                        a.isMove = newAlign['isMove']
+                        a.isForward = newAlign['isForward']
+                        a.token = newAlign['token']
+                        a.numPos = newAlign['numPos']
+                        a.context = newAlign['context']
+                        a.save()
+                        print a.witnessId
+                        a.modifications.add(m)
+                        filteredRuleSet[0].alignments.add(a)
             else:
                 print "error: filteredRuleSet"
                 
@@ -505,21 +512,24 @@ def changeAligns(request):
 
            if filteredRuleSet and filteredRuleSet.count() == 1:
                for modification in jdata['alignments']:
+                   # filteredModifications = Modification.objects.filter(userId=jdata['userName']).filter(\
+                   #  modification_type=jdata['alignments'][0]['modifications'][0]['modification_type'])\
+                   #  .filter(dateTime=jdata['alignments'][0]['modifications'][0]['dateTime'])
                     found = False
                     for align in filteredRuleSet[0].alignments.all():
-                        # filteredModifications = Modification.objects.filter(userId=jdata['userName']\
-                        #                 ).filter(modification_type=jdata['modification']['modifications']\
-                        #                 [0]['modification_type']).filter(dateTime=jdata['rules'][0]\
-                        #                 ['modifications'][0]['dateTime'])
                        if (align.appliesTo == jdata['urn'] and align.appliesTo == \
-                        jdata['alignments'][0]['appliesTo'] and align.position == \
-                        jdata['alignments'][0]['position'] and align.isForward == \
+                        jdata['alignments'][0]['appliesTo'] and align.witnessId == \
+                        jdata['alignments'][0]['witnessId'] and align.isForward == \
                         jdata['alignments'][0]['isForward'] and align.isMove == \
                         jdata['alignments'][0]['isMove'] and align.numPos == \
                         jdata['alignments'][0]['numPos'] and align.token == \
-                        jdata['alignments'][0]['token']):
+                        jdata['alignments'][0]['token'] and align.context == \
+                        jdata['alignments'][0]['context']):
                         found = True
                         modifiedAlign = align
+
+                        # if (modifiedAlign.modifications.modification_type == 'delete'):
+                        #     found = False
                         
                     if found:
                         m = Modification()
