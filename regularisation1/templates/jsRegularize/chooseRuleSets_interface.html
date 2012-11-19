@@ -32,6 +32,8 @@
     ruleSetData = ruleSetData.replace(/'/g, '\"');
     ruleSetData = JSON.parse(ruleSetData);
     
+    console.log(ruleSetData);
+    
     loadTables();
   }
   
@@ -57,26 +59,64 @@
     var tfooter = '</table><br/>';
     var selectButton = '<input type="button" value = "Select" onclick="chooseRuleSet('+number+')"/><br/>';
     
-    tbody += '<font color="#A52A2A"><tr><td> RULE SET: </td> <td> Name: </td> <td> Applies To: </td> <td> Owner </td><td></td><td></td>';
+    tbody += '<font color="#A52A2A"><tr><td> RULE SET: </td> <td> Name: </td> <td> Applies To: </td> <td> Owner </td><td></td><td></td><td></td><td></td>';
     tbody += '<tr> <td> </td> <td>' +  ruleSet.name + ' </td> <td>' + ruleSet.appliesTo + '</td> <td>';
-    tbody += ruleSet.userId + ' </td> <td></td><td></td></tr></font>';
+    tbody += ruleSet.userId + ' </td> <td></td><td></td><td></td><td></td></tr></font>';
     tbody += '<tr> </tr><tr><td></td><td> RULES: </td> <td> Applies To: </td> <td> Action: </td>'
-    tbody += '<td> Scope: </td> <td> Token: </td> </tr>';
+    tbody += '<td> Scope: </td> <td> Token: </td> <td></td><td></td></tr>';
     
     var ruleNumber = 1;
     for (var i in ruleSet.rules)
     {
       tbody += '<tr> <td></td><td>Rule #' + ruleNumber +'</td><td>' + ruleSet.rules[i].appliesTo + '</td><td>' + ruleSet.rules[i].action;
-      tbody += '</td><td>' + ruleSet.rules[i].scope + '</td><td>' + ruleSet.rules[i].token + '</td></tr>';
-      tbody += '<tr> <td></td><td></td><td> MODIFICATIONS: </td> <td> Type: </td> <td> Owner </td> <td> Timestamp: </td></tr>';
+      tbody += '</td><td>' + ruleSet.rules[i].scope + '</td><td>' + ruleSet.rules[i].token + '</td><td></td><td></td></tr>';
+      tbody += '<tr> <td></td><td></td><td> MODIFICATIONS: </td> <td> Type: </td> <td> Owner </td> <td> Timestamp: </td><td></td><td></td></tr>';
       
       for (var j in ruleSet.rules[i].modifications)
       {
         tbody += '<tr><td></td><td></td><td></td><td>' + ruleSet.rules[i].modifications[j].modification_type;
         tbody += '</td><td>' + ruleSet.rules[i].modifications[j].userId + '</td><td>';
-        tbody += ruleSet.rules[i].modifications[j].dateTime + '</td></tr>';
+        tbody += ruleSet.rules[i].modifications[j].dateTime + '</td><td></td><td></td></tr>';
       }
       ruleNumber++;
+    }
+    
+    tbody += '<tr> </tr><tr><td></td><td> ALIGNMENTS: </td> <td> Applies To: </td> <td> Token: </td>'
+    tbody += '<td> Position: </td> <td> Type: </td> <td> Direction: </td> <td> Number of Positions: </td> </tr>';
+    var alignNumber = 1;
+    for(var i in ruleSet.alignments)
+    {
+      var direction = "";
+      var type = "";
+      if(ruleSet.alignments[i].isMove)
+      {
+        type = "Move tokens";
+      }
+      else
+      {
+        type = "Create phrase";
+      }
+      
+      if(ruleSet.alignments[i].isForward)
+      {
+        direction = "Forward";
+      }
+      else
+      {
+        direction = "Backward";
+      }
+      
+      tbody += '<tr> <td></td><td>Alignment #' + alignNumber +'</td><td>' + ruleSet.alignments[i].appliesTo + '</td><td>' + ruleSet.alignments[i].token;
+      tbody += '</td><td>' + ruleSet.alignments[i].position + '</td><td>' + type + '</td><td>' + direction + '</td><td>' + ruleSet.alignments[i].numPos + '</td></tr>';
+      tbody += '<tr> <td></td><td></td><td> MODIFICATIONS: </td> <td> Type: </td> <td> Owner </td> <td> Timestamp: </td><td></td><td></td></tr>';
+      
+      for (var j in ruleSet.alignments[i].modifications)
+      {
+        tbody += '<tr><td></td><td></td><td></td><td>' + ruleSet.alignments[i].modifications[j].modification_type;
+        tbody += '</td><td>' + ruleSet.alignments[i].modifications[j].userId + '</td><td>';
+        tbody += ruleSet.alignments[i].modifications[j].dateTime + '</td><td></td><td></td></tr>';
+      }
+      alignNumber++;
     }
     
     return theader + tbody + tfooter + selectButton;

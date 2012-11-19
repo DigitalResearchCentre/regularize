@@ -53,6 +53,10 @@ var distinct;
 var changeLabelTimer = null;
 var isOriginals;
 var isRealign;
+var alignOn;
+var allAlign;
+var customAligns;
+var isCustomAlign;
 
 function load()
 {
@@ -77,16 +81,23 @@ function load()
   document.reg_information.style.visibility ="hidden";
   document.edit_reg.style.visibility = "hidden";
   document.regularization.reg_checkbox.checked = true;
-  showRegularization(document.regularization.reg_checkbox);
   
+  alignOn = false;
   isOriginals = false;
   isRealign = false;
   newRules = { rules: [] };
   customRules = { rules: [] };
+  customAligns = { alignments: [] };
+  isCustomAlign = false;
   allRules = { rules: [] };
+  allAlign = { alignments: [] };
   for(var i in ruleSet.ruleSet.rules)
   {
     allRules.rules.push(ruleSet.ruleSet.rules[i]);
+  }
+  for(var i in ruleSet.ruleSet.alignments)
+  {
+    allAlign.alignments.push(ruleSet.ruleSet.alignments[i]);
   }
   contextStruct = { witnesses: [] };
   
@@ -102,16 +113,25 @@ function load()
   });
 
   shortcut.add("Shift+Right", function () {
-    addTokenTo();
+    if(!isRealign)
+    {
+      addTokenTo();
+    }
   });
 
   shortcut.add("Tab", function() {
-    findNextVariant();
+    if(!isRealign)
+    {
+      findNextVariant();
+    }
   });
   
   shortcut.add("Enter", function() {
+    if(!isRealign)
+    {
       addRule();
-    });
+    }
+  });
     
   allTokens = witnessDataTokens;
   origTokens = createNewAllTokens();
@@ -119,10 +139,10 @@ function load()
   
   totalPos = allTokens.alignment[0].tokens.length;
   
-  regularize();
-  
+  showRegularization(document.regularization.reg_checkbox);
   regOn = false;
   regularize_onoff();
+  regularize();
 }
 
 function nextToken()
@@ -141,6 +161,7 @@ function nextToken()
   }
   
   regularize();
+  //applyAlign();
   
   document.regularization.reg_to.value = reg_toWhole;
 }
@@ -161,6 +182,7 @@ function previousToken()
   }
   
   regularize();
+  //applyAlign();
   
   document.regularization.reg_to.value = reg_toWhole;
 }
@@ -192,6 +214,13 @@ function selectRealignToken()
   var content = document.regularization.reg.value;
   var txt = document.regularization.reg;
   var pos = txt.selectionStart;
+  if(document.getElementById("move_realign").checked)
+  {
+    document.getElementById("backward_realign").checked = false;
+    document.getElementById("forward_realign").checked = false;
+    document.getElementById("backward_select").style.visibility = "hidden";
+    document.getElementById("forward_select").style.visibility = "hidden";
+  }
 
   var token = findWord(pos, content);
 
@@ -455,23 +484,13 @@ function addRuleList(newRule)
   {
     customRules.rules.push(newRule);
     allRules.rules.push(newRule);
-    //newRules.rules.push(newRule);
     regularize();
   }
   else //if(regOn && !isCustomRules)
   {
     allRules.rules.push(newRule);
-    //var regRules = allRules;
-    //CHANGED: check works!
-    //newRules.rules.push(newRule);
     regularize();
   }
-//  else
-//  {
-//    allRules.rules.push(newRule);
-//    newRules.rules.push(newRule);
-//    regularize(newRules);
-//  }
 
 }
 
@@ -683,8 +702,10 @@ function regularize_onoff()
      document.getElementById('reg_on').innerHTML = "Regularization is on! Click on a witness for a regularized word to see more detail.";
      document.getElementById('reg_button').value = "Reg. Off";
 
-
-     loadRegTable();
+     if(!alignOn)
+     {
+       loadRegTable();
+     }
      regularize();
   }
   else
@@ -707,17 +728,8 @@ function regularize_onoff()
      
      allTokens = origTokens;
      regularize();
-     
-//     if(isCustomRules)
-//     {
-//       regularize(customRules);
-//     }
-//     else
-//     {
-//       newRules = { rules: [] };
-//       regularize(newRules);
-//     }
   }
+  
 }
 
 function regularize()
@@ -771,7 +783,7 @@ function findDistinct(position)
     }
 
     // regularize token
-    var token = getToken(regRules, i, position);
+    var token = getToken(i, position);
     
 
     // determine what the original token is, if it is regularized
@@ -1121,7 +1133,12 @@ function findNextVariant()
   var reg_to = document.regularization.reg_to.value;
 
   var position = currentPosition;
-  var regRules = "";
+  
+  if(!regOn)
+  {
+    alert("Regularization must be on to perform this action");
+    return;
+  }
 
   if(isCustomRules)
   {
@@ -1129,15 +1146,7 @@ function findNextVariant()
   }
   else
   {
-    regRules = newRules;
-
-    if(regOn)
-    {
-      for(var i in allRules.rules)
-      {
-        regRules.rules.push(allRules.rules[i]);
-      }
-    }
+    regRules = allRules;
   }
 
   if(reg_to == "")
@@ -1152,7 +1161,7 @@ function findNextVariant()
      var variant = "";
      for (var i in allTokens.alignment)
      {
-       var token = getToken(regRules, i, position);
+       var token = getToken(i, position);
 
        if (token == reg_to && !found)
        {
@@ -1187,23 +1196,11 @@ function addTokenTo()
   var reg_this = document.regularization.reg_to.value;
   var position = currentPosition;
   var newToken = "";
-  var regRules = "";
-
-  if(isCustomRules)
+  
+  if(!regOn)
   {
-    regRules = customRules;
-  }
-  else
-  {
-    regRules = newRules;
-
-    if(regOn)
-    {
-      for(var i in allRules.rules)
-      {
-        regRules.rules.push(allRules.rules[i]);
-      }
-    }
+    alert("Regularization must be on to perform this action");
+    return;
   }
   
   var reg_thisArray = reg_this.split(" ");
@@ -1232,12 +1229,12 @@ function addTokenTo()
 
      for (var i in allTokens.alignment)
      {
-       var token = getToken(regRules, i, position);
+       var token = getToken(i, position);
         
         if(token == reg_this)
         {
          var newPosition = position + 1;
-         var rToken = getToken(regRules, i, newPosition);
+         var rToken = getToken(i, newPosition);
 
           if(!found)
           {
@@ -1270,26 +1267,28 @@ function addTokenThis()
     // else add next word to reg_this
     // if reg_on see if rules apply to next word!
 
-  var reg_this = document.regularization.reg_this.value;
-  var position = currentPosition;
-  var newToken = "";
-  var regRules = "";
-
-  if(isCustomRules)
+  
+  var reg_this = "";
+  if(!isRealign)
   {
-    regRules = customRules;
+    reg_this = document.regularization.reg_this.value;
   }
   else
   {
-    regRules = newRules;
-
-    if(regOn)
-    {
-      for(var i in allRules.rules)
-      {
-        regRules.rules.push(allRules.rules[i]);
-      }
-    }
+    reg_this = document.realign_token.token.value;
+  }
+  var position = currentPosition;
+  var newToken = "";
+  
+  if(!regOn && !isRealign)
+  {
+    alert("Regularization must be on to perform this action");
+    return;
+  }
+  else if(isRealign && !alignOn)
+  {
+    alert("Alignment must be on to perform this action");
+    return;
   }
   
   var reg_thisArray = reg_this.split(" ");
@@ -1318,13 +1317,13 @@ function addTokenThis()
 
      for (var i in allTokens.alignment)
      {
-       var token = getToken(regRules, i, position);
+       var token = getToken(i, position);
         
         
         if(token == reg_this)
         {
           var newPosition = position + 1;
-          var rToken = getToken(regRules, i, newPosition);
+          var rToken = getToken(i, newPosition);
 
           if(!found)
           {
@@ -1338,9 +1337,13 @@ function addTokenThis()
          }
     }
 
-     if(add)
+     if(add && !isRealign)
      {
        document.regularization.reg_this.value += " " + newToken;
+     }
+     else if(add && isRealign)
+     {
+       document.realign_token.token.value += " " + newToken;
      }
      else
      {
@@ -1353,15 +1356,6 @@ function buildWitnesses()
 {
   //alert("buildWitnesses");
   newWitnesses = { witnesses: [] };
-  var regRules;
-  if(isCustomRules)
-  {
-    regRules = customRules;
-  }
-  else
-  {
-    regRules = allRules;
-  }
   isBuildWitnesses = true;
   allTokens = origTokens;
 
@@ -1370,7 +1364,7 @@ function buildWitnesses()
     var content = "";
     for (var j in allTokens.alignment[i].tokens)
     {
-      var token = getToken(regRules, i, j);
+      var token = getToken(i, j);
       if(token != "null")
       {
         content += token + " ";
@@ -1479,12 +1473,23 @@ function checkSpaces(reg_word)
   }
 }
 
-function getToken(regRules, witnessId, position)
+function getToken(witnessId, position)
 {
 
    var token = "";
    var collate = false;
    var origToken = "";
+   var regRules = { rules: []};
+   
+   if(isCustomRules)
+   {
+     regRules = customRules;
+     
+   }
+   else
+   {
+     regRules = allRules;
+   }
   
    if(allTokens.alignment[witnessId].tokens[position] == null)
    {
@@ -1699,6 +1704,7 @@ function informationWindow(witnessId)
   var line = temp.split("Line=")[1];
   
   document.getElementById('newRegInfo').style.visibility = "hidden";
+  document.getElementById('newRegInfo').innerHTML = "";
   
   witnessId = witnessId.split('(')[0];
   
@@ -1730,44 +1736,48 @@ function informationWindow(witnessId)
   
   for(var i in regRules.rules)
   {
-    var action = regRules.rules[i].action;
-    
-    if(allTokens.alignment[index].tokens != null && allTokens.alignment[index].tokens[currentPosition] != null)
+    var modifications = regRules.rules[i].modifications;
+    if(modifications[modifications.length-1].modification_type != "delete")
     {
-      if(allTokens.alignment[index].tokens[currentPosition].origToken != null && allTokens.alignment[index].tokens[currentPosition].origToken != "")
-      {
-        reg_this = action.split(', ')[0];
-        reg_this = reg_this.substring(11, reg_this.length);
-        if(allTokens.alignment[index].tokens[currentPosition].origToken == reg_this)
-        {
-          reg_to = action.split(', ')[1];
-          reg_to = reg_to.substring(0, reg_to.length-1);
-          choice = regRules.rules[i].scope;
-        }
-      }
-      else 
-      {
-        if (allTokens.alignment[index].tokens[currentPosition] != null)
-        {
-          token = allTokens.alignment[index].tokens[currentPosition].t;
-        }
-        else
-        {
-          token = "null";
-        }
+      var action = regRules.rules[i].action;
 
-        if(token == regRules.rules[i].token)
+      if(allTokens.alignment[index].tokens != null && allTokens.alignment[index].tokens[currentPosition] != null)
+      {
+        if(allTokens.alignment[index].tokens[currentPosition].origToken != null && allTokens.alignment[index].tokens[currentPosition].origToken != "")
         {
-          reg_this = regRules.rules[i].token;
-          reg_to = action.split(', ')[1];
-          reg_to = reg_to.substring(0, reg_to.length-1);
-          choice = regRules.rules[i].scope;
+          reg_this = action.split(', ')[0];
+          reg_this = reg_this.substring(11, reg_this.length);
+          if(allTokens.alignment[index].tokens[currentPosition].origToken == reg_this)
+          {
+            reg_to = action.split(', ')[1];
+            reg_to = reg_to.substring(0, reg_to.length-1);
+            choice = regRules.rules[i].scope;
+          }
+        }
+        else 
+        {
+          if (allTokens.alignment[index].tokens[currentPosition] != null)
+          {
+            token = allTokens.alignment[index].tokens[currentPosition].t;
+          }
+          else
+          {
+            token = "null";
+          }
+
+          if(token == regRules.rules[i].token)
+          {
+            reg_this = regRules.rules[i].token;
+            reg_to = action.split(', ')[1];
+            reg_to = reg_to.substring(0, reg_to.length-1);
+            choice = regRules.rules[i].scope;
+          }
         }
       }
-    }
-    else
-    {
-      token = "null";
+      else
+      {
+        token = "null";
+      }
     }
   }
   
@@ -1804,6 +1814,7 @@ function informationWindow(witnessId)
 
 function loadRegTable()
 {
+  document.getElementById("reg_table_title").innerHTML = "Regularizations";
   var regRules = { rules: [] };
   
   regRules = allRules;
@@ -1822,6 +1833,7 @@ function loadRegTable()
   var row = table.insertRow(rowCount);
   
   var checkCellTitle = row.insertCell(0);
+  checkCellTitle.innerHTML  = "Apply";
   var scopeCellTitle = row.insertCell(1);
   scopeCellTitle.innerHTML = "Scope";
   var regThisCellTitle = row.insertCell(2);
@@ -1971,19 +1983,87 @@ function insertRegTable(scope, reg_this, reg_to, isDisabled)
           element5.disabled = true;
         }
   	deleteCell.appendChild(element5);
-        
-  	/*
-var deleteRegCell = row.insertCell(4);
-  	var element5 = document.createElement("input");
-  	element5.type = "button";
-  	element5.value = "Delete";
-  	deleteRegCell.appendChild(element5);
-*/
-  
 }
 
 function submitCustomReg()
 {
+  // for alignments
+  if(alignOn)
+  {
+    isCustomAlign = true;
+    
+    var table = document.getElementById("reg_table");
+    var rowCount = table.rows.length;
+    
+    customAligns = { alignments: [] };
+    var sendAligns = { alignments: [] };
+    var aligns = allAlign;
+    
+    for(var i=1; i<rowCount; i++)
+    {
+      var row = table.rows[i];
+      var check = row.cells[0].childNodes[0];
+      var deleteCell = row.cells[6].childNodes[0];
+      var index = i - 1;
+      
+      if(check.checked)
+      {
+        customAligns.alignments.push(aligns.alignments[index]);
+      }
+      
+      if(deleteCell.checked)
+      { 
+        var newAlign = aligns.alignments[index];
+        newAlign.modifications.push({
+          "userId": userName,
+          "modification_type": "delete",
+          "dateTime" : getDateTime()
+        });
+        customAligns.alignments.push(newAlign);
+        allAlign.alignments[index].modifications.push({
+          "userId": userName,
+          "modification_type": "delete",
+          "dateTime" : getDateTime()
+        });
+        sendAligns.alignments.push(newAlign);
+      }
+    }
+    
+    sendAligns.urn = urn;
+    sendAligns.userName = userName;
+    sendAligns.ruleSetName = ruleSetName;
+
+    // send changed rules to server
+    $.ajax({
+        url: "http://127.0.0.1:8000/regularization/changeAligns/",
+        dataType: 'json',
+        type: 'POST',
+        async: false,
+        data: JSON.stringify(sendAligns),
+        success: function(data){
+    }});
+  
+    sendAligns = {alignments:[]};
+    
+    $.ajax({
+        url: "http://127.0.0.1:8000/regularization/getBaseTokens/",
+        dataType: 'json',
+        async: false,
+        success: function(data){
+          allTokens = data;
+          origTokens = createNewAllTokens();
+        }
+    });
+    regularize();
+    //applyAlign();
+    loadAlignTable();
+    
+    console.log(allAlign);
+    
+    return;
+  }
+  
+  // for regularization rules
   isCustomRules = true;  // ??!! <----
   var table = document.getElementById('reg_table');
   var rowCount = table.rows.length;
@@ -1993,11 +2073,6 @@ function submitCustomReg()
   var sendRules = { rules: [] };
   
   var regRules = allRules;
-//  for(var i in newRules.rules)
-//  {
-//    regRules.rules.push(newRules.rules[i]);
-//  }
-  //console.log(regRules);
   
   for(var i=1; i<rowCount; i++)
   {
@@ -2125,6 +2200,10 @@ function submitCustomReg()
         }
   });
   regularize();
+  if(alignOn)
+  {
+    //applyAlign();
+  }
   loadRegTable();
 }
 
@@ -2274,6 +2353,12 @@ function backEntity()
   var jdata = { urn: temp};
   jdata = JSON.stringify(jdata);
   getEntity(jdata);
+  urn = temp;
+  
+  var temp = urn.split("entity=")[1];
+  var entity = temp.split(":", 1)[0];
+  var line = temp.split("Line=")[1];
+  document.getElementById("title_label").innerHTML = "entity " + entity + ", line " + line;
   
 }
 
@@ -2286,11 +2371,21 @@ function forwardEntity()
   {
     line = 1;
   }
+  else
+  {
+    line++;
+  }
   
   temp = temp+"Line="+line.toString();
   var jdata = { urn: temp};
   jdata = JSON.stringify(jdata);
   getEntity(jdata);
+  urn = temp;
+  
+  var temp = urn.split("entity=")[1];
+  var entity = temp.split(":", 1)[0];
+  var line = temp.split("Line=")[1];
+  document.getElementById("title_label").innerHTML = "entity " + entity + ", line " + line;
 }
 
 function getEntity(jdata)
@@ -2318,6 +2413,7 @@ function getEntity(jdata)
       totalPos = allTokens.alignment[0].tokens.length;
       currentPosition = 0;
       console.log(allTokens);
+      //applyAlign();
       regularize();
   }});
 }
@@ -2328,31 +2424,10 @@ function showOriginals(checkBox)
   if(checkBox.checked)
   {
     isOriginals = true;
-    
-//    if(isCustomRules)
-//    {
-//      var regRules = customRules;
-//    }
-//    else
-//    {
-//      var regRules = allRules;
-//    }
-    //regularize();
-    
   }
   else
   {
     isOriginals = false; 
-    
-//    if(isCustomRules)
-//    {
-//      var regRules = customRules;
-//    }
-//    else
-//    {
-//      var regRules = allRules;
-//    }
-    //regularize(regRules);
   }
   regularize();
 }
@@ -2400,6 +2475,7 @@ function showRegularization(checkBox)
       document.getElementById('showOriginals').innerHTML = "";
     }
     isRealign = false;
+    loadRegTable();
   }
 }
 
@@ -2414,29 +2490,25 @@ function showRealign(checkBox)
     document.getElementById("reg_wrapper").innerHTML = "";
     
     var alignHTML = "Change token alignment: <input type='text' name='token' size='20'/>";
-    //alignHTML += "<br/> <input type='checkbox' id='move_realign' value='move_realign' onchange='changeKindCheckbox(this)'/> Move tokens";
+    alignHTML += "<br/> <input type='checkbox' id='move_realign' value='move_realign' onchange='changeKindCheckbox(this)'/> Move token";
+    alignHTML += "<br/> <input type='checkbox' id='combine_realign' value='combine_realign' onchange='changeKindCheckbox(this)'/> Create phrase";
     //alignHTML += "<br/> <input type='checkbox' id='insert_realign' value='insert_realign' onchange='changeKindCheckbox(this)'/> Insert into tokens";
-    alignHTML += "<br/>Direction:<br/>";
-    alignHTML += "<input type='checkbox' name='forward_realign' value='forward_realign' id='forward_realign'";
-    alignHTML += "onchange='alignmentDirection(this)'/> Forward";
-    alignHTML += "<select name='forward_select' id='forward_select' onchange='getRealign()'></select>";
+    alignHTML += "<br/><div id='alignOption_wrapper'></div>"
     alignHTML += "<br />";
-    alignHTML += "<input type='checkbox' name='backward_realign' value='bacward_realign' id='backward_realign'";
-    alignHTML += "onchange='alignmentDirection(this)'/> Backward";
-    alignHTML += "<select name='backward_select' id='backward_select' onchange='getRealign()'></select>";
+    alignHTML += "<input name='submitRealign' type='button' value='Change' onclick='addAlign()'>";
     alignHTML += "<br />";
     alignHTML += "Old alignment: <label id='realign_this'></label>";
     alignHTML += "<br />";
     alignHTML += "New alignment: <label id='realign_to'></label>";
-    alignHTML += "<br />";
-    alignHTML += "<input name='submitRealign' type='button' value='Change' onclick='realign()'>";
     
     document.getElementById("align_wrapper").innerHTML = alignHTML;
-    document.getElementById("forward_select").style.visibility = "hidden";
-    document.getElementById("backward_select").style.visibility = "hidden";
     document.edit_reg.style.visibility = "hidden";
     document.getElementById("move_realign").checked = true;
-    isMove = true;
+    changeKindCheckbox(document.getElementById("move_realign"));
+    alignOn = false;
+    align_onoff();
+    
+    //document.getElementById("move_realign").checked = true;
   }
   else
   {
@@ -2448,11 +2520,28 @@ function changeKindCheckbox(checkBox)
 {
   if(checkBox.value == "move_realign")
   {
-    document.getElementById("insert_realign").checked = false;
+    document.getElementById("combine_realign").checked = false;
+    
+    document.getElementById("alignOption_wrapper").innerHTML = "";
+    var alignHTML = "<br/>Direction:<br/>";
+    alignHTML += "<input type='checkbox' name='forward_realign' value='forward_realign' id='forward_realign'";
+    alignHTML += "onchange='alignmentDirection(this)'/> Forward";
+    alignHTML += "<select name='forward_select' id='forward_select' onchange='getRealign()'></select>";
+    alignHTML += "<br/>";
+    alignHTML += "<input type='checkbox' name='backward_realign' value='bacward_realign' id='backward_realign'";
+    alignHTML += "onchange='alignmentDirection(this)'/> Backward";
+    alignHTML += "<select name='backward_select' id='backward_select' onchange='getRealign()'></select>";
+    document.getElementById("alignOption_wrapper").innerHTML = alignHTML;
+    document.getElementById("forward_realign").style.visibility = "visible";
+    document.getElementById("backward_realign").style.visibility = "visible";
+    document.getElementById("forward_select").style.visibility = "hidden";
+    document.getElementById("backward_select").style.visibility = "hidden";
   }
   else
   {
     document.getElementById("move_realign").checked = false;
+    document.getElementById("alignOption_wrapper").innerHTML = "";
+    document.getElementById("alignOption_wrapper").innerHTML = "Shortcuts::<br/>'Alt+Right Arrow': Add next token to Change Alignment";
   }
 }
 
@@ -2495,12 +2584,18 @@ function alignmentDirection(checkBox)
   }
 }
 
-function realign()
+function realign(token, isMove, isForward, numPos)
 {
-  var token = document.realign_token.token.value;
-  var forward = document.getElementById("forward_select").value;
-  var backward = document.getElementById("backward_select").value;
-  var isMove = document.getElementById("move_realign").checked;
+//  var token = document.realign_token.token.value;
+  var forward = "";
+  var backward = "";
+//  var isMove = document.getElementById("move_realign").checked;
+  var isCreate = true;
+  
+  if(isMove)
+  {
+    isCreate = false;
+  }
   
   if(token == "")
   {
@@ -2511,6 +2606,12 @@ function realign()
   if(!regOn)
   {
     alert("Regularization must be on to change alignment");
+    return;
+  }
+  
+  if(!alignOn)
+  {
+    alert("Alignment must be on to change alignment");
     return;
   }
   
@@ -2533,16 +2634,12 @@ function realign()
       }
     }
 
-    console.log(ids);
+//    console.log(ids);
 
-    if(document.getElementById("forward_realign").checked)
+    // MOVE TOKENS
+    if(isMove)
     {
-      // INSERT INTO
-      // add a null at currentPosition for this token(one to align), in each witness
-      // **pushing this token to next position
-      // add a null at end of tokens for each other witness
-      // splice(index, howmany(0), item)
-      if(!isMove)
+      if(isForward)
       {
         for(var i in allTokens.alignment)
         {
@@ -2557,39 +2654,7 @@ function realign()
 
           if(foundId)
           {
-            for(var k = 0; k < forward; k++)
-            {
-              allTokens.alignment[i].tokens.splice(currentPosition, 0, null);
-            }
-          }
-          else
-          { 
-            var newPosition = totalPos + 1;
-            for(var k = 0; k < forward; k++)
-            {
-              allTokens.alignment[i].tokens.splice(newPosition, 0, null);
-              newPosition++;
-            }
-          }
-        }
-      }
-      else
-      {
-        // MOVE
-        for(var i in allTokens.alignment)
-        {
-          var foundId = false;
-          for (var j in ids)
-          {
-            if(allTokens.alignment[i].witness == ids[j])
-            {
-              foundId = true;
-            }
-          }
-
-          if(foundId)
-          {
-            for(var k = 0; k < forward; k++)
+            for(var k = 0; k < numPos; k++)
             {
               allTokens.alignment[i].tokens.splice(0, 0, "null");
               allTokens.alignment[i].tokens[0] = null;
@@ -2598,7 +2663,7 @@ function realign()
           else
           { 
             var newPosition = totalPos + 1;
-            for(var k = 0; k < forward; k++)
+            for(var k = 0; k < numPos; k++)
             {
               allTokens.alignment[i].tokens.splice(newPosition, 0, null);
               newPosition++;
@@ -2607,12 +2672,8 @@ function realign()
         }
         
       }
-    }
-    else
-    {
-      if(isMove)
+      else
       {
-        // MOVE
         for(var i in allTokens.alignment)
         {
           var foundId = false;
@@ -2627,7 +2688,7 @@ function realign()
           if(foundId)
           {
             newPosition = totalPos + 1;
-            for(var k = 0; k < backward; k++)
+            for(var k = 0; k < numPos; k++)
             {
               allTokens.alignment[i].tokens.splice(newPosition, 0, "null");
               newPosition++;
@@ -2643,48 +2704,7 @@ function realign()
           }
           else
           {
-            for(var k = 0; k < backward; k++)
-            {
-              allTokens.alignment[i].tokens.splice(0, 0, "null");
-              allTokens.alignment[i].tokens[0] = null;
-            }
-          }
-        }
-      }
-      else
-      {
-        // INSERT INTO
-        for(var i in allTokens.alignment)
-        {
-          var foundId = false;
-          for (var j in ids)
-          {
-            if(allTokens.alignment[i].witness == ids[j])
-            {
-              foundId = true;
-            }
-          }
-
-          if(foundId)
-          {
-            var newPosition = currentPosition;
-            newPosition++;
-            for(var k = 0; k < backward; k++)
-            {
-              allTokens.alignment[i].tokens.splice(newPosition, 0, "null");
-            }
-
-            for(var k in allTokens.alignment[i].tokens)
-            {
-              if(allTokens.alignment[i].tokens[k] == "null")
-              {
-                allTokens.alignment[i].tokens[k] = null;
-              }
-            }
-          }
-          else
-          {
-            for(var k = 0; k < backward; k++)
+            for(var k = 0; k < numPos; k++)
             {
               allTokens.alignment[i].tokens.splice(0, 0, "null");
               allTokens.alignment[i].tokens[0] = null;
@@ -2693,28 +2713,119 @@ function realign()
         }
       }
     }
+    
+    // CREATE PHRASE
+    if(isCreate)
+    {
+      if(token[token.length-1] == " ")
+      {
+        token.splice(token.length-1, 1);
+      }
+
+      token = token.split(" ");
+      var length = token.length;
+      
+      for(var i in allTokens.alignment)
+      {
+        var match = true;
+        var index = currentPosition;
+        for (var j in token)
+        {
+          if(getToken(i, index) != token[j])
+          {
+            match = false;
+          }
+          index++;
+        }
+        
+        if(match)
+        {
+          allTokens.alignment[i].tokens[currentPosition].t = token.join(" ");
+          var indexInput = totalPos;
+          var indexDelete = currentPosition;
+          indexDelete++;
+          
+          for(var j = 0; j < length-1; j++)
+          {
+            allTokens.alignment[i].tokens[indexInput] = null;
+            indexInput++;
+          }
+          
+          for(var j=0; j < length-1; j++)
+          {
+            allTokens.alignment[i].tokens.splice(indexDelete, 1);
+          }
+        }
+      }
+    }
+    
+    
+  }
+  
+  // Make sure there are no extra null positions in alignment
+  var found = false;
+  for(var i in allTokens.alignment)
+  {
+    if(allTokens.alignment[i].tokens[0] != null)
+    {
+      found = true;
+    }
+  }
+  
+  if(!found)
+  {
+    for (var i in allTokens.alignment)
+    {
+      allTokens.alignment[i].tokens.splice(0,1);
+    }
+  }
+  
+  found = false;
+  for(var i in allTokens.alignment)
+  {
+    if(allTokens.alignment[i].tokens[allTokens.alignment[0].tokens.length-1] != null)
+    {
+      found = true;
+    }
+  }
+  
+  if(!found)
+  {
+    for (var i in allTokens.alignment)
+    {
+      allTokens.alignment[i].tokens.splice(allTokens.alignment[0].tokens.length-1,1);
+    }
   }
   
   console.log(allTokens);
-//  if(isCustomRules)
-//  {
-//    regularize(customRules);
-//  }
-//  {
-//    regularize(allRules);
-//  }
+  totalPos = allTokens.alignment[0].tokens.length;
   regularize();
 }
 
 function getRealign()
 {
-  var token = document.realign_token.token.value;
   var oldAlign = "";
   var newAlign = "";
-  var forward = document.getElementById("forward_select").value;
-  var backward = document.getElementById("backward_select").value;
-  var isMove = document.getElementById("move_realign").checked;
   var oldTotalPos = totalPos;
+  
+  var numPos = null;
+  var isForward = null;
+  var token = document.realign_token.token.value;
+  var isMove = document.getElementById("move_realign").checked;
+  
+  if(isMove)
+  {
+    isForward = document.getElementById("forward_realign").checked;
+    
+    if(isForward)
+    {
+      numPos = document.getElementById("forward_select").value;
+    }
+    else
+    {
+      numPos = document.getElementById("backward_select").value;
+    }
+  }
   
   if(token == "")
   {
@@ -2728,6 +2839,12 @@ function getRealign()
     return;
   }
   
+  if(!alignOn)
+  {
+    alert("Alignment must be on to change alignment");
+    return;
+  }
+  
   var newTokens = createNewAllTokens();
   var oldTokens = allTokens;
   allTokens = newTokens;
@@ -2735,13 +2852,12 @@ function getRealign()
   if(document.getElementById("forward_realign").checked)
   {
     //OLDALIGN
-    var numTokens = totalPos + parseInt(forward);
+    var numTokens = totalPos + parseInt(numPos);
     for(var i=0; i<numTokens; i++)
     {
       var position = i;
       if(position <= totalPos)
       { 
-        //TODO: APPLY RULES DIFF -> IF CUSTOMRULES, etc
         oldAlign += findDistinct(position) + "<br />&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;";
       }
       else
@@ -2752,14 +2868,13 @@ function getRealign()
 
     //NEWALIGN
     regularize();
-    realign();
-    var numTokens = totalPos + parseInt(forward);
+    realign(token, isMove, isForward, numPos);
+    var numTokens = totalPos + parseInt(numPos);
     for(var i = 0; i<numTokens; i++)
     {
       var position = i;
       if(position <= totalPos)
       { 
-        //TODO: APPLY RULES DIFF -> IF CUSTOMRULES, etc
         newAlign += findDistinct(position) + "<br />&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;";
       }
       else
@@ -2770,58 +2885,15 @@ function getRealign()
   }
   else
   {
-    //if(isMove)
-    //{
-      // MOVE
-      // 
-      //OLDALIGN
-//      position = position - backward;
-//      for(var i = 0; i <= backward; i++)
-//      {
-//        if(position >= -1)
-//        {
-//          // TODO: APPLY RULES DIFF -> IF CUSTOMRULES, etc
-//          oldAlign += findDistinct(position, allRules) + "<br />&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;";
-//        }
-//        else
-//        {
-//          oldAlign += getNullContent() + "<br />&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;";
-//        }
-//        position++;
-//      }
-//
-//      //NEWALIGN
-//      position = currentPosition - backward + 1;
-//      //TODO: change for customRules, etc
-//      regularize(allRules);
-//      realign();
-//      for(var i = 0; i <= backward; i++)
-//      {
-//        if(position >= -1)
-//        {
-//          // TODO: APPLY RULES DIFF -> IF CUSTOMRULES, etc
-//          newAlign += findDistinct(position, allRules) + "<br />&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;";
-//        }
-//        else
-//        {
-//          newAlign += getNullContent() + "<br />&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;";
-//        }
-//        position++;
-//      }
-    //}
-//    else
-//    {
-//      // INSERT INTO
-//    }
+    
     //OLDALIGN
-    var numTokens = totalPos + parseInt(backward);
-    var endPosition = 0 - parseInt(backward);
+    var numTokens = totalPos + parseInt(numPos) - 1;
+    var endPosition = 0 - parseInt(numPos);
     var position = 0;
     for(var i=numTokens; i>endPosition; i--)
     {
       if(i >= -1)
       { 
-        //TODO: APPLY RULES DIFF -> IF CUSTOMRULES, etc
         oldAlign += findDistinct(position) + "<br />&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;";
         position++;
       }
@@ -2833,15 +2905,14 @@ function getRealign()
 
     //NEWALIGN
     regularize();
-    realign();
-    var numTokens = totalPos + parseInt(backward);
-    var endPosition = 0 - parseInt(backward);
+    realign(token, isMove, isForward, numPos);
+    var numTokens = totalPos + parseInt(numPos) - 1;
+    var endPosition = 0 - parseInt(numPos);
     var position = 0;
     for(var i = numTokens; i>endPosition; i--)
     {
       if(i >= -1)
       { 
-        //TODO: APPLY RULES DIFF -> IF CUSTOMRULES, etc
         newAlign += findDistinct(position) + "<br />&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;";
         position++;
       }
@@ -2927,14 +2998,7 @@ function createNewAllTokens()
         else
         {
           var token = "";
-          if(regOn && isCustomRules)
-          {
-            token = getToken(customRules, i, j);
-          }
-          else if (regOn)
-          {
-            token = getToken(allRules, i, j);
-          }
+          token = getToken(i, j);
           newTokens.witnesses[i].tokens.push({
             "t": token
           });
@@ -2944,6 +3008,295 @@ function createNewAllTokens()
   }
   
   return newTokens;
+}
+
+function loadAlignTable()
+{
+  document.getElementById("reg_table_title").innerHTML = "Alignments";
+
+  //delete everything out of reg_table
+   var table = document.getElementById('reg_table');
+   var rowCount = table.rows.length;
+   for(var i =rowCount-1; i>=0; i--)
+   {
+     table.deleteRow(i);
+   }
+
+  var table = document.getElementById('reg_table');
+
+  var rowCount = table.rows.length;
+  var row = table.insertRow(rowCount);
+  
+  var checkCellTitle = row.insertCell(0);
+  checkCellTitle.innerHTML = "Apply";
+  var tokenCellTitle = row.insertCell(1);
+  tokenCellTitle.innerHTML = "Token or Phrase";
+  var positionCellTitle = row.insertCell(2);
+  positionCellTitle.innerHTML = "Position";
+  var typeCellTitle = row.insertCell(3);
+  typeCellTitle.innerHTML = "Type";
+  var directionCellTitle = row.insertCell(4);
+  directionCellTitle.innerHTML = "Direction";
+  var numCellTitle = row.insertCell(5);
+  numCellTitle.innerHTML = "Number of Positions";
+  var deleteCellTitle = row.insertCell(6);
+  deleteCellTitle.innerHTML = "Delete";
+  
+  rowCount++; 
+  
+  for(var i in allAlign.alignments)
+  {
+    var token = allAlign.alignments[i].token;
+    var position = allAlign.alignments[i].position;
+    var type = allAlign.alignments[i].isMove;
+    var direction = allAlign.alignments[i].isForward;
+    var numPos = allAlign.alignments[i].numPos;
+    var modifications = allAlign.alignments[i].modifications;
+    var isDisabled = false;
+    if (modifications[modifications.length-1].modification_type == "delete")
+    {
+      isDisabled = true; 
+    }
+    
+    insertAlignTable(token, position, type, direction, numPos, isDisabled);
+    rowCount++;
+  }
+  
+  document.edit_reg.style.visibility = "visible";
+}
+
+function insertAlignTable(token, position, isMove, isForward, numPos, isDisabled)
+{
+  var table = document.getElementById('reg_table');
+
+  var rowCount = table.rows.length;
+  var row = table.insertRow(rowCount);
+
+  var checkCell = row.insertCell(0);
+  var element1 = document.createElement("input");
+  element1.type = "checkbox";
+  element1.checked = true;
+  var found = false;
+  for(var i in customAligns.alignments)
+  {
+    var customToken = customAligns.alignments[i].token;
+    var customPosition = customAligns.alignments[i].position;
+    var customMove = customAligns.alignments[i].isMove;
+    var customForward = customAligns.alignments[i].isForward;
+    var customNumPos = customAligns.alignments[i].numPos;
+    if(customToken == token && customPosition == position && isMove == customMove && isForward == customForward && numPos == customNumPos)
+    {
+      found = true;
+    }
+  }
+  if(found)
+  {
+    element1.checked = "checked";
+  }
+  if(isDisabled)
+  {
+    element1.disabled = true;
+  }
+  checkCell.appendChild(element1);
+  
+  var tokenCell = row.insertCell(1);
+  var element2 = document.createElement("label");
+  element2.innerHTML = token;
+  tokenCell.appendChild(element2);
+  
+  var positionCell = row.insertCell(2);
+  var element3 = document.createElement("label");
+  element3.innerHTML = position;
+  positionCell.appendChild(element3);
+  
+  var typeCell = row.insertCell(3);
+  var element4 = document.createElement("label");
+  if(isMove)
+  {
+    element4.innerHTML = "Move tokens";
+  }
+  else
+  {
+    element4.innerHTML = "Create phrase";
+  }
+  typeCell.appendChild(element4);
+  
+  var directionCell = row.insertCell(4);
+  var element5 = document.createElement("label");
+  if(isMove)
+  {
+    if(isForward)
+    {
+      element5.innerHTML = "Forward";
+    }
+    else
+    {
+      element5.innerHTML = "Backward";
+    }
+  }
+  else
+  {
+    element5.innerHTML = "--";
+  }
+  directionCell.appendChild(element5);
+  
+  var numberCell = row.insertCell(5);
+  var element6 = document.createElement("label");
+  if(isMove)
+  {
+    element6.innerHTML = numPos;
+  }
+  else
+  {
+    element6.innerHTML = "--";
+  }
+  numberCell.appendChild(element6);
+
+  var deleteCell = row.insertCell(6);
+  deleteCell.align = "center";
+  var element7 = document.createElement("input");
+  element7.type = "checkbox";
+  if(isDisabled)
+  {
+    element7.disabled = true;
+  }
+  deleteCell.appendChild(element7);
+}
+
+function align_onoff()
+{
+  if(alignOn)
+  {
+    alignOn = false;
+    document.getElementById("align_button").value = "Align. Off";
+  }
+  else
+  {
+    alignOn = true;
+    document.getElementById("align_button").value = "Align. On";
+    allTokens = origTokens;
+    //applyAlign();
+    loadAlignTable();
+  }
+  regularize();
+}
+
+function createAlignment(token, isMove, isForward, numPos)
+{
+  if(isForward == null)
+  {
+    isForward = false;
+  }
+  
+  if(numPos == null)
+  {
+    numPos = 0;
+  }
+  
+  var newAlign = {
+    "token": token,
+    "appliesTo": urn,
+    "position": currentPosition,
+    "isMove": isMove,
+    "isForward": isForward,
+    "numPos": numPos,
+    "modifications": []
+  };
+  
+  newAlign.modifications.push({
+    "modification_type": "create",
+    "userName": userName,
+    "dateTime": getDateTime()
+  });
+  
+  return newAlign;
+}
+
+function addAlign()
+{
+  var numPos = null;
+  var isForward = null;
+  var token = document.realign_token.token.value;
+  var isMove = document.getElementById("move_realign").checked;
+  document.getElementById("realign_this").innerHTML = "";
+  document.getElementById("realign_to").innerHTML = "";
+  
+  if(isMove)
+  {
+    isForward = document.getElementById("forward_realign").checked;
+    
+    if(isForward)
+    {
+      numPos = document.getElementById("forward_select").value;
+    }
+    else
+    {
+      numPos = document.getElementById("backward_select").value;
+    }
+  }
+  
+  newAlign = createAlignment(token, isMove, isForward, numPos);
+  allAlign.alignments.push(newAlign);
+  
+  //send to server
+  sendAlign(newAlign);
+  
+  // do alignment
+  realign(token, isMove, isForward, numPos);
+  
+  // add to table
+  insertAlignTable(token, currentPosition, isMove, isForward, numPos, false);
+  
+}
+
+function sendAlign(newAlign)
+{
+  var sendAligns = {alignments: []};
+  sendAligns.alignments.push(newAlign);
+  sendAligns.urn = urn;
+  sendAligns.userName = userName;
+  sendAligns.ruleSetName = ruleSetName;
+  
+    $.post("http://127.0.0.1:8000/regularization/postNewAlign/",
+       JSON.stringify(sendAligns), function(data){
+       //alert("success");
+     })
+   .error(function () {alert("error: saveAlign");})
+
+}
+
+function applyAlign()
+{
+  var aligns = {alignments: []};
+  if(isCustomAlign)
+  {
+    aligns = customAligns;
+  }
+  else
+  {
+    aligns = allAlign;
+  }
+  
+  if(!alignOn)
+  {
+    return;
+  }
+  
+  for (var i in aligns.alignments)
+  {
+    var token = aligns.alignments[i].token;
+    var position = aligns.alignments[i].position;
+    var isMove = aligns.alignments[i].isMove;
+    var isForward = aligns.alignments[i].isForward;
+    var numPos = aligns.alignments[i].numPos;
+    if(aligns.alignments[i].modifications[aligns.alignments[i].modifications.length-1].modification_type != "delete")
+    {
+      if(position == currentPosition)
+      {
+        realign(token, isMove, isForward, numPos);
+      }
+    }
+  }
 }
 
 </script>
@@ -2959,7 +3312,7 @@ originals)
 
 <table>
 <tr>
-<td>
+<td style="width: 30px">
 <form action="." method="POST" name="regularization">
        <br /><textarea rows="10" cols="75" name="reg" onclick="determineClick()"></textarea>
        
@@ -2970,6 +3323,7 @@ originals)
        <br />
        
        <input name="reg_on" id="reg_button" type="button" value="Reg. On" onclick="regularize_onoff()">
+       <input name="align_on" id="align_button" type="button" value="Align. On" onclick="align_onoff()">
        <input name="back" type="button" value="Back Entity" onclick="backEntity()">
        <input name="forward" type="button" value="Forward Entity" onclick="forwardEntity()">
        <input name="previous" type="button" value="Previous Word" onclick="previousToken()">
@@ -3017,7 +3371,7 @@ This regularization set for <label for="choice" id="choice"></label>
 <tr>
   <td>
 <form name="edit_reg">
-<h2>Regularizations</h2>
+  <label id="reg_table_title">Regularizations</label>
 
 <table id="reg_table" border="1">
 	
