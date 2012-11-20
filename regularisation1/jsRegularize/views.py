@@ -32,8 +32,8 @@ def getWitnessData(urn):
     urlDet = "http://textualcommunities.usask.ca/drc/api/det/"
 
     ## comment out if urls start working again
-    jdata = getTestData()
-    return jdata
+    #jdata = getTestData()
+    #return jdata
 
     send = httplib2.Http()
     response, content = send.request(urlDoc, 'GET')
@@ -208,6 +208,7 @@ def postSelectedRuleSets(request):
     if request.is_ajax():
         if request.method == 'POST':
             request.session['selectedRuleSets'] = request.raw_post_data
+            request.session['data'] = request.raw_post_data
             
     return HttpResponse("OK")
 
@@ -401,6 +402,7 @@ def sendEntity(request):
         indexId = indexId + 1
 
     jdata = json.dumps(jdata)
+    request.session['data'] = jdata
     
     url = 'http://127.0.0.1:8080/collatex-web-0.9.1-RC2/api/collate'
     headers = {'Content-Type': 'application/json', 'Accept': 'application/json'}
@@ -414,17 +416,24 @@ def sendEntity(request):
         return HttpResponse(data, mimetype="application/json")
     except:
         return HttpResponse("OK")
-    
 
 def getBaseTokens(request):
-    jdata = getTestData()
+    #jdata = getTestData()
+    #print jdata
+    
+    if request.session.get('data'):
+        jdata = request.session.pop('data')
+        request.session['data'] = jdata
+        jdata = json.loads(jdata)
+        jdata = json.dumps({'witnesses': jdata['witnesses'][0]})
+        print jdata
+    
+        url = 'http://127.0.0.1:8080/collatex-web-0.9.1-RC2/api/collate'
+        headers = {'Content-Type': 'application/json', 'Accept': 'application/json'}
 
-    url = 'http://127.0.0.1:8080/collatex-web-0.9.1-RC2/api/collate'
-    headers = {'Content-Type': 'application/json', 'Accept': 'application/json'}
-
-    send = httplib2.Http()
-    response, content = send.request(url, 'POST', jdata, headers)
-    return HttpResponse(content, mimetype="application/json")
+        send = httplib2.Http()
+        response, content = send.request(url, 'POST', jdata, headers)
+        return HttpResponse(content, mimetype="application/json")
 
 def getTestData():
     contentEl = 'Heere bigynneth the Miller; his tale'
