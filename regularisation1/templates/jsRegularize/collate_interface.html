@@ -143,6 +143,7 @@ function load()
   regOn = false;
   regularize_onoff();
   regularize();
+  applyAlign();
 }
 
 function nextToken()
@@ -161,7 +162,7 @@ function nextToken()
   }
   
   regularize();
-  //applyAlign();
+  applyAlign();
   
   document.regularization.reg_to.value = reg_toWhole;
 }
@@ -182,7 +183,7 @@ function previousToken()
   }
   
   regularize();
-  //applyAlign();
+  applyAlign();
   
   document.regularization.reg_to.value = reg_toWhole;
 }
@@ -485,11 +486,13 @@ function addRuleList(newRule)
     customRules.rules.push(newRule);
     allRules.rules.push(newRule);
     regularize();
+    applyAlign();
   }
   else //if(regOn && !isCustomRules)
   {
     allRules.rules.push(newRule);
     regularize();
+    applyAlign();
   }
 
 }
@@ -707,6 +710,7 @@ function regularize_onoff()
        loadRegTable();
      }
      regularize();
+     applyAlign();
   }
   else
   {
@@ -728,6 +732,7 @@ function regularize_onoff()
      
      allTokens = origTokens;
      regularize();
+     applyAlign();
   }
   
 }
@@ -2064,10 +2069,10 @@ function submitCustomReg()
     origTokens = createNewAllTokens();
     
     regularize();
-    //applyAlign();
+    applyAlign();
     loadAlignTable();
     
-    console.log(allAlign);
+    //console.log(allAlign);
     
     return;
   }
@@ -2203,10 +2208,7 @@ function submitCustomReg()
   allTokens = getBaseTokens();
   
   regularize();
-  if(alignOn)
-  {
-    //applyAlign();
-  }
+  applyAlign();
   loadRegTable();
 }
 
@@ -2415,9 +2417,9 @@ function getEntity(jdata)
       origTokens = createNewAllTokens();
       totalPos = allTokens.alignment[0].tokens.length;
       currentPosition = 0;
-      console.log(allTokens);
-      //applyAlign();
+      //console.log(allTokens);
       regularize();
+      applyAlign();
   }});
 }
 
@@ -2433,6 +2435,7 @@ function showOriginals(checkBox)
     isOriginals = false; 
   }
   regularize();
+  applyAlign();
 }
 
 function showRegularization(checkBox)
@@ -2800,7 +2803,7 @@ function realign(token, isMove, isForward, numPos)
     }
   }
   
-  console.log(allTokens);
+  //console.log(allTokens);
   totalPos = allTokens.alignment[0].tokens.length;
   regularize();
 }
@@ -2933,7 +2936,7 @@ function getRealign()
   allTokens = oldTokens;
   regularize();
   totalPos = oldTotalPos;
-  console.log(totalPos);
+  //console.log(totalPos);
 }
 
 function getNullContent()
@@ -3172,16 +3175,19 @@ function align_onoff()
   {
     alignOn = false;
     document.getElementById("align_button").value = "Align. Off";
+    allTokens = getBaseTokens();
+    origTokens = createNewAllTokens();
   }
   else
   {
     alignOn = true;
     document.getElementById("align_button").value = "Align. On";
-    allTokens = origTokens;
+    //allTokens = origTokens;
     //applyAlign();
     loadAlignTable();
   }
   regularize();
+  applyAlign();
 }
 
 function createAlignment(token, isMove, isForward, numPos)
@@ -3355,37 +3361,76 @@ function applyAlign()
     var isForward = aligns.alignments[i].isForward;
     var numPos = aligns.alignments[i].numPos;
     var currentContext = "";
-    var context = aligns.alignment[i].context;
-    var witnessId = aligns.alignment[i].witnessId;
+    var context = aligns.alignments[i].context;
+    var witnessId = aligns.alignments[i].witnessId;
+    var found = false;
     if(aligns.alignments[i].modifications[aligns.alignments[i].modifications.length-1].modification_type != "delete")
-    {
-      for(var j in origTokens.alignment)
+    { 
+      if(isMove)
       {
-        if(origTokens.alignment[j].witnessId == witnessId)
+        for(var j in allTokens.alignment)
         {
-          var number = 0;
-          for(var k in origTokens.alignment[j].tokens)
+          if(allTokens.alignment[j].witness == witnessId)
           {
-            if(number != 0)
+            var number = 0;
+            currentContext = "";
+            for(var k in allTokens.alignment[j].tokens)
             {
-              currentContext += " ";
+              if(number != 0)
+              {
+                currentContext += " ";
+              }
+
+              if(allTokens.alignment[j].tokens[k] != null)
+              {
+                currentContext += allTokens.alignment[j].tokens[k].t;
+              }
+              else
+              {
+                currentContext += "null";
+              }
+              number++;
             }
-            
-            if(origTokens.alignment[j].tokens[k] != null)
-            {
-              currentContext += origTokens.alignment[j].tokens[k].t;
-            }
-            else
-            {
-              currentContext += "null";
-            }
-            number++;
+          }
+        
+          if(currentContext == context  && !found)
+          {
+            found = true;
+            realign(token, isMove, isForward, numPos);
           }
         }
-        
-        if(currentContext == context)
+      }
+      else
+      {
+        for(var j in origTokens.alignment)
         {
-          realign(token, isMove, isForward, numPos);
+          if(origTokens.alignment[j].witness == witnessId)
+          {
+            var number = 0;
+            currentContext = "";
+            for(var k in origTokens.alignment[j].tokens)
+            {
+              if(number != 0)
+              {
+                currentContext += " ";
+              }
+
+              if(origTokens.alignment[j].tokens[k] != null)
+              {
+                currentContext += origTokens.alignment[j].tokens[k].t;
+              }
+              else
+              {
+                currentContext += "null";
+              }
+              number++;
+            }
+          }
+        
+          if(currentContext == context)
+          {
+            realign(token, isMove, isForward, numPos);
+          }
         }
       }
     }

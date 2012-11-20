@@ -525,11 +525,15 @@ def changeAligns(request):
                         jdata['alignments'][0]['numPos'] and align.token == \
                         jdata['alignments'][0]['token'] and align.context == \
                         jdata['alignments'][0]['context']):
-                        found = True
-                        modifiedAlign = align
-
-                        # if (modifiedAlign.modifications.modification_type == 'delete'):
-                        #     found = False
+                           modifications = align.modifications.all()
+                           number = 1
+                           for modificationIn in modifications:
+                               #print modificationIn.modification_type
+                               if(number == len(modifications) and modificationIn.modification_type != \
+                                  'delete'):
+                                   found = True
+                                   modifiedAlign = align
+                               number = number + 1
                         
                     if found:
                         m = Modification()
