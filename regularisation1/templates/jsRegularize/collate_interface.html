@@ -2,6 +2,7 @@
 <html> <head>
 <title>Collate Interface</title>
 <script src="http://code.jquery.com/jquery-1.7.2.min.js"></script>
+<script type="text/javascript" src="http://maps.google.com/maps/api/js?libraries=geometry&sensor=false"></script>
 <script type="text/javascript">
   
   var userName = "{{ userName }}";
@@ -57,6 +58,29 @@ var alignOn;
 var allAlign;
 var customAligns;
 var isCustomAlign;
+var map;
+
+// Google Maps Images
+//////////////////////////////////
+
+//var Image = Image || {};
+//Image.ImagesBaseUrl = 'http://textualcommunities.usask.ca';
+//
+//// ImageMap class
+////////////////////////////////////
+//Image.ImageMap = function (container) {
+//    // Create map
+//    this._map = new google.maps.Map(container, {
+//        zoom: 1,
+//        center: new google.maps.LatLng(0, -20),
+//        mapTypeControl: false,
+//        streetViewControl: false
+//    });
+//
+//    // Set custom tiles
+//    this._map.mapTypes.set('image', new Image.ImgMapType('image', '#4E4E4E'));
+//    this._map.setMapTypeId('image');
+//};
 
 function load()
 {
@@ -165,6 +189,8 @@ function nextToken()
   applyAlign();
   
   document.regularization.reg_to.value = reg_toWhole;
+  
+  console.log(allTokens);
 }
 
 function previousToken()
@@ -186,6 +212,8 @@ function previousToken()
   applyAlign();
   
   document.regularization.reg_to.value = reg_toWhole;
+  
+  console.log(allTokens);
 }
 
 function determineClick()
@@ -1815,6 +1843,96 @@ function informationWindow(witnessId)
     document.getElementById('choice').innerHTML = choice;
   }
   
+  displayImage(witnessId);
+}
+
+var imageCount;
+
+function displayImage(witnessId)
+{
+  new ImageMap();
+}
+
+function ImageMapType (options){
+  options = options || {};
+  this.tileSize = options.tileSize || new google.maps.Size(256, 256);
+  this.maxZoom = options.maxZoom || 4;
+  this.minZoom = options.minZoom || 2;
+  this.name = options.name || 'Image';
+  this.src= options.src || 'image/';
+};
+
+ImageMapType.prototype.getTile = function (coord, zoom, ownerDocument){
+  var tilesCount = Math.pow(2, zoom);
+  
+  if( coord.x >= tilesCount || coord.x < 0 || coord.y >= tilesCount || coord.y < 0)
+  {
+    var div = ownerDocument.createElement('div');
+    div.style.width = this.tileSize.width + "px";
+    div.style.height = this.tileSize.height + "px";
+    div.style.backgroundColor = "#FFF";
+    return div;
+  }
+  
+  var img = ownerDocument.createElement('img');
+  img.width = this.tileSize.width;
+  img.height = this.tileSize.height;
+  img.src = this.src+(zoom)+'/'+coord.x+'_'+coord.y+".jpg";
+  return img;
+}
+
+
+function ImageMap(){
+  options = {};
+  options.mapTypeId = 'DRCImageMapType';
+  options.center = options.center || new google.maps.LatLng(0, 0);
+  options.zoom = options.zoom || 2;
+  options.maxZoom = options.maxZoom || 4;
+  options.minZoom = options.minZoom || 2;
+  options.name = options.name || 'Image';
+  options.src = options.src || 'http://textualcommunities.usask.ca/drc/community/file/155/';
+  options.streetViewControl = false;
+  options.mapTypeControlOptions = options.mapTypeControlOptions || {
+    mapTypeIds: [],
+    style: null
+  };
+  var image = {
+    src: 'http://textualcommunities.usask.ca/drc/community/file/155/',
+    width: 1707,
+    height: 2514
+  }
+  this.rate = image.width > image.height ?  256/image.width : 256/image.height;
+  this.x_fix = (256 - this.rate*image.width)/2;
+  this.y_fix = (256 - this.rate*image.height)/2;
+  var max = 256*Math.pow(2, options.zoom)-4;
+  this.maxSize = {
+    width: max-this.x_fix*Math.pow(2, options.zoom+1),
+    height: max-this.y_fix*Math.pow(2, options.zoom+1)
+  };
+  
+  var map = new google.maps.Map(
+    document.getElementById("image_map"), options);
+
+  map.mapTypes.set(options.mapTypeId, new ImageMapType(options));
+ 
+  map.overlayView = new google.maps.OverlayView();
+  map.overlayView.draw = function (){};
+  map.overlayView.setMap(map);
+//  google.maps.event.addListener(map, 'mousemove', function(e){
+//    var div = document.getElementById('coord');
+//    div.textContent = e.latLng.lat() + ', ' + e.latLng.lng();
+//  });
+  google.maps.event.addListener(map, 'projection_changed', function(e){
+    var zoom = this.getZoom();
+    var tile_num = Math.pow(2, zoom-1);
+    var projection = this.getProjection();
+    console.log(tile_num);
+    var latLng = projection.fromPointToLatLng(new google.maps.Point(64, 64));
+    console.log(projection);
+    console.log(latLng);
+    this.setCenter(latLng);
+  });
+  this.map = map;
 }
 
 function loadRegTable()
@@ -1998,6 +2116,23 @@ function getBaseTokens()
         dataType: 'json',
         async: false,
         success: function(data){
+          for(var i in data.alignment)
+          {
+            for(var j in data.alignment[i].tokens)
+            {
+                for(var k in allTokens.alignment[i].tokens)
+                {
+                  if(allTokens.alignment[i].tokens[k] != null && data.alignment[i].tokens[j] != null)
+                  {
+                    if(allTokens.alignment[i].tokens[k].t == data.alignment[i].tokens[j].t)
+                    {
+                      data.alignment[i].tokens[j].origToken = allTokens.alignment[i].tokens[k].origToken;
+                    }
+                  }
+                }
+            }
+          }
+          
           newTokens = data;
         }
     });
@@ -2353,6 +2488,10 @@ function backEntity()
   {
     line = parseInt(line) - 1;
   }
+  else if(line == 1)
+  {
+    line = "IR";
+  }
   
   temp = temp+"Line="+line.toString();;
   var jdata = { urn: temp};
@@ -2458,7 +2597,6 @@ function showRegularization(checkBox)
     regHTML += "onclick='addRule()'>";
     regHTML += "<input name='recollateTokens' type='button' value='Recollate' onclick='recollate()'/>";
     regHTML += "<input name='view' type='button' value='View Entire Reg.' onclick='seeWitnesses()'>";
-    regHTML += "<input name='done' type='button' value='Done'>";
     regHTML += "<br /> Shortcuts:: <br/>'Alt+Right Arrow': Add next word to Regularize This";
     regHTML += "<br /> 'Shift+Right Arrow': Add next word to Regularize To";
     regHTML += "<br /> 'Tab': Find next variant to regularize";
@@ -3295,6 +3433,12 @@ function addAlign()
     {
       numPos = document.getElementById("backward_select").value;
     }
+    
+    if(numPos == "--")
+    {
+      alert("Select number of positions to move token");
+      return;
+    }
   }
   
   newAlign = createAlignment(token, isMove, isForward, numPos);
@@ -3381,14 +3525,15 @@ function applyAlign()
                 currentContext += " ";
               }
 
-              if(allTokens.alignment[j].tokens[k] != null)
-              {
-                currentContext += allTokens.alignment[j].tokens[k].t;
-              }
-              else
-              {
-                currentContext += "null";
-              }
+              currentContext += getToken(j, k);
+//              if(allTokens.alignment[j].tokens[k] != null)
+//              {
+//                currentContext += allTokens.alignment[j].tokens[k].t;
+//              }
+//              else
+//              {
+//                currentContext += "null";
+//              }
               number++;
             }
           }
@@ -3461,11 +3606,12 @@ originals)
        <br />
        
        <input name="reg_on" id="reg_button" type="button" value="Reg. On" onclick="regularize_onoff()">
-       <input name="align_on" id="align_button" type="button" value="Align. On" onclick="align_onoff()">
+       <input name="align_on" id="align_button" type="button" value="Align. Off" onclick="align_onoff()">
        <input name="back" type="button" value="Back Entity" onclick="backEntity()">
        <input name="forward" type="button" value="Forward Entity" onclick="forwardEntity()">
        <input name="previous" type="button" value="Previous Word" onclick="previousToken()">
-       <input name="next" type="button" value="Next Word" onclick="nextToken()"><br />
+       <input name="next" type="button" value="Next Word" onclick="nextToken()">
+       <input name="done" type="button" value="Done"><br/>
     
        <div id="reg_wrapper"></div><br />
        
@@ -3519,6 +3665,7 @@ This regularization set for <label for="choice" id="choice"></label>
 
 </form>
   </td>
+  <td><div id="image_map" style="width:384px;height:384px;margin:0px auto;"></div></td>
 </tr>
 </table>
 </body> </html>
