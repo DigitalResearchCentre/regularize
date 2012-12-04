@@ -22,11 +22,24 @@
     }[b];
   });
   
+  var allImages = (("{{ images }}")).replace(/&(l|g|quo)t;/g, function(a,b)
+  {
+    return {
+      l : '<',
+      g : '>',
+      quo : '"'
+    }[b];
+  });
+  
   function load()
   { 
     witnessData = witnessData.replace(/u'/g, '\'');
     witnessData = witnessData.replace(/'/g, '\"');
     witnessData = JSON.parse(witnessData);
+    
+    allImages = allImages.replace(/u'/g, '\'');
+    allImages = allImages.replace(/'/g, '\"');
+    allImages = JSON.parse(allImages);
     
     ruleSetData = ruleSetData.replace(/u'/g, '\'');
     ruleSetData = ruleSetData.replace(/'/g, '\"');
@@ -149,6 +162,13 @@
   {
     witnessData.userName = userName;
     witnessData.urn = urn;
+    
+    witnessData.images = [];
+    
+    for(var i in allImages.images)
+    {
+      witnessData.images.push(allImages.images[i]);
+    }
     
     $.ajax({
       url: "http://127.0.0.1:8000/regularization/postSelectedRuleSets/",

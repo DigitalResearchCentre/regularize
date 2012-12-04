@@ -15,16 +15,21 @@ import HTMLParser
 def regularization(request):
     # request should contain json with username and urn
 
-    urn = "urn:det:TCUSASK:CTP2:entity=MI:Tale=MI:Line=IR"
-    userName = "user@mail.usask.ca"
+    #urn = "urn:det:TCUSASK:CTP2:entity=MI:Tale=MI:Line=IR"
+    #userName = "user@mail.usask.ca"
+
+    urn = request.GET.get('urn', '')
+    userName = request.GET.get('username', '')
+    returnUrl = request.get_full_path()
 
     jdata = getWitnessData(urn)
 
-    return render_to_response('jsRegularize/chooseTexts_interface.html', {"userName" : userName, "urn" : urn, "witnesses" : jdata}, context_instance=RequestContext(request))
+    return render_to_response('jsRegularize/chooseTexts_interface.html', {"userName" : userName, "urn" : urn, "witnesses" : jdata[0], "images": jdata[1]}, context_instance=RequestContext(request))
     
 def getWitnessData(urn):
     parser = HTMLParser.HTMLParser()
     jdata = '{"witnesses":['
+    jdata2 = '{"images":['
     number = 0
 
     urlDoc = "http://textualcommunities.usask.ca/drc/api/urn/" + urn + "/"
@@ -61,6 +66,7 @@ def getWitnessData(urn):
             
             if number != 0:
                 jdata = jdata + ','
+                jdata2 = jdata2 + ','
             #jdata = jdata + '{"urn": ' + jsonpickle.encode(det['urn']) + ','
             #print det['urn']
             
@@ -70,6 +76,7 @@ def getWitnessData(urn):
             _id = "".join(_id)
             #jdata = jdata + '"id": ' + jsonpickle.encode(_id) + ','
             jdata = jdata + '{"id": ' + jsonpickle.encode(_id) + ','
+            jdata2 = jdata2 + '{"id": ' + jsonpickle.encode(_id) + ','
             # print _id
 
             #jdata = jdata + '"img": ' + jsonpickle.encode(det['img']) + ','
@@ -108,6 +115,7 @@ def getWitnessData(urn):
             x = x.replace("&amp;", "&")
             x = parser.unescape(x)
             jdata = jdata + '"content": ' + jsonpickle.encode(x) + '}'
+            jdata2 = jdata2 + '"url": ' + jsonpickle.encode(det['img']) + '}'
             # print x
 
             number = number + 1
@@ -116,9 +124,14 @@ def getWitnessData(urn):
             print "valueError: " + str(text['istextin'])
 
     jdata = jdata + ']}'
+    jdata2 = jdata2 + ']}'
+
+    dataList = []
+    dataList.append(jdata)
+    dataList.append(jdata2)
     #pprint.pprint(jdata)
 
-    return jdata
+    return dataList
 
 @csrf_exempt
 def postSelectedWitnesses(request):
@@ -136,6 +149,7 @@ def chooseRuleSetsInterface(request):
         urn = jdata['urn']
         # TODO: May have to change this line
         witnesses = '{"witnesses":[' + jsonpickle.encode(jdata['witnesses']) + ']}'
+        images = '{"images": [' + jsonpickle.encode(jdata['images']) + ']}'
 
         filteredRuleSets = RuleSet.objects.filter(appliesTo=urn).filter(userId=userName)
 
@@ -181,6 +195,7 @@ def chooseRuleSetsInterface(request):
                     jdata = jdata + '"isMove": ' + jsonpickle.encode(a.isMove) + ','
                     jdata = jdata + '"token": ' + jsonpickle.encode(a.token) + ','
                     jdata = jdata + '"numPos": ' + jsonpickle.encode(a.numPos) + ','
+                    jdata = jdata + '"position": ' + jsonpickle.encode(a.position) + ','
                     jdata = jdata + '"context": ' + jsonpickle.encode(a.context) + ','
                     jdata = jdata + '"modifications": ['
                     modificationNum = 0
@@ -199,7 +214,7 @@ def chooseRuleSetsInterface(request):
         jdata = jdata + ']}'
         print jdata
         
-        return render_to_response('jsRegularize/chooseRuleSets_interface.html', {"userName" : userName, "urn" : urn, "witnesses" : witnesses, "ruleSetData": jdata}, context_instance=RequestContext(request))
+        return render_to_response('jsRegularize/chooseRuleSets_interface.html', {"userName" : userName, "urn" : urn, "witnesses" : witnesses, "ruleSetData": jdata, "images": images}, context_instance=RequestContext(request))
     else:
        return HttpResponse(status=500) 
 
@@ -226,6 +241,7 @@ def loadRegularizationInterface(request):
         ruleSetName = jdata['ruleSetName']
         ruleSet = json.dumps({'ruleSet': jdata['ruleSet']})
         witnesses = json.dumps({'witnesses': jdata['witnesses'][0]})
+        images = json.dumps({'images': jdata['images'][0]})
 
         filteredRuleSet = RuleSet.objects.filter(userId=userName).filter(\
                                                         appliesTo=urn).filter(name=ruleSetName)
@@ -239,7 +255,7 @@ def loadRegularizationInterface(request):
         send = httplib2.Http()
         response, content = send.request(urlCollation, 'POST', witnesses, headers)
         
-        return render_to_response('jsRegularize/collate_interface.html', {"userName" : userName, "urn" : urn, "witnessesTokens" : content, "witnessesLines": witnesses, "ruleSetName": ruleSetName, "ruleSet": ruleSet, "position": 0}, context_instance=RequestContext(request))
+        return render_to_response('jsRegularize/collate_interface.html', {"userName" : userName, "urn" : urn, "witnessesTokens" : content, "witnessesLines": witnesses, "ruleSetName": ruleSetName, "ruleSet": ruleSet, "position": 0, "images": images}, context_instance=RequestContext(request))
 
 @csrf_exempt
 def postNewRule(request):
@@ -388,8 +404,9 @@ def sendEntity(request):
 
     urn = jdata['urn']
     jdata = getWitnessData(urn)
-    allWitnesses = jdata
-    jdata = json.loads(jdata)
+    allWitnesses = jdata[0]
+    images = jdata[1]
+    jdata = json.loads(jdata[0])
     #print jdata
     indexId = 0
     
@@ -411,7 +428,8 @@ def sendEntity(request):
         send = httplib2.Http()
         response, content = send.request(url, 'POST', jdata, headers)
         #print content
-        data = '{"allWitnesses" : ' + allWitnesses + ', "allTokens" : ' + content + '}'
+        data = '{"allWitnesses" : ' + allWitnesses + ', "allTokens" : ' + content + \
+            ', "allImages": ' + images + '}'
         #print data
         return HttpResponse(data, mimetype="application/json")
     except:
@@ -478,6 +496,7 @@ def postNewAlign(request):
                             newAlign['isForward'] and align.isMove == \
                             newAlign['isMove'] and align.numPos == \
                             newAlign['numPos'] and align.token == \
+                            newAlign['position'] and align.position == \
                             newAlign['token'] and align.context == \
                             newAlign['context']):
                             print "hereFound"
@@ -500,6 +519,7 @@ def postNewAlign(request):
                         a.token = newAlign['token']
                         a.numPos = newAlign['numPos']
                         a.context = newAlign['context']
+                        a.position = newAlign['position']
                         a.save()
                         print a.witnessId
                         a.modifications.add(m)
@@ -532,7 +552,8 @@ def changeAligns(request):
                         jdata['alignments'][0]['isForward'] and align.isMove == \
                         jdata['alignments'][0]['isMove'] and align.numPos == \
                         jdata['alignments'][0]['numPos'] and align.token == \
-                        jdata['alignments'][0]['token'] and align.context == \
+                        jdata['alignments'][0]['token'] and align.position == \
+                        jdata['alignments'][0]['position'] and align.context == \
                         jdata['alignments'][0]['context']):
                            modifications = align.modifications.all()
                            number = 1

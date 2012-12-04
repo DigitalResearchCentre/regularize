@@ -22,6 +22,7 @@ class Alignment(models.Model):
     isForward = models.BooleanField()
     token = models.CharField(max_length=200)
     numPos = models.IntegerField()
+    position = models.IntegerField()
     modifications = models.ManyToManyField(Modification)
 
 class RuleSet(models.Model):

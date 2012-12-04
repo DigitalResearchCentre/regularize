@@ -17,6 +17,15 @@
     }[b];
   });
   
+  var allImages = (("{{ images }}")).replace(/&(l|g|quo)t;/g, function(a,b)
+  {
+    return {
+      l : '<',
+      g : '>',
+      quo : '"'
+    }[b];
+  });
+  
   function load()
   {
     selectedIds = [];
@@ -24,6 +33,12 @@
     witnessData = witnessData.replace(/u'/g, '\'');
     witnessData = witnessData.replace(/'/g, '\"');
     witnessData = JSON.parse(witnessData);
+    
+    allImages = allImages.replace(/u'/g, '\'');
+    allImages = allImages.replace(/'/g, '\"');
+    allImages = JSON.parse(allImages);
+    
+    //console.log(allImages);
     
     for(var i in witnessData.witnesses)
     {
@@ -51,7 +66,7 @@
   function done()
   {
     
-    var newWitnesses = { witnesses: [] };
+    var newWitnesses = { witnesses: [], images: [] };
     
     for(var i in witnessData.witnesses)
     {
@@ -63,6 +78,14 @@
     
     newWitnesses.urn = urn;
     newWitnesses.userName = userName;
+    
+    for(var i in allImages.images)
+    {
+      if(document.getElementById(allImages.images[i].id).checked == true)
+      {
+        newWitnesses.images.push(allImages.images[i]);
+      }
+    }
      
      $.ajax({
     url: "http://127.0.0.1:8000/regularization/postSelectedWitnesses/",
