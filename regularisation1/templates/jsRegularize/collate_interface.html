@@ -753,7 +753,8 @@ function regularize_onoff()
      //document.information.style.visibility = "hidden";
      document.edit_reg.style.visibility = "hidden";
      
-     allTokens = origTokens;
+     allTokens = getBaseTokens();
+     // should applyAlign if alignOn
      regularize();
      
      

@@ -42,6 +42,17 @@
     
     for(var i in witnessData.witnesses)
     {
+      for(var j in witnessData.witnesses)
+      {
+        if(witnessData.witnesses[i].id == witnessData.witnesses[j].id && i != j)
+        {
+          witnessData.witnesses.splice(j, 1);
+        }
+      }
+    }
+    
+    for(var i in witnessData.witnesses)
+    {
       var checkbox = document.createElement('input');
       checkbox.type = "checkbox";
       checkbox.name = witnessData.witnesses[i].id;

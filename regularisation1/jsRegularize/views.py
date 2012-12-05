@@ -482,10 +482,6 @@ def postNewAlign(request):
                                 appliesTo=jdata['urn']).filter(name=jdata['ruleSetName'])
 
             if filteredRuleSet and filteredRuleSet.count() == 1:
-                # filteredModifications = Modification.objects.filter(userId=jdata['userName']).filter(\
-                #     modification_type=jdata['alignments'][0]['modifications'][0]['modification_type'])\
-                #     .filter(dateTime=jdata['alignments'][0]['modifications'][0]['dateTime'])
-
                 for newAlign in jdata['alignments']:
                     found = False
                     print newAlign
@@ -541,36 +537,30 @@ def changeAligns(request):
 
            if filteredRuleSet and filteredRuleSet.count() == 1:
                for modification in jdata['alignments']:
-                   # filteredModifications = Modification.objects.filter(userId=jdata['userName']).filter(\
-                   #  modification_type=jdata['alignments'][0]['modifications'][0]['modification_type'])\
-                   #  .filter(dateTime=jdata['alignments'][0]['modifications'][0]['dateTime'])
                     found = False
                     for align in filteredRuleSet[0].alignments.all():
                        if (align.appliesTo == jdata['urn'] and align.appliesTo == \
-                        jdata['alignments'][0]['appliesTo'] and align.witnessId == \
-                        jdata['alignments'][0]['witnessId'] and align.isForward == \
-                        jdata['alignments'][0]['isForward'] and align.isMove == \
-                        jdata['alignments'][0]['isMove'] and align.numPos == \
-                        jdata['alignments'][0]['numPos'] and align.token == \
-                        jdata['alignments'][0]['token'] and align.position == \
-                        jdata['alignments'][0]['position'] and align.context == \
-                        jdata['alignments'][0]['context']):
+                        modification['appliesTo'] and align.witnessId == \
+                        modification['witnessId'] and align.isForward == \
+                        modification['isForward'] and align.isMove == \
+                        modification['isMove'] and align.numPos == \
+                        modification['numPos'] and align.token == \
+                        modification['token'] and align.position == \
+                        modification['position'] and align.context == \
+                        modification['context']):
                            modifications = align.modifications.all()
                            number = 1
                            for modificationIn in modifications:
-                               #print modificationIn.modification_type
                                if(number == len(modifications) and modificationIn.modification_type != \
                                   'delete'):
-                                   found = True
-                                   modifiedAlign = align
+                                   print "here"
+                                   m = Modification()
+                                   m.userId = jdata['userName']
+                                   m.modification_type = modification['modifications'][-1]\
+                                       ['modification_type']
+                                   m.dateTime = modification['modifications'][-1]['dateTime']
+                                   m.save()
+                                   align.modifications.add(m)
                                number = number + 1
-                        
-                    if found:
-                        m = Modification()
-                        m.userId = jdata['userName']
-                        m.modification_type = modification['modifications'][-1]['modification_type']
-                        m.dateTime = modification['modifications'][-1]['dateTime']
-                        m.save()
-                        modifiedAlign.modifications.add(m)
                         
     return HttpResponse("OK")
