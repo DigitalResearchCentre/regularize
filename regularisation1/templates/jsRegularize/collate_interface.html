@@ -85,7 +85,7 @@ function load()
   allImages = allImages.replace(/u'/g, '\'');
   allImages = allImages.replace(/'/g, '\"');
   allImages = JSON.parse(allImages);
-  console.log(allImages);
+  //console.log(allImages);
   
   var temp = urn.split("entity=")[1];
   var entity = temp.split(":", 1)[0];
@@ -159,7 +159,6 @@ function load()
   regOn = false;
   regularize_onoff();
   regularize();
-  applyAlign();
 }
 
 function nextToken()
@@ -178,11 +177,10 @@ function nextToken()
   }
   
   regularize();
-  //applyAlign();
   
   document.regularization.reg_to.value = reg_toWhole;
   
-  console.log(allTokens);
+  //console.log(allTokens);
 }
 
 function previousToken()
@@ -201,11 +199,11 @@ function previousToken()
   }
   
   regularize();
-  applyAlign();
+ 
   
   document.regularization.reg_to.value = reg_toWhole;
   
-  console.log(allTokens);
+  //console.log(allTokens);
 }
 
 function determineClick()
@@ -382,7 +380,6 @@ function selectNew()
 
 function addRule()
 {
-  console.log(distinct);
   
   var reg_thisWhole = document.regularization.reg_this.value;
   var reg_toWhole = document.regularization.reg_to.value;
@@ -426,8 +423,7 @@ function addRule()
         {
           for(var j in distinct.witnesses[index].originals[i].id)
           {
-            //alert(id);
-            id = distinct.witnesses[index].originals[i].id[j];
+            var id = distinct.witnesses[index].originals[i].id[j];
             newRule = createRule(choice, reg_thisWhole, reg_toWhole, reg_word, id, index);
 
             var add = true;
@@ -459,35 +455,18 @@ function addRule()
       }
 
     }
+    
+    //console.log(contextStruct);
 
     contextStruct = { witnesses: [] };
 
     document.regularization.reg_this.value = "";
-    //document.regularization.reg_to.value = "";
     document.regularization.reg_to.value = reg_toWhole;
 
     if(regOn)
     {
       insertRegTable(choice, reg_thisWhole, reg_toWhole);
-      // without showing context --> may need to do for each rule added
-      // if there are different ones for different witnesess 
-      // (different context)
-//      if(choice != "this_place")
-//      {
-//        insertRegTable(choice, reg_thisWhole, reg_toWhole);
-//      }
-//      else
-//      {
-//        action = newRule.action;
-//        reg_this = action.split(',')[0];
-//        reg_this = reg_this.substring(11,reg_this.length);
-//        reg_to = action.split(', ')[1];
-//        reg_to = reg_to.substring(0, reg_to.length-1);
-//        insertRegTable(choice, reg_this, reg_to);
-//      }
     }
-
-    //console.log(newRules);
 
     changeRegularizeLabel(choice, reg_thisWhole, reg_toWhole);
   }
@@ -506,13 +485,13 @@ function addRuleList(newRule)
     customRules.rules.push(newRule);
     allRules.rules.push(newRule);
     regularize();
-    //applyAlign();
+    //);
   }
   else //if(regOn && !isCustomRules)
   {
     allRules.rules.push(newRule);
     regularize();
-    //applyAlign();
+    //);
   }
 
 }
@@ -522,8 +501,7 @@ function addRuleList(newRule)
  * index: index in the distinct.witnesses list (for token)
  */
 function getContext(id, index)
-{ 
-  
+{   
   var needMoreContext = false;
   var context = "";
   var contextIndex;
@@ -535,7 +513,7 @@ function getContext(id, index)
     if(contextStruct.witnesses[i].id == id)
     {
       context = contextStruct.witnesses[i].context;
-      origContext = context;
+      origContext = contextStruct.witnesses[i].context;
       context = context.split(/\W/);
       context = context.join(' ');
       contextIndex = i;
@@ -560,7 +538,7 @@ function getContext(id, index)
       {
         for(var k in distinct.witnesses[index].originals[j].id)
         {
-          dWid = distinct.witnesses[index].originals[j].id[k];
+          var dWid = distinct.witnesses[index].originals[j].id[k];
           if(dWid == allWitnesses.witnesses[i].id)
           {
             isId = true;
@@ -729,10 +707,6 @@ function regularize_onoff()
      {
        loadRegTable();
      }
-//     else
-//     {
-//       applyAlign();
-//     }
      regularize();
   }
   else
@@ -758,7 +732,7 @@ function regularize_onoff()
      regularize();
      
      
-     //applyAlign();
+     //);
   }
   
 }
@@ -1506,11 +1480,12 @@ function checkSpaces(reg_word)
 
 function getToken(witnessId, position)
 {
-
    var token = "";
    var collate = false;
    var origToken = "";
    var regRules = { rules: []};
+   var foundMatch = true;
+   var ruleApplied = false;
    
    if(isCustomRules)
    {
@@ -1529,67 +1504,174 @@ function getToken(witnessId, position)
    else
    {
      token = allTokens.alignment[witnessId].tokens[position].t;
+     origToken = allTokens.alignment[witnessId].tokens[position].t;
    }
 
    for (var k in regRules.rules)
    {
+     var action = regRules.rules[k].action;
+     var reg_this = action.split(',')[0];
+     reg_this = reg_this.substring(11,reg_this.length);
+     var reg_to = action.split(', ')[1];
+     reg_to = reg_to.substring(0, reg_to.length-1);
+     var wholeToToken = reg_to;
+     var regularizeToken = regRules.rules[k].token;
+     var choice = regRules.rules[k].scope;
+     foundMatch = true;
      var modifications = regRules.rules[k].modifications;
      if (modifications[modifications.length-1].modification_type == "delete")
      {
-      isDisabled = true; 
+       isDisabled = true;
      }
      else if (token == regRules.rules[k].token)
-     {
-        action = regRules.rules[k].action;
-        reg_this = action.split(',')[0];
-        reg_this = reg_this.substring(11,reg_this.length);
-        reg_to = action.split(', ')[1];
-        reg_to = reg_to.substring(0, reg_to.length-1);
-        wholeToToken = reg_to;
-        choice = regRules.rules[k].scope;
-        
+     {  
         if(choice == "this_place")
         {
-          var found = false;
-          var reg_thisIndex = -1;
+          //alert(allTokens.alignment[witnessId].witness);
+          //alert(regularizeToken);
+          //alert(reg_this + "; " + reg_to);
+          //alert("ruleApplied: " + ruleApplied);
+          //console.log(allTokens);
           var reg_thisArray = reg_this.split(" ");
-          for(var m in reg_thisArray)
-          {
-            if(reg_thisArray[m] == token && !found)
-            {
-              found = true;
-              reg_thisIndex = m;
-              
-            }
-          }
-          if(found)
-          {
-            reg_thisArray.splice(0, reg_thisIndex);
-          }
-          origToken = reg_thisArray[0];
-          reg_thisArray = reg_thisArray.join(" ");
-          
-          found = false;
-          var reg_thisArray2 = reg_this.split(" ");
           var reg_toArray = reg_to.split(" ");
-          var reg_toIndex = -1;
+          var tokenArray = regularizeToken.split(" ");  //?!? maybe should use reg_thisArray (is token only one word)
+          var index = "";
           
-          for(var m in reg_toArray)
+          // Establish this is the correct place to regularize
+          if(tokenArray.length == 1)
           {
-            if(reg_toArray[m] != reg_thisArray2[m] && !found)
+            for(var m in reg_thisArray)
             {
-              found = true;
-              reg_toIndex = m;
+              if(token == reg_thisArray[m])
+              {
+                index = m;
+              }
             }
           }
-          if(found)
+          else
           {
-            reg_toArray.splice(0, reg_toIndex);
+            for(var m in reg_thisArray)
+            {
+              if(tokenArray[0] == reg_thisArray[m])
+              {
+                index = m;
+              }
+            }
           }
-          reg_toArray = reg_toArray.join(" ");
           
-          reg_this = reg_thisArray;
-          reg_to = reg_toArray;
+          var numBack = currentPosition - index;
+          for(var m = 0; m<index; m++)
+          {
+            //alert(numBack);
+            if(allTokens.alignment[witnessId].tokens[numBack] != null)
+            {
+              if(allTokens.alignment[witnessId].tokens[numBack].t != reg_thisArray[m] && foundMatch)
+              {
+                //alert("Backward: noMatch");
+                //var newTokenn = allTokens.alignment[witnessId].tokens[position].t;
+                //alert(newTokenn + " " + reg_thisArray[m]);
+                foundMatch = false;
+              }
+            }
+            else
+            {
+              m--;
+            }
+            numBack--;
+          }
+          
+          var numForward = currentPosition;
+          for(var m = index + tokenArray.length - 1; m < reg_thisArray.length; m++)
+          {
+            if(allTokens.alignment[witnessId].tokens[numForward] != null)
+            {
+              if(allTokens.alignment[witnessId].tokens[numForward].t != reg_thisArray[m] && foundMatch)
+              {
+                //alert(" Forward: noMatch");
+                //alert(allTokens.alignment[witnessId].tokens[numForward].t + " " + reg_thisArray[m]);
+                foundMatch = false;
+              }
+            }
+            else
+            {
+              m++;
+            }
+            numForward++;
+          }
+          
+          if(foundMatch)
+          { 
+             ruleApplied = true;
+             //alert("match");
+             var found = false;
+             var indexEndThis = 0;
+             for(var m = index; m < reg_thisArray; m++)
+             {
+               for(var n = index; n < reg_toArray; n++)
+               {
+                 if(reg_thisArray[m] == reg_toArray[n] && !found)
+                 {
+                   found = true;
+                   indexEndThis = m;
+                 }
+               }
+             }
+             var endIndex = reg_thisArray.length-index-indexEndThis;
+             reg_thisArray = reg_thisArray.splice(index, endIndex);
+             
+             var indexEndThis = 0;
+             for(var m = index; m < reg_thisArray; m++)
+             {
+               for(var n = index; n < reg_toArray; n++)
+               {
+                 if(reg_thisArray[m] == reg_toArray[n] && !found)
+                 {
+                   found = true;
+                   indexEndThis = m;
+                 }
+               }
+             }
+             reg_thisArray = reg_thisArray.splice(indexEndThis, reg_thisArray.length-1-indexEndThis);
+             reg_this = reg_thisArray.join(" ");
+             //alert("RegSoFar: " + reg_thisArray.join(" "));
+             
+             
+             for(var m = index; m < reg_toArray; m++)
+             {
+               for(var n = index; n < reg_thisArray; n++)
+               {
+                 if(reg_thisArray[n] == reg_toArray[m] && !found)
+                 {
+                   found = true;
+                   indexEndThis = m;
+                 }
+               }
+             }
+             reg_toArray = reg_toArray.splice(index, reg_toArray.length-index-indexEndThis);
+             
+             for(var m = index; m < reg_toArray; m++)
+             {
+               for(var n = index; n < reg_thisArray; n++)
+               {
+                 if(reg_thisArray[n] == reg_toArray[m] && !found)
+                 {
+                   found = true;
+                   indexEndThis = m;
+                 }
+               }
+             }
+             reg_toArray = reg_toArray.splice(indexEndThis, reg_toArray.length-1-indexEndThis);
+             reg_to = reg_toArray.join(" ");
+             wholeToToken = reg_to;
+             
+             //alert("reg_this: " + reg_this + " reg_to: " + reg_to);
+            
+          }
+          else if(!ruleApplied)
+          {
+            token = origToken;
+            //alert("Nomatch: " + token);
+          }
           
         }
         
@@ -1637,7 +1719,15 @@ function getToken(witnessId, position)
         }
         else
         {
-          token = reg_to;
+          ///TODO: change in object
+          if(foundMatch)
+          {
+            token = reg_to;
+          }
+          else
+          {
+            token = origToken;
+          }
         }
         
         if(spacesTo != false && !isBuildWitnesses)
@@ -1675,6 +1765,7 @@ function getToken(witnessId, position)
                   {
                     var insertTok = { "t" : insertTokens[k], "n" : insertTokens[k], "origToken" : origToken, "reg_to" : reg_to};
                     allTokens.alignment[witnessId].tokens.splice(position,1,insertTok);
+                    // TODO:: May have to add a null token at end of each other witness to make same number of tokens
                   }
                 }
                 else
@@ -1685,6 +1776,7 @@ function getToken(witnessId, position)
                   }
                   var insertTok = { "t" : insertTokens[k], "n" : insertTokens[k], "origToken" : origToken, "reg_to" : reg_to};
                   allTokens.alignment[witnessId].tokens.splice(position,0,insertTok);
+                  // TODO:: May have to add a null token at tend of each oter witness to make same number of tokens
                 }
                 position++;
               }
@@ -1701,11 +1793,19 @@ function getToken(witnessId, position)
         }
         else
         {
-          reg_to = reg_to.split(' ')[0];
-          token = reg_to;
+          ///TODO: change in array
+          if(foundMatch)
+          {
+            reg_to = reg_to.split(' ')[0];
+            token = reg_to;
+          }
+          else
+          {
+            token = origToken;
+          }
         }
       }
-    }
+   }
     
     if(collate)
     {
@@ -1765,49 +1865,29 @@ function informationWindow(witnessId)
   var reg_to = "";
   var choice = "";
   
-  for(var i in regRules.rules)
+  console.log(distinct);
+  for(var j in distinct.witnesses)
   {
-    var modifications = regRules.rules[i].modifications;
-    if(modifications[modifications.length-1].modification_type != "delete")
+    for(var k in distinct.witnesses[j].originals)
     {
-      var action = regRules.rules[i].action;
-
-      if(allTokens.alignment[index].tokens != null && allTokens.alignment[index].tokens[currentPosition] != null)
+      for(var l in distinct.witnesses[j].originals[k].id)
       {
-        if(allTokens.alignment[index].tokens[currentPosition].origToken != null && allTokens.alignment[index].tokens[currentPosition].origToken != "")
+        if(distinct.witnesses[j].originals[k].id[l] == witnessId)
         {
-          reg_this = action.split(', ')[0];
-          reg_this = reg_this.substring(11, reg_this.length);
-          if(allTokens.alignment[index].tokens[currentPosition].origToken == reg_this)
-          {
-            reg_to = action.split(', ')[1];
-            reg_to = reg_to.substring(0, reg_to.length-1);
-            choice = regRules.rules[i].scope;
-          }
-        }
-        else 
-        {
-          if (allTokens.alignment[index].tokens[currentPosition] != null)
-          {
-            token = allTokens.alignment[index].tokens[currentPosition].t;
-          }
-          else
-          {
-            token = "null";
-          }
-
-          if(token == regRules.rules[i].token)
-          {
-            reg_this = regRules.rules[i].token;
-            reg_to = action.split(', ')[1];
-            reg_to = reg_to.substring(0, reg_to.length-1);
-            choice = regRules.rules[i].scope;
-          }
+          reg_this = distinct.witnesses[j].originals[k].origToken;
+          reg_to = distinct.witnesses[j].token;
         }
       }
-      else
+    }
+  }
+  
+  if(reg_this != reg_to)
+  {
+    for(var i in regRules.rules)
+    {
+      if(reg_this == regRules.rules[i].token)
       {
-        token = "null";
+        choice = regRules.rules[i].scope;
       }
     }
   }
@@ -1930,10 +2010,10 @@ function ImageMap(url){
     var zoom = this.getZoom();
     var tile_num = Math.pow(2, zoom-1);
     var projection = this.getProjection();
-    console.log(tile_num);
+    //console.log(tile_num);
     var latLng = projection.fromPointToLatLng(new google.maps.Point(64, 64));
-    console.log(projection);
-    console.log(latLng);
+    //console.log(projection);
+    //console.log(latLng);
     this.setCenter(latLng);
   });
   this.map = map;
@@ -2192,7 +2272,7 @@ function submitCustomReg()
     sendAligns.userName = userName;
     sendAligns.ruleSetName = ruleSetName;
     
-    console.log(sendAligns);
+    //console.log(sendAligns);
 
     // send changed rules to server
     $.ajax({
@@ -2210,10 +2290,10 @@ function submitCustomReg()
     origTokens = createNewAllTokens();
     
     regularize();
-    //applyAlign();
+    //);
     loadAlignTable();
     
-    //console.log(allAlign);
+    ////console.log(allAlign);
     
     return;
   }
@@ -2349,7 +2429,7 @@ function submitCustomReg()
   allTokens = getBaseTokens();
   
   regularize();
-  //applyAlign();
+  //);
   loadRegTable();
 }
 
@@ -2367,14 +2447,14 @@ function getDateTime()
   return dateTime;
 }
 
-  function createRule(scope, reg_this, reg_to, token, id, index)
+function createRule(scope, reg_this, reg_to, token, id, index)
 {
  
   contextStruct = {witnesses:[]};
   var goForward;
   var context = reg_this;
   
-  if(currentPosition == totalPos)
+  if(currentPosition == totalPos-1)
   {
     goForward = false;
   }
@@ -2419,7 +2499,7 @@ function getDateTime()
            };
            
            
-  console.log(newRule);
+  //console.log(newRule);
   return newRule;
 
 }
@@ -2556,16 +2636,16 @@ function getEntity(jdata)
     dataType: 'json',
     async: false,
     success: function(data){
-      console.log(data)
+      //console.log(data)
       allTokens = data.allTokens;
       allWitnesses = data.allWitnesses;
       origTokens = createNewAllTokens();
       totalPos = allTokens.alignment[0].tokens.length;
-      allImages = data.images;
+      allImages = data.allImages;
       currentPosition = 0;
       //console.log(allTokens);
       regularize();
-      //applyAlign();
+      //);
   }});
 }
 
@@ -2581,7 +2661,7 @@ function showOriginals(checkBox)
     isOriginals = false; 
   }
   regularize();
-  //applyAlign();
+  //);
 }
 
 function showRegularization(checkBox)
@@ -2737,12 +2817,8 @@ function alignmentDirection(checkBox)
   }
 }
 
-function realign(token, isMove, isForward, numPos)
+function realign(token, isMove, isForward, numPos, position)
 {
-//  var token = document.realign_token.token.value;
-  var forward = "";
-  var backward = "";
-//  var isMove = document.getElementById("move_realign").checked;
   var isCreate = true;
   
   if(isMove)
@@ -2881,7 +2957,7 @@ function realign(token, isMove, isForward, numPos)
       for(var i in allTokens.alignment)
       {
         var match = true;
-        var index = currentPosition;
+        var index = position;
         for (var j in token)
         {
           if(getToken(i, index) != token[j])
@@ -2893,9 +2969,9 @@ function realign(token, isMove, isForward, numPos)
         
         if(match)
         {
-          allTokens.alignment[i].tokens[currentPosition].t = token.join(" ");
+          allTokens.alignment[i].tokens[position].t = token.join(" ");
           var indexInput = totalPos;
-          var indexDelete = currentPosition;
+          var indexDelete = position;
           indexDelete++;
           
           for(var j = 0; j < length-1; j++)
@@ -2914,37 +2990,53 @@ function realign(token, isMove, isForward, numPos)
   }
   
   // Make sure there are no extra null positions in alignment
-  var found = false;
-  for(var i in allTokens.alignment)
+  var endDelete = false;
+  for(var j = 0; j < totalPos; j++)
   {
-    if(allTokens.alignment[i].tokens[0] != null)
+    if(!endDelete)
     {
-      found = true;
+      var found = false;
+      for(var i in allTokens.alignment)
+      {
+        if(allTokens.alignment[i].tokens[0] != null)
+        {
+          found = true;
+          endDelete = true;
+        }
+      }
+      
+      if(!found)
+      {
+        for (var i in allTokens.alignment)
+        {
+          allTokens.alignment[i].tokens.splice(0,1);
+        }
+      }
     }
   }
   
-  if(!found)
-  {
-    for (var i in allTokens.alignment)
-    {
-      allTokens.alignment[i].tokens.splice(0,1);
-    }
-  }
   
-  found = false;
-  for(var i in allTokens.alignment)
+  var endDelete = false;
+  for(var j = 0; j < totalPos; j++)
   {
-    if(allTokens.alignment[i].tokens[allTokens.alignment[0].tokens.length-1] != null)
+    if(!endDelete)
     {
-      found = true;
-    }
-  }
-  
-  if(!found)
-  {
-    for (var i in allTokens.alignment)
-    {
-      allTokens.alignment[i].tokens.splice(allTokens.alignment[0].tokens.length-1,1);
+      found = false;
+      for(var i in allTokens.alignment)
+      {
+        if(allTokens.alignment[i].tokens[allTokens.alignment[0].tokens.length-1] != null)
+        {
+          found = true;
+        }
+      }
+
+      if(!found)
+      {
+        for (var i in allTokens.alignment)
+        {
+          allTokens.alignment[i].tokens.splice(allTokens.alignment[0].tokens.length-1,1);
+        }
+      }
     }
   }
   
@@ -3019,7 +3111,7 @@ function getRealign()
 
     //NEWALIGN
     regularize();
-    realign(token, isMove, isForward, numPos);
+    realign(token, isMove, isForward, numPos, currentPosition);
     var numTokens = totalPos + parseInt(numPos);
     for(var i = 0; i<numTokens; i++)
     {
@@ -3056,7 +3148,7 @@ function getRealign()
 
     //NEWALIGN
     regularize();
-    realign(token, isMove, isForward, numPos);
+    realign(token, isMove, isForward, numPos, currentPosition);
     var numTokens = totalPos + parseInt(numPos) - 1;
     var endPosition = 0 - parseInt(numPos);
     var position = 0;
@@ -3328,16 +3420,17 @@ function align_onoff()
     alignOn = true;
     document.getElementById("align_button").value = "Align. On";
     //allTokens = origTokens;
-    //applyAlign();
+    //);
     loadAlignTable();
   }
   regularize();
-  //applyAlign();
+  //);
 }
 
 function createAlignment(token, isMove, isForward, numPos)
 {
   var allNewAlign = { alignments: [] };
+  contextStruct = {witnesses: []};
   origTokens = getBaseTokens();
   
   if(isForward == null)
@@ -3359,7 +3452,7 @@ function createAlignment(token, isMove, isForward, numPos)
   var witnessId = "";
   var context = "";
 
-  for(var i in origTokens.alignment)
+  for(var i in allTokens.alignment)
   {
     var match = true;
     var index = currentPosition;
@@ -3375,27 +3468,42 @@ function createAlignment(token, isMove, isForward, numPos)
 
     if(match)
     {
-      witnessId = origTokens.alignment[i].witness;
-      var number = 0;
+      witnessId = allTokens.alignment[i].witness;
       
-      for( var j in origTokens.alignment[i].tokens)
+      if(currentPosition == totalPos-1)
       {
-        if(number != 0)
-        {
-          context += " ";
-        }
-        if(origTokens.alignment[i].tokens[j] != null)
-        {
-          context += origTokens.alignment[i].tokens[j].t;
-        }
-        else
-        {
-          context += "null"
-        }
-        number++;
+        goForward = false;
       }
-
-      //context = getAlignContext(token, witnessId);
+      else
+      {
+        goForward = true;
+      }
+      
+      contextStruct.witnesses.push({
+        "id": witnessId,
+        "token": token[0],
+        "context": token.join(" "),
+        "tokenPos": currentPosition,
+        "startPos": currentPosition,
+        "endPos": currentPosition,
+        "goForward": goForward,
+        "switchDirections": true
+        
+      });
+      
+      console.log(contextStruct);
+      
+      var index = 0;
+      for(var j in distinct.witnesses)
+      {
+        if(token[0] == distinct.witnesses[j].token)
+        {
+          index = j;
+        }
+      }
+      
+      context = getContext(witnessId, index);
+      
       
       var newAlign = {
         "token": token.join(" "),
@@ -3414,6 +3522,8 @@ function createAlignment(token, isMove, isForward, numPos)
         "userName": userName,
         "dateTime": getDateTime()
       });
+      
+      console.log(newAlign);
       
       allNewAlign.alignments.push(newAlign);
     }
@@ -3464,7 +3574,7 @@ function addAlign()
   sendAlign(newAlign);
   
   // do alignment
-  realign(token, isMove, isForward, numPos);
+  realign(token, isMove, isForward, numPos, currentPosition);
   
 }
 
@@ -3476,7 +3586,7 @@ function sendAlign(newAlign)
   {
     sendAligns.alignments.push(newAlign.alignments[i]);
   }
-  console.log(sendAligns);
+  //console.log(sendAligns);
   sendAligns.urn = urn;
   sendAligns.userName = userName;
   sendAligns.ruleSetName = ruleSetName;
@@ -3489,6 +3599,9 @@ function sendAlign(newAlign)
 
 }
 
+/**
+ * applies ALL alignments
+ */
 function applyAlign()
 {
   var aligns = {alignments: []};
@@ -3506,94 +3619,94 @@ function applyAlign()
     return;
   }
   
-  origTokens = getBaseTokens();
-  
-  var foundAlign = [];
-  
-  if(aligns.alignment != undefined)
+  for (var i in aligns.alignments)
   {
-    for(var i = 0; i < aligns.alignments[0].length; i++)
+    var token = aligns.alignments[i].token;
+    var isMove = aligns.alignments[i].isMove;
+    var isForward = aligns.alignments[i].isForward;
+    var numPos = aligns.alignments[i].numPos;
+    var context = aligns.alignments[i].context;
+    var witnessId = aligns.alignments[i].witnessId;
+    var position = aligns.alignments[i].position;
+    var foundMatch = true;
+    var tokenArray = token.split(" ");
+    var alignApplied = false;
+    if(aligns.alignments[i].modifications[aligns.alignments[i].modifications.length-1].modification_type != "delete")
     {
-      foundAlign[i] = false;
-    }
-  }
-  
-  for(var m = 0; m < totalPos; m++)
-  {
-    for(var n in allTokens.alignment)
-    {
-      for (var i in aligns.alignments)
+      for(var j in allTokens.alignment)
       {
-        var token = aligns.alignments[i].token;
-        var isMove = aligns.alignments[i].isMove;
-        var isForward = aligns.alignments[i].isForward;
-        var numPos = aligns.alignments[i].numPos;
-        var currentContext = "";
-        var context = aligns.alignments[i].context;
-        var witnessId = aligns.alignments[i].witnessId;
-        var position = aligns.alignments[i].position;
-        var found = false;
-        if(aligns.alignments[i].modifications[aligns.alignments[i].modifications.length-1].modification_type != "delete" &&
-        !foundAlign[i] && position == currentPosition && token == getToken(n, m))
-        { 
-          if(isMove)
+        if(allTokens.alignment[j].witness == witnessId && !alignApplied)
+        {
+          //alert("match witnessId: " + witnessId);
+          for(var k in allTokens.alignment[j].tokens)
           {
-            for(var j in allTokens.alignment)
+            findDistinct(k);
+            //alert("At: " + getToken(j, k) + " alignTok: " + tokenArray[0]);
+            if(getToken(j, k) == tokenArray[0])
             {
-              if(allTokens.alignment[j].witness == witnessId)
-              {
-                var number = 0;
-                currentContext = "";
-                for(var k in allTokens.alignment[j].tokens)
-                {
-                  if(number != 0)
-                  {
-                    currentContext += " ";
-                  }
+              //alert("match Token: " + tokenArray[0]);
+              //alert("Context: " + context);
+              var contextArray = context.split(" ");
+              var index = "";
 
-                  currentContext += getToken(j, k);
-                  number++;
+              for(var l in allTokens.alignment)
+              {
+                if(witnessId == allTokens.alignment[l].witness)
+                {
+                  witnessId = l;
                 }
               }
 
-              if(currentContext == context  && !found)
+              for(var m in contextArray)
               {
-                found = true;
-                realign(token, isMove, isForward, numPos);
-              }
-            }
-          }
-          else
-          {
-            for(var j in origTokens.alignment)
-            {
-              if(origTokens.alignment[j].witness == witnessId)
-              {
-                var number = 0;
-                currentContext = "";
-                for(var k in origTokens.alignment[j].tokens)
+                if(tokenArray[0] == contextArray[m])
                 {
-                  if(number != 0)
-                  {
-                    currentContext += " ";
-                  }
-
-//                  if(origTokens.alignment[j].tokens[k] != null)
-//                  {
-//                    currentContext += origTokens.alignment[j].tokens[k].t;
-//                  }
-//                  else
-//                  {
-//                    currentContext += "null";
-//                  }
-                  currentContext += getToken(j, k);
-                  number++;
+                  index = m;
                 }
               }
 
-              if(currentContext == context)
+              var numBack = k - index;
+              for(var m = 0; m<index; m++)
               {
-                realign(token, isMove, isForward, numPos);
+                //alert(numBack);
+                if(allTokens.alignment[witnessId].tokens[numBack] != null)
+                {
+                  if(allTokens.alignment[witnessId].tokens[numBack].t != contextArray[m] && foundMatch)
+                  {
+                    //alert("backward no match");
+                    foundMatch = false;
+                  }
+                }
+                else
+                {
+                  m--;
+                }
+                numBack--;
+              }
+
+              var numForward = k;
+              for(var m = index + tokenArray.length - 1; m < contextArray.length; m++)
+              {
+                if(allTokens.alignment[witnessId].tokens[numForward] != null)
+                {
+                  if(allTokens.alignment[witnessId].tokens[numForward].t != contextArray[m] && foundMatch)
+                  {
+                    //alert("forward no match");
+                    foundMatch = false;
+                  }
+                }
+                else
+                {
+                  m++;
+                }
+                numForward++;
+              }
+
+              if(foundMatch && !alignApplied)
+              { 
+                 alert("match");
+                 alignApplied = true;
+                 realign(token, isMove, isForward, numPos, k);
               }
             }
           }
@@ -3601,6 +3714,8 @@ function applyAlign()
       }
     }
   }
+  
+  console.log(allTokens);
 }
 
 </script>
