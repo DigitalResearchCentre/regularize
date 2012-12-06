@@ -2990,55 +2990,55 @@ function realign(token, isMove, isForward, numPos, position)
   }
   
   // Make sure there are no extra null positions in alignment
-  var endDelete = false;
-  for(var j = 0; j < totalPos; j++)
-  {
-    if(!endDelete)
-    {
-      var found = false;
-      for(var i in allTokens.alignment)
-      {
-        if(allTokens.alignment[i].tokens[0] != null)
-        {
-          found = true;
-          endDelete = true;
-        }
-      }
-      
-      if(!found)
-      {
-        for (var i in allTokens.alignment)
-        {
-          allTokens.alignment[i].tokens.splice(0,1);
-        }
-      }
-    }
-  }
-  
-  
-  var endDelete = false;
-  for(var j = 0; j < totalPos; j++)
-  {
-    if(!endDelete)
-    {
-      found = false;
-      for(var i in allTokens.alignment)
-      {
-        if(allTokens.alignment[i].tokens[allTokens.alignment[0].tokens.length-1] != null)
-        {
-          found = true;
-        }
-      }
-
-      if(!found)
-      {
-        for (var i in allTokens.alignment)
-        {
-          allTokens.alignment[i].tokens.splice(allTokens.alignment[0].tokens.length-1,1);
-        }
-      }
-    }
-  }
+//  var endDelete = false;
+//  for(var j = 0; j < totalPos; j++)
+//  {
+//    if(!endDelete)
+//    {
+//      var found = false;
+//      for(var i in allTokens.alignment)
+//      {
+//        if(allTokens.alignment[i].tokens[0] != null)
+//        {
+//          found = true;
+//          endDelete = true;
+//        }
+//      }
+//      
+//      if(!found)
+//      {
+//        for (var i in allTokens.alignment)
+//        {
+//          allTokens.alignment[i].tokens.splice(0,1);
+//        }
+//      }
+//    }
+//  }
+//  
+//  
+//  var endDelete = false;
+//  for(var j = 0; j < totalPos; j++)
+//  {
+//    if(!endDelete)
+//    {
+//      found = false;
+//      for(var i in allTokens.alignment)
+//      {
+//        if(allTokens.alignment[i].tokens[allTokens.alignment[0].tokens.length-1] != null)
+//        {
+//          found = true;
+//        }
+//      }
+//
+//      if(!found)
+//      {
+//        for (var i in allTokens.alignment)
+//        {
+//          allTokens.alignment[i].tokens.splice(allTokens.alignment[0].tokens.length-1,1);
+//        }
+//      }
+//    }
+//  }
   
   //console.log(allTokens);
   totalPos = allTokens.alignment[0].tokens.length;
@@ -3704,7 +3704,7 @@ function applyAlign()
 
               if(foundMatch && !alignApplied)
               { 
-                 alert("match");
+                 alert("match: " + witnessId);
                  alignApplied = true;
                  realign(token, isMove, isForward, numPos, k);
               }
