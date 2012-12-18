@@ -20,11 +20,11 @@ def regularization(request):
 
     urn = request.GET.get('urn', '')
     userName = request.GET.get('username', '')
-    returnUrl = request.get_full_path()
+    returnUrl = request.GET.get('page', '')
 
     jdata = getWitnessData(urn)
 
-    return render_to_response('jsRegularize/chooseTexts_interface.html', {"userName" : userName, "urn" : urn, "witnesses" : jdata[0], "images": jdata[1]}, context_instance=RequestContext(request))
+    return render_to_response('jsRegularize/chooseTexts_interface.html', {"userName" : userName, "urn" : urn, "witnesses" : jdata[0], "images": jdata[1], "returnUrl": returnUrl}, context_instance=RequestContext(request))
     
 def getWitnessData(urn):
     parser = HTMLParser.HTMLParser()
@@ -96,8 +96,8 @@ def getWitnessData(urn):
             x = "".join(x)
             x = x.split("<hi rend=\"orncp\">")
             x = "".join(x)
-            x = x.split("<lb n=\"\">")
-            x = "".join(x)
+            #x = x.split("<lb n=\"\">")
+            # x = "".join(x)
             x = x.split("</lb>")
             x = "".join(x)
             x = x.split("<hi rend=\"unex\">")
@@ -105,6 +105,10 @@ def getWitnessData(urn):
             x = x.split("<hi rend=\"sup\">")
             x = "".join(x)
             x = x.split("<hi rend=\"ud\">")
+            x = "".join(x)
+            x = x.split("\"")
+            x = "".join(x)
+            x = x.split("<lb n=/>")
             x = "".join(x)
             # x = x.split("&lt;gap extent=&quot;")
             # if(len(x) >= 2):
@@ -147,6 +151,7 @@ def chooseRuleSetsInterface(request):
         jdata = json.loads(jdata)
         userName = jdata['userName']
         urn = jdata['urn']
+        returnUrl = jdata['returnUrl']
         # TODO: May have to change this line
         witnesses = '{"witnesses":[' + jsonpickle.encode(jdata['witnesses']) + ']}'
         images = '{"images": [' + jsonpickle.encode(jdata['images']) + ']}'
@@ -210,11 +215,11 @@ def chooseRuleSetsInterface(request):
                     jdata = jdata + ']}'
                     alignNum = alignNum + 1
                 jdata = jdata + ']}'
-            ruleSetNum = ruleSetNum + 1
+                ruleSetNum = ruleSetNum + 1
         jdata = jdata + ']}'
         print jdata
         
-        return render_to_response('jsRegularize/chooseRuleSets_interface.html', {"userName" : userName, "urn" : urn, "witnesses" : witnesses, "ruleSetData": jdata, "images": images}, context_instance=RequestContext(request))
+        return render_to_response('jsRegularize/chooseRuleSets_interface.html', {"userName" : userName, "urn" : urn, "witnesses" : witnesses, "ruleSetData": jdata, "images": images, "returnUrl": returnUrl}, context_instance=RequestContext(request))
     else:
        return HttpResponse(status=500) 
 
@@ -239,6 +244,7 @@ def loadRegularizationInterface(request):
         userName = jdata['userName']
         urn = jdata['urn']
         ruleSetName = jdata['ruleSetName']
+        returnUrl = jdata['returnUrl']
         ruleSet = json.dumps({'ruleSet': jdata['ruleSet']})
         witnesses = json.dumps({'witnesses': jdata['witnesses'][0]})
         images = json.dumps({'images': jdata['images'][0]})
@@ -255,7 +261,7 @@ def loadRegularizationInterface(request):
         send = httplib2.Http()
         response, content = send.request(urlCollation, 'POST', witnesses, headers)
         
-        return render_to_response('jsRegularize/collate_interface.html', {"userName" : userName, "urn" : urn, "witnessesTokens" : content, "witnessesLines": witnesses, "ruleSetName": ruleSetName, "ruleSet": ruleSet, "position": 0, "images": images}, context_instance=RequestContext(request))
+        return render_to_response('jsRegularize/collate_interface.html', {"userName" : userName, "urn" : urn, "witnessesTokens" : content, "witnessesLines": witnesses, "ruleSetName": ruleSetName, "ruleSet": ruleSet, "position": 0, "images": images, "returnUrl": returnUrl}, context_instance=RequestContext(request))
 
 @csrf_exempt
 def postNewRule(request):

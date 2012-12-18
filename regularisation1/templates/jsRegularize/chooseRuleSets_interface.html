@@ -5,6 +5,7 @@
 <script type="text/javascript">
   var userName = "{{ userName }}";
   var urn = "{{ urn }}";
+  var returnUrl = "{{ returnUrl }}";
   var witnessData = (("{{ witnesses}}")).replace(/&(l|g|quo)t;/g, function(a,b)
   {
     return {
@@ -43,9 +44,10 @@
     
     ruleSetData = ruleSetData.replace(/u'/g, '\'');
     ruleSetData = ruleSetData.replace(/'/g, '\"');
+    console.log(ruleSetData);
     ruleSetData = JSON.parse(ruleSetData);
     
-    console.log(ruleSetData);
+    
     
     loadTables();
   }
@@ -69,8 +71,8 @@
   {
     var theader = '<table border="1">';
     var tbody = '';
-    var tfooter = '</table><br/>';
-    var selectButton = '<input type="button" value = "Select" onclick="chooseRuleSet('+number+')"/><br/>';
+    var tfooter = '</table>';
+    var selectButton = '<input type="button" value = "Select" onclick="chooseRuleSet('+number+')"/><br/><br/>';
     
     tbody += '<font color="#A52A2A"><tr><td> RULE SET: </td> <td> Name: </td> <td> Applies To: </td> <td> Owner </td><td></td><td></td><td></td><td></td>';
     tbody += '<tr> <td> </td> <td>' +  ruleSet.name + ' </td> <td>' + ruleSet.appliesTo + '</td> <td>';
@@ -101,26 +103,30 @@
     {
       var direction = "";
       var type = "";
+      var positions = 0;
       if(ruleSet.alignments[i].isMove)
       {
         type = "Move tokens";
+        if(ruleSet.alignments[i].isForward)
+        {
+          direction = "Forward";
+        }
+        else
+        {
+          direction = "Backward";
+        }
+        positions = ruleSet.alignments[i].numPos;
+        
       }
       else
       {
         type = "Create phrase";
-      }
-      
-      if(ruleSet.alignments[i].isForward)
-      {
-        direction = "Forward";
-      }
-      else
-      {
-        direction = "Backward";
+        direction = "--";
+        positions = "--";
       }
       
       tbody += '<tr> <td></td><td>Alignment #' + alignNumber +'</td><td>' + ruleSet.alignments[i].appliesTo + '</td><td>' + ruleSet.alignments[i].token;
-      tbody += '</td><td>' + ruleSet.alignments[i].witnessId + '</td><td>' + type + '</td><td>' + direction + '</td><td>' + ruleSet.alignments[i].numPos + '</td></tr>';
+      tbody += '</td><td>' + ruleSet.alignments[i].witnessId + '</td><td>' + type + '</td><td>' + direction + '</td><td>' + positions + '</td></tr>';
       tbody += '<tr> <td></td><td></td><td> MODIFICATIONS: </td> <td> Type: </td> <td> Owner </td> <td> Timestamp: </td><td></td><td></td></tr>';
       
       for (var j in ruleSet.alignments[i].modifications)
@@ -162,6 +168,7 @@
   {
     witnessData.userName = userName;
     witnessData.urn = urn;
+    witnessData.returnUrl = returnUrl;
     
     witnessData.images = [];
     
@@ -187,9 +194,8 @@
 <body onload="load()">
 <h1>Choose Rule Sets</h1>
 
-<div id="wrapper"></div><br/>
-
-Name: <input name="name" type="text" id="name" value="MI:MI:IR">
-<br/><input name="create" type="button" value="Create New" onclick="create()">
+Name: <input name="name" type="text" id="name" >
+<br/><input name="create" type="button" value="Create New" onclick="create()"><br/><br/>
+<div id="wrapper"></div>
 
 </body> </html>

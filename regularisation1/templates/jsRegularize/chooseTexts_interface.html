@@ -8,6 +8,7 @@
   var selectedIds;
   var userName = "{{ userName }}";
   var urn = "{{ urn }}";
+  var returnUrl = "{{ returnUrl }}";
   var witnessData = (("{{ witnesses}}")).replace(/&(l|g|quo)t;/g, function(a,b)
   {
     return {
@@ -32,6 +33,7 @@
     
     witnessData = witnessData.replace(/u'/g, '\'');
     witnessData = witnessData.replace(/'/g, '\"');
+    //console.log(witnessData);
     witnessData = JSON.parse(witnessData);
     
     allImages = allImages.replace(/u'/g, '\'');
@@ -89,6 +91,7 @@
     
     newWitnesses.urn = urn;
     newWitnesses.userName = userName;
+    newWitnesses.returnUrl = returnUrl;
     
     for(var i in allImages.images)
     {

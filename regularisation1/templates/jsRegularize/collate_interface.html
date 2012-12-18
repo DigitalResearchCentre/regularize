@@ -8,6 +8,7 @@
   var userName = "{{ userName }}";
   var urn = "{{ urn }}";
   var ruleSetName = "{{ ruleSetName }}";
+  var returnUrl = "{{ returnUrl }}";
   var witnessDataTokens = (("{{ witnessesTokens}}")).replace(/&(l|g|quo)t;/g, function(a,b)
   {
     return {
@@ -171,7 +172,7 @@ function nextToken()
     allTokens = origTokens;
   }
   
-  if(currentPosition != totalPos)
+  if(currentPosition != totalPos-1  )
   {
     currentPosition++;
   }
@@ -233,13 +234,13 @@ function selectRealignToken()
   var content = document.regularization.reg.value;
   var txt = document.regularization.reg;
   var pos = txt.selectionStart;
-  if(document.getElementById("move_realign").checked)
-  {
-    document.getElementById("backward_realign").checked = false;
-    document.getElementById("forward_realign").checked = false;
-    document.getElementById("backward_select").style.visibility = "hidden";
-    document.getElementById("forward_select").style.visibility = "hidden";
-  }
+//  if(document.getElementById("move_realign").checked)
+//  {
+//    document.getElementById("backward_realign").checked = false;
+//    document.getElementById("forward_realign").checked = false;
+//    document.getElementById("backward_select").style.visibility = "hidden";
+//    document.getElementById("forward_select").style.visibility = "hidden";
+//  }
 
   var token = findWord(pos, content);
 
@@ -502,6 +503,7 @@ function addRuleList(newRule)
  */
 function getContext(id, index)
 {   
+  //alert("getContext: " + id);
   var needMoreContext = false;
   var context = "";
   var contextIndex;
@@ -514,8 +516,6 @@ function getContext(id, index)
     {
       context = contextStruct.witnesses[i].context;
       origContext = contextStruct.witnesses[i].context;
-      context = context.split(/\W/);
-      context = context.join(' ');
       contextIndex = i;
     }
   }
@@ -526,35 +526,20 @@ function getContext(id, index)
   // regularize --> needMoreContext
   // if there are more than one match in a witness to 
   // be regularized --> needMoreContext
+  var numMatches = 0;
   for(var i in allWitnesses.witnesses)
   {
-    var witness = allWitnesses.witnesses[i].content.split(/\W/).join(' ');
+    var witness = allWitnesses.witnesses[i].content;
     var result = witness.match(re);
-    var isId = false;
-    
-    if(result)
+    if(result !== null && result !== undefined && result !== 'undefined')
     {
-      for(var j in distinct.witnesses[index].originals)
-      {
-        for(var k in distinct.witnesses[index].originals[j].id)
-        {
-          var dWid = distinct.witnesses[index].originals[j].id[k];
-          if(dWid == allWitnesses.witnesses[i].id)
-          {
-            isId = true;
-            if(result.length > 1)
-            {
-              needMoreContext = true;
-            }
-          }
-        }
-      }
-      
-      if(!isId)
-      {
-        needMoreContext = true;
-      }
+      numMatches++; 
     }
+  }
+  
+  if(numMatches > 1)
+  {
+    needMoreContext = true;
   }
   
   if(needMoreContext)
@@ -583,9 +568,11 @@ function getContext(id, index)
  */
 function getMoreContext(id, index, witnessIndex)
 {
-  //alert("getMoreContext");
+  //alert("getMoreContext: " + id);
   
   var tokenWitnessIndex;
+  var endTokensPos = allTokens.alignment[0].tokens.length;
+  endTokensPos--;
   for (var i in allWitnesses.witnesses)
   {
     if(allWitnesses.witnesses[i].id == id)
@@ -594,12 +581,12 @@ function getMoreContext(id, index, witnessIndex)
     }
   }
 
-  if(contextStruct.witnesses[witnessIndex].startPos == 1 && contextStruct.witnesses[witnessIndex].maxPos == totalPos)
+  if(contextStruct.witnesses[witnessIndex].startPos == 0 && contextStruct.witnesses[witnessIndex].maxPos == endTokensPos)
   {
     // total context
     return false;
   }
-  else if (contextStruct.witnesses[witnessIndex].startPos == 1 && contextStruct.witnesses[witnessIndex].endPos != totalPos)
+  else if (contextStruct.witnesses[witnessIndex].startPos == 0 && contextStruct.witnesses[witnessIndex].endPos != endTokensPos)
   {
     contextStruct.witnesses[witnessIndex].endPos++;
     if(allTokens.alignment[tokenWitnessIndex].tokens[contextStruct.witnesses[witnessIndex].endPos] != null)
@@ -608,7 +595,7 @@ function getMoreContext(id, index, witnessIndex)
     }
     contextStruct.witnesses[witnessIndex].switchDirections = false;
   }
-  else if (contextStruct.witnesses[witnessIndex].endPos == totalPos && contextStruct.witnesses[witnessIndex].startPos != 1)
+  else if (contextStruct.witnesses[witnessIndex].endPos == endTokensPos && contextStruct.witnesses[witnessIndex].startPos != 0)
   {
     contextStruct.witnesses[witnessIndex].startPos--;
     if(allTokens.alignment[tokenWitnessIndex].tokens[contextStruct.witnesses[witnessIndex].startPos] != null)
@@ -617,7 +604,7 @@ function getMoreContext(id, index, witnessIndex)
     }
     contextStruct.witnesses[witnessIndex].switchDirections = false;
   }
-  else if (contextStruct.witnesses[witnessIndex].goForward == true && contextStruct.witnesses[witnessIndex].endPos != totalPos)
+  else if (contextStruct.witnesses[witnessIndex].goForward == true && contextStruct.witnesses[witnessIndex].endPos != endTokensPos)
   {
     contextStruct.witnesses[witnessIndex].goForward = false;
     contextStruct.witnesses[witnessIndex].endPos++;
@@ -626,7 +613,7 @@ function getMoreContext(id, index, witnessIndex)
       contextStruct.witnesses[witnessIndex].context += " " + allTokens.alignment[tokenWitnessIndex].tokens[contextStruct.witnesses[witnessIndex].endPos].t;
     }
   }
-  else if (contextStruct.witnesses[witnessIndex].goForward == false && contextStruct.witnesses[witnessIndex].startPos != 1)
+  else if (contextStruct.witnesses[witnessIndex].goForward == false && contextStruct.witnesses[witnessIndex].startPos != 0)
   {
     contextStruct.witnesses[witnessIndex].goForward = true;
     contextStruct.witnesses[witnessIndex].startPos--;
@@ -739,7 +726,6 @@ function regularize_onoff()
 
 function regularize()
 {
-
   var position = currentPosition;
   
   var content = findDistinct(position);
@@ -2579,17 +2565,9 @@ function backEntity()
     line = "IR";
   }
   
-  temp = temp+"Line="+line.toString();;
-  var jdata = { urn: temp};
-  jdata = JSON.stringify(jdata);
-  getEntity(jdata);
-  urn = temp;
+  temp = temp+"Line="+line.toString();
   
-  var temp = urn.split("entity=")[1];
-  var entity = temp.split(":", 1)[0];
-  var line = temp.split("Line=")[1];
-  document.getElementById("title_label").innerHTML = "entity " + entity + ", line " + line;
-  
+  window.location.href = "http://127.0.0.1:8000/regularization/?urn="+ temp + "&username=" + userName + "&page=" + returnUrl; 
 }
 
 function forwardEntity()
@@ -2607,15 +2585,7 @@ function forwardEntity()
   }
   
   temp = temp+"Line="+line.toString();
-  var jdata = { urn: temp};
-  jdata = JSON.stringify(jdata);
-  getEntity(jdata);
-  urn = temp;
-  
-  var temp = urn.split("entity=")[1];
-  var entity = temp.split(":", 1)[0];
-  var line = temp.split("Line=")[1];
-  document.getElementById("title_label").innerHTML = "entity " + entity + ", line " + line;
+  window.location.href = "http://127.0.0.1:8000/regularization/?urn="+ temp + "&username=" + userName + "&page=" + returnUrl;
 }
 
 function getEntity(jdata)
@@ -2712,7 +2682,6 @@ function showRegularization(checkBox)
 
 function showRealign(checkBox)
 {
-  
   if(checkBox.checked)
   {
     isRealign = true;
@@ -2739,14 +2708,17 @@ function showRealign(checkBox)
     alignOn = false;
     align_onoff();
     
+    currentPosition = 0;
+    recollate();
+    applyAlign();
+    regularize();
+    
     //document.getElementById("move_realign").checked = true;
   }
   else
   {
     isRealign = false;
   }
-  
-  applyAlign();
 }
 
 function changeKindCheckbox(checkBox)
@@ -2760,15 +2732,18 @@ function changeKindCheckbox(checkBox)
     alignHTML += "<input type='checkbox' name='forward_realign' value='forward_realign' id='forward_realign'";
     alignHTML += "onchange='alignmentDirection(this)'/> Forward";
     alignHTML += "<select name='forward_select' id='forward_select' onchange='getRealign()'></select>";
-    alignHTML += "<br/>";
-    alignHTML += "<input type='checkbox' name='backward_realign' value='bacward_realign' id='backward_realign'";
-    alignHTML += "onchange='alignmentDirection(this)'/> Backward";
-    alignHTML += "<select name='backward_select' id='backward_select' onchange='getRealign()'></select>";
+    //alignHTML += "<br/>";
+    //alignHTML += "<input type='checkbox' name='backward_realign' value='bacward_realign' id='backward_realign'";
+    //alignHTML += "onchange='alignmentDirection(this)'/> Backward";
+    //alignHTML += "<select name='backward_select' id='backward_select' onchange='getRealign()'></select>";
     document.getElementById("alignOption_wrapper").innerHTML = alignHTML;
     document.getElementById("forward_realign").style.visibility = "visible";
-    document.getElementById("backward_realign").style.visibility = "visible";
-    document.getElementById("forward_select").style.visibility = "hidden";
-    document.getElementById("backward_select").style.visibility = "hidden";
+    //document.getElementById("backward_realign").style.visibility = "visible";
+    //document.getElementById("forward_select").style.visibility = "hidden";
+    //document.getElementById("backward_select").style.visibility = "hidden";
+    document.getElementById("forward_realign").checked = "true";
+    document.getElementById("forward_realign").style.visibility = "hidden";
+    alignmentDirection(document.getElementById("forward_realign"));
   }
   else
   {
@@ -2782,9 +2757,9 @@ function alignmentDirection(checkBox)
 {
   if(checkBox.value == "forward_realign")
   {
-    document.getElementById("backward_realign").checked = false;
-    document.getElementById("forward_select").style.visibility = "visible";
-    document.getElementById("backward_select").style.visibility = "hidden";
+    //document.getElementById("backward_realign").checked = false;
+    //document.getElementById("forward_select").style.visibility = "visible";
+    //document.getElementById("backward_select").style.visibility = "hidden";
     
     document.getElementById("forward_select").options.length = 0;
     var option = document.createElement("option");
@@ -2817,7 +2792,7 @@ function alignmentDirection(checkBox)
   }
 }
 
-function realign(token, isMove, isForward, numPos, position)
+function realign(token, isMove, isForward, numPos, position, witnessId)
 {
   var isCreate = true;
   
@@ -2844,77 +2819,84 @@ function realign(token, isMove, isForward, numPos, position)
     return;
   }
   
+  var index = 0;
+  for(var i in allTokens.alignment)
+  {
+    if(allTokens.alignment[i].witness == witnessId)
+    {
+      index = i; 
+    }
+  }
+  
   if (token != "")
   {
-    var ids = [];
-    //console.log(distinct);
-
-    for (var i in distinct.witnesses)
-    {
-      if(token == distinct.witnesses[i].token)
-      {
-        for (var j in distinct.witnesses[i].originals)
-        {
-          for (var k in distinct.witnesses[i].originals[j].id)
-          {
-            ids.push(distinct.witnesses[i].originals[j].id[k]);
-          }
-        }
-      }
-    }
-
-//    console.log(ids);
-
     // MOVE TOKENS
     if(isMove)
     {
       if(isForward)
       {
-        for(var i in allTokens.alignment)
+        var newPos = parseInt(position);
+        var numAdd = 0;
+        for(var k = 0; k < numPos; k++)
         {
-          var foundId = false;
-          for (var j in ids)
+          // GET RID OF null
+          newPos++;
+          //alert(index + " " + allTokens.alignment[index].tokens[newPos].t);
+          if(allTokens.alignment[index].tokens[newPos] == null)
           {
-            if(allTokens.alignment[i].witness == ids[j])
-            {
-              foundId = true;
-            }
+            //alert(index + " " + newPos + " null");
+            allTokens.alignment[index].tokens.splice(newPos, 1);
+            allTokens.alignment[index].tokens.splice(position, 0, "null");
+            allTokens.alignment[index].tokens[position] = null;
           }
-
-          if(foundId)
-          {
-            for(var k = 0; k < numPos; k++)
-            {
-              allTokens.alignment[i].tokens.splice(0, 0, "null");
-              allTokens.alignment[i].tokens[0] = null;
-            }
-          }
+          // MOVE ALL TOKENS FORWARD
           else
-          { 
-            var newPosition = totalPos + 1;
-            for(var k = 0; k < numPos; k++)
-            {
-              allTokens.alignment[i].tokens.splice(newPosition, 0, null);
-              newPosition++;
-            }
+          {
+            //alert(index + " non-null");
+            allTokens.alignment[index].tokens.splice(position, 0, "null");
+            allTokens.alignment[index].tokens[position] = null;
+            numAdd++;
           }
         }
+        
+//        for(var k in allTokens.alignment)
+//        {
+//          for(var l = 0; l<numPos; l++)
+//          {
+//            allTokens.alignment[k].tokens.push(null);
+//          }
+//        }
+        
+    /**
+     *KEEP THISS!!
+     */
+//        for(var i in allTokens.alignment)
+//        {
+//          if(i == index)
+//          {
+//            for(var k = 0; k < numPos; k++)
+//            {
+//              allTokens.alignment[i].tokens.splice(0, 0, "null");
+//              allTokens.alignment[i].tokens[0] = null;
+//            }
+//          }
+//          else
+//          { 
+//            var newPosition = totalPos + 1;
+//            for(var k = 0; k < numPos; k++)
+//            {
+//              allTokens.alignment[i].tokens.splice(newPosition, 0, null);
+//              newPosition++;
+//            }
+//          }
+//        }
         
       }
       else
       {
         for(var i in allTokens.alignment)
         {
-          var foundId = false;
-          for (var j in ids)
-          {
-            if(allTokens.alignment[i].witness == ids[j])
-            {
-              foundId = true;
-            }
-          }
-
-          if(foundId)
+          if(i == index)
           {
             newPosition = totalPos + 1;
             for(var k = 0; k < numPos; k++)
@@ -2989,59 +2971,33 @@ function realign(token, isMove, isForward, numPos, position)
     }
   }
   
-  // Make sure there are no extra null positions in alignment
-//  var endDelete = false;
-//  for(var j = 0; j < totalPos; j++)
-//  {
-//    if(!endDelete)
-//    {
-//      var found = false;
-//      for(var i in allTokens.alignment)
-//      {
-//        if(allTokens.alignment[i].tokens[0] != null)
-//        {
-//          found = true;
-//          endDelete = true;
-//        }
-//      }
-//      
-//      if(!found)
-//      {
-//        for (var i in allTokens.alignment)
-//        {
-//          allTokens.alignment[i].tokens.splice(0,1);
-//        }
-//      }
-//    }
-//  }
-//  
-//  
-//  var endDelete = false;
-//  for(var j = 0; j < totalPos; j++)
-//  {
-//    if(!endDelete)
-//    {
-//      found = false;
-//      for(var i in allTokens.alignment)
-//      {
-//        if(allTokens.alignment[i].tokens[allTokens.alignment[0].tokens.length-1] != null)
-//        {
-//          found = true;
-//        }
-//      }
-//
-//      if(!found)
-//      {
-//        for (var i in allTokens.alignment)
-//        {
-//          allTokens.alignment[i].tokens.splice(allTokens.alignment[0].tokens.length-1,1);
-//        }
-//      }
-//    }
-//  }
   
-  //console.log(allTokens);
   totalPos = allTokens.alignment[0].tokens.length;
+  allPos = allTokens.alignment[0].tokens.length;
+  // Make sure there are no extra null positions in alignment
+  for(var j = 0; j <= allPos; j++)
+  {
+    var found = false;
+    for(var k in allTokens.alignment)
+    {
+      if(allTokens.alignment[k].tokens[j] != null)
+      {
+        found = true;
+      }
+    }
+    
+    if(!found)
+    {
+      for(var k in allTokens.alignment)
+      {
+        allTokens.alignment[k].tokens.splice(j, 1);
+      }
+      j--;
+      allPos--;
+    }
+  }
+  
+  console.log(allTokens);
   regularize();
 }
 
@@ -3055,6 +3011,23 @@ function getRealign()
   var isForward = null;
   var token = document.realign_token.token.value;
   var isMove = document.getElementById("move_realign").checked;
+  
+  var ids = [];
+  //console.log(distinct);
+
+  for (var i in distinct.witnesses)
+  {
+    if(token == distinct.witnesses[i].token)
+    {
+      for (var j in distinct.witnesses[i].originals)
+      {
+        for (var k in distinct.witnesses[i].originals[j].id)
+        {
+          ids.push(distinct.witnesses[i].originals[j].id[k]);
+        }
+      }
+    }
+  }
   
   if(isMove)
   {
@@ -3099,19 +3072,22 @@ function getRealign()
     for(var i=0; i<numTokens; i++)
     {
       var position = i;
-      if(position <= totalPos)
-      { 
+      //if(position <= totalPos)
+      //{ 
         oldAlign += findDistinct(position) + "<br />&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;";
-      }
-      else
-      {
-        oldAlign += getNullContent() + "<br />&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;";
-      }
+      //}
+//      else
+//      {
+//        oldAlign += getNullContent() + "<br />&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;";
+//      }
     }
 
     //NEWALIGN
     regularize();
-    realign(token, isMove, isForward, numPos, currentPosition);
+    for(var k in ids)
+    {
+      realign(token, isMove, isForward, numPos, currentPosition, ids[k]);
+    }
     var numTokens = totalPos + parseInt(numPos);
     for(var i = 0; i<numTokens; i++)
     {
@@ -3148,7 +3124,10 @@ function getRealign()
 
     //NEWALIGN
     regularize();
-    realign(token, isMove, isForward, numPos, currentPosition);
+    for(var k in ids)
+    {
+      realign(token, isMove, isForward, numPos, currentPosition, ids[k]);
+    }
     var numTokens = totalPos + parseInt(numPos) - 1;
     var endPosition = 0 - parseInt(numPos);
     var position = 0;
@@ -3290,6 +3269,7 @@ function loadAlignTable()
   for(var i in allAlign.alignments)
   {
     var token = allAlign.alignments[i].token;
+    //var token = allAlign.alignments[i].context;
     var witnessId = allAlign.alignments[i].witnessId;
     var type = allAlign.alignments[i].isMove;
     var direction = allAlign.alignments[i].isForward;
@@ -3345,11 +3325,19 @@ function insertAlignTable(token, witnessId, isMove, isForward, numPos, isDisable
   var tokenCell = row.insertCell(1);
   var element2 = document.createElement("label");
   element2.innerHTML = token;
+  if(isDisabled)
+  {
+    element2.style.opacity = "0.5";
+  }
   tokenCell.appendChild(element2);
   
   var positionCell = row.insertCell(2);
   var element3 = document.createElement("label");
   element3.innerHTML = witnessId;
+  if(isDisabled)
+  {
+    element3.style.opacity = "0.5";
+  }
   positionCell.appendChild(element3);
   
   var typeCell = row.insertCell(3);
@@ -3361,6 +3349,10 @@ function insertAlignTable(token, witnessId, isMove, isForward, numPos, isDisable
   else
   {
     element4.innerHTML = "Create phrase";
+  }
+  if(isDisabled)
+  {
+    element4.style.opacity = "0.5";
   }
   typeCell.appendChild(element4);
   
@@ -3381,6 +3373,10 @@ function insertAlignTable(token, witnessId, isMove, isForward, numPos, isDisable
   {
     element5.innerHTML = "--";
   }
+  if(isDisabled)
+  {
+    element5.style.opacity = "0.5";
+  }
   directionCell.appendChild(element5);
   
   var numberCell = row.insertCell(5);
@@ -3392,6 +3388,10 @@ function insertAlignTable(token, witnessId, isMove, isForward, numPos, isDisable
   else
   {
     element6.innerHTML = "--";
+  }
+  if(isDisabled)
+  {
+    element6.style.opacity = "0.5";
   }
   numberCell.appendChild(element6);
 
@@ -3419,12 +3419,12 @@ function align_onoff()
   {
     alignOn = true;
     document.getElementById("align_button").value = "Align. On";
-    //allTokens = origTokens;
-    //);
+    allTokens = getBaseTokens();
+    // apply all rules and alignments
+    //applyAlign();
     loadAlignTable();
   }
   regularize();
-  //);
 }
 
 function createAlignment(token, isMove, isForward, numPos)
@@ -3504,7 +3504,6 @@ function createAlignment(token, isMove, isForward, numPos)
       
       context = getContext(witnessId, index);
       
-      
       var newAlign = {
         "token": token.join(" "),
         "appliesTo": urn,
@@ -3568,13 +3567,15 @@ function addAlign()
     allAlign.alignments.push(newAlign.alignments[i]);
     // add to table
     insertAlignTable(newAlign.alignments[i].token, newAlign.alignments[i].witnessId, newAlign.alignments[i].isMove, newAlign.alignments[i].isForward, newAlign.alignments[i].numPos, false);
+    // do alignment
+    realign(token, isMove, isForward, numPos, currentPosition, newAlign.alignments[i].witnessId);
   }
   
   //send to server
   sendAlign(newAlign);
   
   // do alignment
-  realign(token, isMove, isForward, numPos, currentPosition);
+  
   
 }
 
@@ -3627,6 +3628,7 @@ function applyAlign()
     var numPos = aligns.alignments[i].numPos;
     var context = aligns.alignments[i].context;
     var witnessId = aligns.alignments[i].witnessId;
+    var _id = aligns.alignments[i].witnessId;
     var position = aligns.alignments[i].position;
     var foundMatch = true;
     var tokenArray = token.split(" ");
@@ -3654,59 +3656,59 @@ function applyAlign()
                 if(witnessId == allTokens.alignment[l].witness)
                 {
                   witnessId = l;
-                }
-              }
 
-              for(var m in contextArray)
-              {
-                if(tokenArray[0] == contextArray[m])
-                {
-                  index = m;
-                }
-              }
-
-              var numBack = k - index;
-              for(var m = 0; m<index; m++)
-              {
-                //alert(numBack);
-                if(allTokens.alignment[witnessId].tokens[numBack] != null)
-                {
-                  if(allTokens.alignment[witnessId].tokens[numBack].t != contextArray[m] && foundMatch)
+                  for(var m in contextArray)
                   {
-                    //alert("backward no match");
-                    foundMatch = false;
+                    if(tokenArray[0] == contextArray[m])
+                    {
+                      index = m;
+                    }
+                  }
+
+                  var numBack = k - index;
+                  for(var m = 0; m<index; m++)
+                  {
+                    //alert(numBack);
+                    if(allTokens.alignment[witnessId].tokens[numBack] != null)
+                    {
+                      if(allTokens.alignment[witnessId].tokens[numBack].t != contextArray[m] && foundMatch)
+                      {
+                        //alert("backward no match");
+                        foundMatch = false;
+                      }
+                    }
+                    else
+                    {
+                      m--;
+                    }
+                    numBack--;
+                  }
+
+                  var numForward = k;
+                  for(var m = index + tokenArray.length - 1; m < contextArray.length; m++)
+                  {
+                    if(allTokens.alignment[witnessId].tokens[numForward] != null)
+                    {
+                      if(allTokens.alignment[witnessId].tokens[numForward].t != contextArray[m] && foundMatch)
+                      {
+                        //alert("forward no match");
+                        foundMatch = false;
+                      }
+                    }
+                    else
+                    {
+                      m++;
+                    }
+                    numForward++;
+                  }
+
+                  if(foundMatch && !alignApplied)
+                  { 
+                     //alert("match: " + witnessId);
+                     alignApplied = true;
+                     realign(token, isMove, isForward, numPos, k, _id);
                   }
                 }
-                else
-                {
-                  m--;
-                }
-                numBack--;
-              }
-
-              var numForward = k;
-              for(var m = index + tokenArray.length - 1; m < contextArray.length; m++)
-              {
-                if(allTokens.alignment[witnessId].tokens[numForward] != null)
-                {
-                  if(allTokens.alignment[witnessId].tokens[numForward].t != contextArray[m] && foundMatch)
-                  {
-                    //alert("forward no match");
-                    foundMatch = false;
-                  }
-                }
-                else
-                {
-                  m++;
-                }
-                numForward++;
-              }
-
-              if(foundMatch && !alignApplied)
-              { 
-                 alert("match: " + witnessId);
-                 alignApplied = true;
-                 realign(token, isMove, isForward, numPos, k);
               }
             }
           }
@@ -3716,6 +3718,11 @@ function applyAlign()
   }
   
   console.log(allTokens);
+}
+
+function returnPage()
+{
+  window.location.href = 'http://textualcommunities.usask.ca/' + returnUrl;
 }
 
 </script>
@@ -3731,7 +3738,7 @@ originals)
 
 <table>
   <tr>
-    <td>
+    <td valign="top">
       <table>
 <tr>
 <td style="width: 30px">
@@ -3741,7 +3748,7 @@ originals)
        <br /> <input type="checkbox" name="reg_checkbox" value="reg_checkbox" onchange="showRegularization(this)"/>
         Add regularization rules
        <br /> <input type="checkbox" name="change" value="change" onchange="showRealign(this)"/>
-        Change alignment of token
+        Change alignment of token (Make sure all regularizations are done!)
        <br />
        
        <input name="reg_on" id="reg_button" type="button" value="Reg. On" onclick="regularize_onoff()">
@@ -3750,7 +3757,7 @@ originals)
        <input name="forward" type="button" value="Forward Entity" onclick="forwardEntity()">
        <input name="previous" type="button" value="Previous Word" onclick="previousToken()">
        <input name="next" type="button" value="Next Word" onclick="nextToken()">
-       <input name="done" type="button" value="Done"><br/>
+       <input name="done" type="button" value="Done" onclick="returnPage()"><br/>
     
        <div id="reg_wrapper"></div><br />
        
@@ -3778,7 +3785,7 @@ originals)
 </tr>
       </table>
     </td>
-    <td>
+    <td valign="top">
       <table>
         <tr>
             <td valign="top">
