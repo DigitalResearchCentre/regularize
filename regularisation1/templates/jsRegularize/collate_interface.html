@@ -2709,8 +2709,8 @@ function showRealign(checkBox)
     align_onoff();
     
     currentPosition = 0;
-    recollate();
-    applyAlign();
+    //recollate();
+    //applyAlign();
     regularize();
     
     //document.getElementById("move_realign").checked = true;
@@ -3421,7 +3421,7 @@ function align_onoff()
     document.getElementById("align_button").value = "Align. On";
     allTokens = getBaseTokens();
     // apply all rules and alignments
-    //applyAlign();
+    applyAlign();
     loadAlignTable();
   }
   regularize();
@@ -3574,9 +3574,6 @@ function addAlign()
   //send to server
   sendAlign(newAlign);
   
-  // do alignment
-  
-  
 }
 
 function sendAlign(newAlign)
@@ -3651,62 +3648,98 @@ function applyAlign()
               var contextArray = context.split(" ");
               var index = "";
 
-              for(var l in allTokens.alignment)
+              if(isMove)
               {
-                if(witnessId == allTokens.alignment[l].witness)
+                for(var l in allTokens.alignment)
                 {
-                  witnessId = l;
-
-                  for(var m in contextArray)
+                  if(witnessId == allTokens.alignment[l].witness)
                   {
-                    if(tokenArray[0] == contextArray[m])
-                    {
-                      index = m;
-                    }
-                  }
+                    witnessId = l;
 
-                  var numBack = k - index;
-                  for(var m = 0; m<index; m++)
-                  {
-                    //alert(numBack);
-                    if(allTokens.alignment[witnessId].tokens[numBack] != null)
+                    for(var m in contextArray)
                     {
-                      if(allTokens.alignment[witnessId].tokens[numBack].t != contextArray[m] && foundMatch)
+                      if(tokenArray[0] == contextArray[m])
                       {
-                        //alert("backward no match");
-                        foundMatch = false;
+                        index = m;
                       }
                     }
-                    else
-                    {
-                      m--;
-                    }
-                    numBack--;
-                  }
 
-                  var numForward = k;
-                  for(var m = index + tokenArray.length - 1; m < contextArray.length; m++)
-                  {
-                    if(allTokens.alignment[witnessId].tokens[numForward] != null)
+                    var numBack = k - index;
+                    for(var m = 0; m<index; m++)
                     {
-                      if(allTokens.alignment[witnessId].tokens[numForward].t != contextArray[m] && foundMatch)
+                      //alert(numBack);
+                      if(allTokens.alignment[witnessId].tokens[numBack] != null)
                       {
-                        //alert("forward no match");
-                        foundMatch = false;
+                        if(allTokens.alignment[witnessId].tokens[numBack].t != contextArray[m] && foundMatch)
+                        {
+                          //alert("backward no match");
+                          foundMatch = false;
+                        }
                       }
+                      else
+                      {
+                        m--;
+                      }
+                      numBack--;
                     }
-                    else
-                    {
-                      m++;
-                    }
-                    numForward++;
-                  }
 
-                  if(foundMatch && !alignApplied)
-                  { 
-                     //alert("match: " + witnessId);
-                     alignApplied = true;
-                     realign(token, isMove, isForward, numPos, k, _id);
+                    var numForward = k;
+                    for(var m = index + tokenArray.length - 1; m < contextArray.length; m++)
+                    {
+                      if(allTokens.alignment[witnessId].tokens[numForward] != null)
+                      {
+                        if(allTokens.alignment[witnessId].tokens[numForward].t != contextArray[m] && foundMatch)
+                        {
+                          //alert("forward no match");
+                          foundMatch = false;
+                        }
+                      }
+                      else
+                      {
+                        m++;
+                      }
+                      numForward++;
+                    }
+
+                    if(foundMatch && !alignApplied)
+                    { 
+                       //alert("match: " + witnessId);
+                       alignApplied = true;
+                       realign(token, isMove, isForward, numPos, k, _id);
+                    }
+                  }
+                }
+              }
+              else
+              {
+                for(var n in allTokens.alignment)
+                {
+                  if(allTokens.alignment[n].witness == witnessId)
+                  {
+                    witnessId = n;
+                  
+                    var numForward = k;
+                    for(var m in tokenArray)
+                    {
+                      if(allTokens.alignment[witnessId].tokens[numForward] != null)
+                      {
+                        if(tokenArray[m] != allTokens.alignment[witnessId].tokens[numForward].t)
+                        {
+                          foundMatch = false;
+                        }
+                      }
+                      else
+                      {
+                        m--;
+                      }
+                      numForward++;
+                    }
+
+                    if(foundMatch && !alignApplied)
+                    {
+                      alignApplied = true;
+                      realign(token, isMove, isForward, numPos, k, _id);
+                    }
                   }
                 }
               }
