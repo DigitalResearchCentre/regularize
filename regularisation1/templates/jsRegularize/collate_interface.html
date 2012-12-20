@@ -114,7 +114,10 @@ function load()
   for(var i in ruleSet.ruleSet.alignments)
   {
     allAlign.alignments.push(ruleSet.ruleSet.alignments[i]);
+    allAlign.alignments[i].isApplied = false;
   }
+  console.log(allAlign);
+  
   contextStruct = { witnesses: [] };
   
   isBuildWitnesses = false;
@@ -177,6 +180,10 @@ function nextToken()
     currentPosition++;
   }
   
+  if(alignOn)
+  {
+    applyAlign();
+  }
   regularize();
   
   document.regularization.reg_to.value = reg_toWhole;
@@ -199,6 +206,10 @@ function previousToken()
     currentPosition--;
   }
   
+  if(alignOn)
+  {
+    applyAlign();
+  }
   regularize();
  
   
@@ -694,7 +705,6 @@ function regularize_onoff()
      {
        loadRegTable();
      }
-     regularize();
   }
   else
   {
@@ -715,12 +725,13 @@ function regularize_onoff()
      document.edit_reg.style.visibility = "hidden";
      
      allTokens = getBaseTokens();
-     // should applyAlign if alignOn
-     regularize();
-     
-     
-     //);
   }
+  
+  if(alignOn)
+  {
+    applyAlign();
+  }
+  regularize();
   
 }
 
@@ -734,6 +745,11 @@ function regularize()
   {
     automateReg(document.getElementById("automate"));
   }
+  
+//  if(alignOn)
+//  {
+//    applyAlign();
+//  }
 
   document.regularization.reg.value = content;
   
@@ -2709,8 +2725,8 @@ function showRealign(checkBox)
     align_onoff();
     
     currentPosition = 0;
-    //recollate();
-    //applyAlign();
+    recollate();
+    applyAlign();
     regularize();
     
     //document.getElementById("move_realign").checked = true;
@@ -3513,6 +3529,7 @@ function createAlignment(token, isMove, isForward, numPos)
         "isForward": isForward,
         "numPos": numPos,
         "position": currentPosition,
+        "isApplied": true,
         "modifications": []
       };
 
@@ -3629,7 +3646,7 @@ function applyAlign()
     var position = aligns.alignments[i].position;
     var foundMatch = true;
     var tokenArray = token.split(" ");
-    var alignApplied = false;
+    var alignApplied = aligns.alignments[i].isApplied;
     if(aligns.alignments[i].modifications[aligns.alignments[i].modifications.length-1].modification_type != "delete")
     {
       for(var j in allTokens.alignment)
@@ -3637,9 +3654,10 @@ function applyAlign()
         if(allTokens.alignment[j].witness == witnessId && !alignApplied)
         {
           //alert("match witnessId: " + witnessId);
-          for(var k in allTokens.alignment[j].tokens)
-          {
-            findDistinct(k);
+          //for(var k in allTokens.alignment[j].tokens[currentPosi])
+          //{
+            var k = currentPosition;
+            //findDistinct(k);
             //alert("At: " + getToken(j, k) + " alignTok: " + tokenArray[0]);
             if(getToken(j, k) == tokenArray[0])
             {
@@ -3705,6 +3723,14 @@ function applyAlign()
                     { 
                        //alert("match: " + witnessId);
                        alignApplied = true;
+                       if(isCustomAlign)
+                       {
+                         customAligns.alignments[i].isApplied = true;
+                       }
+                       else
+                       {
+                         allAlign.alignments[i].isApplied = true;
+                       }
                        realign(token, isMove, isForward, numPos, k, _id);
                     }
                   }
@@ -3738,19 +3764,28 @@ function applyAlign()
                     if(foundMatch && !alignApplied)
                     {
                       alignApplied = true;
+                      if(isCustomAlign)
+                      {
+                        customAligns.alignments[i].isApplied = true;
+                      }
+                      else
+                      {
+                        allAlign.alignments[i].isApplied = true;
+                      }
                       realign(token, isMove, isForward, numPos, k, _id);
                     }
                   }
                 }
               }
             }
-          }
+          //}
         }
       }
     }
   }
   
   console.log(allTokens);
+  console.log(allAlign);
 }
 
 function returnPage()

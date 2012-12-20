@@ -168,7 +168,20 @@
   
   function viewRuleSet(number)
   {
-    viewSets.push(number);
+    found = false;
+    for(var i in viewSets)
+    {
+      if(number == viewSets[i])
+      {
+        viewSets.splice(i, 1);
+        found = true;
+      }
+    }
+    
+    if(!found)
+    {
+      viewSets.push(number);
+    }
     //console.log(viewSets);
     loadTables();
   }
