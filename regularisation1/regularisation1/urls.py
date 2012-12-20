@@ -3,7 +3,7 @@ from jsRegularize.views import regularization, postSelectedWitnesses, chooseRule
 from jsRegularize.views import postSelectedRuleSets, loadRegularizationInterface
 from jsRegularize.views import postNewRule, changeRules, postRecollate
 from jsRegularize.views import sendRecollate, getBaseTokens, postEntity, sendEntity
-from jsRegularize.views import postNewAlign, changeAligns
+from jsRegularize.views import postNewAlign, changeAligns, deleteRuleSet
 
 from django.conf import settings
 
@@ -36,6 +36,7 @@ urlpatterns = patterns('',
     url(r'^regularization/sendEntity/$', sendEntity),
     url(r'^regularization/postNewAlign/$', postNewAlign),
     url(r'^regularization/changeAligns/$', changeAligns),
+    url(r'^regularization/deleteRuleSet/$', deleteRuleSet),
 )
 
 # if settings.DEBUG:

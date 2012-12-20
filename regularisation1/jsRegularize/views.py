@@ -570,3 +570,15 @@ def changeAligns(request):
                                number = number + 1
                         
     return HttpResponse("OK")
+
+@csrf_exempt
+def deleteRuleSet(request):
+    if request.is_ajax():
+       if request.method == 'POST':
+           jdata = json.loads(request.raw_post_data)
+           print jdata
+
+           filteredRuleSet = RuleSet.objects.filter(userId=jdata['userName']).filter(\
+                                appliesTo=jdata['urn']).filter(name=jdata['ruleSetName']).delete()
+
+    return HttpResponse("OK")

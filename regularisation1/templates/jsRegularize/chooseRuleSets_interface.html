@@ -31,6 +31,7 @@
       quo : '"'
     }[b];
   });
+  var viewSets;
   
   function load()
   { 
@@ -44,10 +45,10 @@
     
     ruleSetData = ruleSetData.replace(/u'/g, '\'');
     ruleSetData = ruleSetData.replace(/'/g, '\"');
-    console.log(ruleSetData);
+    //console.log(ruleSetData);
     ruleSetData = JSON.parse(ruleSetData);
     
-    
+    viewSets = [];
     
     loadTables();
   }
@@ -69,76 +70,92 @@
   
   function createTable(ruleSet, number)
   {
+    var found = false;
     var theader = '<table border="1">';
     var tbody = '';
     var tfooter = '</table>';
-    var selectButton = '<input type="button" value = "Select" onclick="chooseRuleSet('+number+')"/><br/><br/>';
+    var viewButton = '<input type="button" value = "View Ruleset" onclick="viewRuleSet('+number+')"/>';
+    var selectButton = '<input type="button" value = "Select" onclick="chooseRuleSet('+number+')"/>';
+    var deleteButton = '<input type="button" value = "Delete" onclick="deleteRuleSet('+number+')"/><br/><br/>';
     
-    tbody += '<font color="#A52A2A"><tr><td> RULE SET: </td> <td> Name: </td> <td> Applies To: </td> <td> Owner </td><td></td><td></td><td></td><td></td>';
+    tbody += '<td> RULE SET: </td> <td> Name: </td> <td> Applies To: </td> <td> Owner </td>';
     tbody += '<tr> <td> </td> <td>' +  ruleSet.name + ' </td> <td>' + ruleSet.appliesTo + '</td> <td>';
-    tbody += ruleSet.userId + ' </td> <td></td><td></td><td></td><td></td></tr></font>';
-    tbody += '<tr> </tr><tr><td></td><td> RULES: </td> <td> Applies To: </td> <td> Action: </td>'
-    tbody += '<td> Scope: </td> <td> Token: </td> <td></td><td></td></tr>';
+    tbody += ruleSet.userId + '</td></tr>';
     
-    var ruleNumber = 1;
-    for (var i in ruleSet.rules)
+    for(var i in viewSets)
     {
-      tbody += '<tr> <td></td><td>Rule #' + ruleNumber +'</td><td>' + ruleSet.rules[i].appliesTo + '</td><td>' + ruleSet.rules[i].action;
-      tbody += '</td><td>' + ruleSet.rules[i].scope + '</td><td>' + ruleSet.rules[i].token + '</td><td></td><td></td></tr>';
-      tbody += '<tr> <td></td><td></td><td> MODIFICATIONS: </td> <td> Type: </td> <td> Owner </td> <td> Timestamp: </td><td></td><td></td></tr>';
-      
-      for (var j in ruleSet.rules[i].modifications)
+      if(number == viewSets[i])
       {
-        tbody += '<tr><td></td><td></td><td></td><td>' + ruleSet.rules[i].modifications[j].modification_type;
-        tbody += '</td><td>' + ruleSet.rules[i].modifications[j].userId + '</td><td>';
-        tbody += ruleSet.rules[i].modifications[j].dateTime + '</td><td></td><td></td></tr>';
+        found = true;
       }
-      ruleNumber++;
     }
     
-    tbody += '<tr> </tr><tr><td></td><td> ALIGNMENTS: </td> <td> Applies To: </td> <td> Token: </td>'
-    tbody += '<td> Witness ID: </td> <td> Type: </td> <td> Direction: </td> <td> Number of Positions: </td> </tr>';
-    var alignNumber = 1;
-    for(var i in ruleSet.alignments)
+    if(found)
     {
-      var direction = "";
-      var type = "";
-      var positions = 0;
-      if(ruleSet.alignments[i].isMove)
+      //tbody += '<td></td><td></td><td></td><td></td></tr>';
+      tbody += '<tr> </tr><tr><td></td><td> RULES: </td> <td> Applies To: </td> <td> Action: </td>';
+      tbody += '<td> Scope: </td> <td> Token: </td> </tr>';
+
+      var ruleNumber = 1;
+      for (var i in ruleSet.rules)
       {
-        type = "Move tokens";
-        if(ruleSet.alignments[i].isForward)
+        tbody += '<tr> <td></td><td>Rule #' + ruleNumber +'</td><td>' + ruleSet.rules[i].appliesTo + '</td><td>' + ruleSet.rules[i].action;
+        tbody += '</td><td>' + ruleSet.rules[i].scope + '</td><td>' + ruleSet.rules[i].token + '</td><td></td><td></td></tr>';
+        tbody += '<tr> <td></td><td></td><td> MODIFICATIONS: </td> <td> Type: </td> <td> Owner </td> <td> Timestamp: </td></tr>';
+
+        for (var j in ruleSet.rules[i].modifications)
         {
-          direction = "Forward";
+          tbody += '<tr><td></td><td></td><td></td><td>' + ruleSet.rules[i].modifications[j].modification_type;
+          tbody += '</td><td>' + ruleSet.rules[i].modifications[j].userId + '</td><td>';
+          tbody += ruleSet.rules[i].modifications[j].dateTime + '</td></tr>';
+        }
+        ruleNumber++;
+      }
+
+      tbody += '<tr> </tr><tr><td></td><td> ALIGNMENTS: </td> <td> Applies To: </td> <td> Token: </td>'
+      tbody += '<td> Witness ID: </td> <td> Type: </td> <td> Direction: </td> <td> Number of Positions: </td> </tr>';
+      var alignNumber = 1;
+      for(var i in ruleSet.alignments)
+      {
+        var direction = "";
+        var type = "";
+        var positions = 0;
+        if(ruleSet.alignments[i].isMove)
+        {
+          type = "Move tokens";
+          if(ruleSet.alignments[i].isForward)
+          {
+            direction = "Forward";
+          }
+          else
+          {
+            direction = "Backward";
+          }
+          positions = ruleSet.alignments[i].numPos;
+
         }
         else
         {
-          direction = "Backward";
+          type = "Create phrase";
+          direction = "--";
+          positions = "--";
         }
-        positions = ruleSet.alignments[i].numPos;
-        
+
+        tbody += '<tr> <td></td><td>Alignment #' + alignNumber +'</td><td>' + ruleSet.alignments[i].appliesTo + '</td><td>' + ruleSet.alignments[i].token;
+        tbody += '</td><td>' + ruleSet.alignments[i].witnessId + '</td><td>' + type + '</td><td>' + direction + '</td><td>' + positions + '</td></tr>';
+        tbody += '<tr> <td></td><td></td><td> MODIFICATIONS: </td> <td> Type: </td> <td> Owner </td> <td> Timestamp: </td></tr>';
+
+        for (var j in ruleSet.alignments[i].modifications)
+        {
+          tbody += '<tr><td></td><td></td><td></td><td>' + ruleSet.alignments[i].modifications[j].modification_type;
+          tbody += '</td><td>' + ruleSet.alignments[i].modifications[j].userId + '</td><td>';
+          tbody += ruleSet.alignments[i].modifications[j].dateTime + '</td></tr>';
+        }
+        alignNumber++;
       }
-      else
-      {
-        type = "Create phrase";
-        direction = "--";
-        positions = "--";
-      }
-      
-      tbody += '<tr> <td></td><td>Alignment #' + alignNumber +'</td><td>' + ruleSet.alignments[i].appliesTo + '</td><td>' + ruleSet.alignments[i].token;
-      tbody += '</td><td>' + ruleSet.alignments[i].witnessId + '</td><td>' + type + '</td><td>' + direction + '</td><td>' + positions + '</td></tr>';
-      tbody += '<tr> <td></td><td></td><td> MODIFICATIONS: </td> <td> Type: </td> <td> Owner </td> <td> Timestamp: </td><td></td><td></td></tr>';
-      
-      for (var j in ruleSet.alignments[i].modifications)
-      {
-        tbody += '<tr><td></td><td></td><td></td><td>' + ruleSet.alignments[i].modifications[j].modification_type;
-        tbody += '</td><td>' + ruleSet.alignments[i].modifications[j].userId + '</td><td>';
-        tbody += ruleSet.alignments[i].modifications[j].dateTime + '</td><td></td><td></td></tr>';
-      }
-      alignNumber++;
     }
     
-    return theader + tbody + tfooter + selectButton;
+    return theader + tbody + tfooter + selectButton + viewButton + deleteButton;
   }
   
   function chooseRuleSet(number)
@@ -147,6 +164,37 @@
     witnessData.ruleSetName = ruleSet.name;
     witnessData.ruleSet = ruleSet;
     sendJSON();
+  }
+  
+  function viewRuleSet(number)
+  {
+    viewSets.push(number);
+    //console.log(viewSets);
+    loadTables();
+  }
+  
+  function deleteRuleSet(number)
+  {
+    var ruleSet = ruleSetData.ruleSets[number];
+    var deleteData = {};
+    deleteData.ruleSetName = ruleSet.name;
+    deleteData.userName = userName;
+    deleteData.urn = urn;
+    
+    //console.log(deleteData);
+    
+    $.ajax({
+      url: "http://127.0.0.1:8000/regularization/deleteRuleSet/",
+      dataType: 'json',
+      type: 'POST',
+      async: false,
+      data: JSON.stringify(deleteData),
+      success: function(data){
+      }});
+    
+    ruleSetData.ruleSets.splice(number, 1);
+    viewSets = [];
+    loadTables();
   }
   
   function create()
