@@ -92,6 +92,8 @@ function load()
   var entity = temp.split(":", 1)[0];
   var line = temp.split("Line=")[1];
   document.getElementById("title_label").innerHTML = "entity " + entity + ", line " + line;
+  document.getElementById("ruleSetNameLabel").innerHTML = ruleSetName + "  ";
+  document.getElementById("chooseTextsLabel").innerHTML = "all  ";
   
   document.information.style.visibility = "hidden";
   document.reg_information.style.visibility ="hidden";
@@ -331,7 +333,7 @@ function findWord(pos, content)
     token = origToken;
   }
 
-  if(token == "///" || token == "" || token == "null")
+  if(token == "///" || token == "")
   {
     notToken = true;
   }
@@ -357,7 +359,7 @@ function selectToken()
 
     var token = findWord(pos, content);
 
-    if(!token)
+    if(!token || token == "null")
     {
       alert("Invalid selection");
     }
@@ -398,8 +400,8 @@ function addRule()
     
   if(regOn && reg_thisWhole != reg_toWhole)
   {
-    var reg_word = reg_thisBox;
-    var reg_to = reg_toBox;
+    var reg_word = document.regularization.reg_this.value;
+    var reg_to = document.regularization.reg_to.value;
     var reg_thisWhole = document.regularization.reg_this.value;
     var reg_toWhole = document.regularization.reg_to.value;
     var choice = document.regularization.reg_choices.value;
@@ -731,6 +733,7 @@ function regularize_onoff()
   {
     applyAlign();
   }
+  
   regularize();
   
 }
@@ -2223,6 +2226,7 @@ function getBaseTokens()
         }
     });
     
+  console.log(newTokens);
   return newTokens;
 }
 
@@ -2572,11 +2576,16 @@ function backEntity()
   var temp = urn.split("Line=");
   var line = temp[1];
   temp = temp[0];
-  if(line != "IR")
+  
+  if(line == 1)
+  {
+    line = "IR";
+  }
+  else if(line != "IR")
   {
     line = parseInt(line) - 1;
   }
-  else if(line == 1)
+  else
   {
     line = "IR";
   }
@@ -3430,6 +3439,7 @@ function align_onoff()
     document.getElementById("align_button").value = "Align. Off";
     allTokens = getBaseTokens();
     origTokens = createNewAllTokens();
+    regularize();
   }
   else
   {
@@ -3437,10 +3447,10 @@ function align_onoff()
     document.getElementById("align_button").value = "Align. On";
     allTokens = getBaseTokens();
     // apply all rules and alignments
+    regularize();
     applyAlign();
     loadAlignTable();
   }
-  regularize();
 }
 
 function createAlignment(token, isMove, isForward, numPos)
@@ -3798,6 +3808,11 @@ function returnPage()
 
 <body onload="load()">
   <h1>Collation Interface: for <label for="title_label" id="title_label"></label></h1>
+  Rule Set Name: <label id="ruleSetNameLabel"></label>
+  <input name="choose_ruleSet" id="choose_ruleSet" type="button" value="Change Rule Set" onclick="chooseRuleSet"><br/>
+  Witnesses: <label id="chooseTextsLabel"></label>
+  <input name="choose_texts" id="choose_text" type="button" value="Select Certain Texts" onclick="chooseTexts()"><br /><br />
+  
 <label for="regularize_label" id="regularize_label">Single click on the word you want regularized, double click or type in the
 word you want it regularized to.  <br/>Select combination of Witnesses and Place.  Click OK when finished.</label>
 <br /><br /><label for="reg_on" id="reg_on">Regularization is off! (Showing

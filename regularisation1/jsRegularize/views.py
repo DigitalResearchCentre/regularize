@@ -22,9 +22,76 @@ def regularization(request):
     userName = request.GET.get('username', '')
     returnUrl = request.GET.get('page', '')
 
-    jdata = getWitnessData(urn)
+    witData = getWitnessData(urn)
+    witnesses = json.loads(witData[0])
+    images = json.loads(witData[1])
+    ruleSets = json.loads(getRuleSets(userName, urn, witData))
+    
+    jdata = '{"urn":' + jsonpickle.encode(urn) + ','
+    jdata += '"userName":' + jsonpickle.encode(userName) + ','
+    jdata += '"returnUrl":' + jsonpickle.encode(returnUrl) + ','
+    jdata += '"witnesses":' + jsonpickle.encode(witnesses['witnesses']) + ','
+    jdata += '"images":' + jsonpickle.encode(images['images']) + ','
+    jdata += '"ruleSets":' + jsonpickle.encode(ruleSets['ruleSets']) + '}'
 
-    return render_to_response('jsRegularize/chooseTexts_interface.html', {"userName" : userName, "urn" : urn, "witnesses" : jdata[0], "images": jdata[1], "returnUrl": returnUrl}, context_instance=RequestContext(request))
+    request.session['data'] = jdata
+    #print jdata
+    return HttpResponseRedirect('/regularization/interface/')
+
+def collationInterface(request):
+    urlCollation = 'http://127.0.0.1:8080/collatex-web-0.9.1-RC2/api/collate'
+    headers = {'Content-Type': 'application/json', 'Accept': 'application/json'}
+    
+    if request.session.get('data'):
+        jdata = request.session.pop('data')
+        jdata = json.loads(jdata)
+        userName = jdata['userName']
+        urn = jdata['urn']
+        ruleSetName = "default"
+        returnUrl = jdata['returnUrl']
+        witnesses = jdata['witnesses']
+        images = json.dumps({'images': jdata['images']})
+        ruleSets = jdata['ruleSets']
+        #print ruleSets
+        #ruleSet = json.dumps({'ruleSet': jdata['ruleSet']})
+        #witnesses = json.dumps({'witnesses': jdata['witnesses'][0]})
+        #images = json.dumps({'images': jdata['images'][0]})
+
+        filteredRuleSet = RuleSet.objects.filter(userId=userName).filter(\
+                                                        appliesTo=urn).filter(name=ruleSetName)
+        if not filteredRuleSet:
+            rs = RuleSet()
+            rs.userId = userName
+            rs.appliesTo = urn
+            rs.name = ruleSetName
+            rs.save()
+            ruleSet = '{}'
+        else:
+            for rs in ruleSets:
+                if rs['name'] == "default":
+                    ruleSet = rs
+
+        witnesses = checkDuplicateWitnesses(witnesses)
+        witnesses = json.dumps({'witnesses': witnesses})
+        ruleSet = json.dumps({'ruleSet': ruleSet})
+        
+        send = httplib2.Http()
+        response, content = send.request(urlCollation, 'POST', witnesses, headers)
+        #return HttpResponse("OK")
+        
+        return render_to_response('jsRegularize/collate_interface.html', {"userName" : userName, "urn" : urn, "witnessesTokens" : content, "witnessesLines": witnesses, "ruleSetName": ruleSetName, "ruleSet": ruleSet, "position": 0, "images": images, "returnUrl": returnUrl}, context_instance=RequestContext(request))
+
+def checkDuplicateWitnesses(witnesses):
+    w1Num = 0
+    for w1 in witnesses:
+        w2Num = 0
+        for w2 in witnesses:
+            if w1['id'] == w2['id'] and w1Num != w2Num:
+                witnesses.pop(w2Num)
+            w2Num = w2Num + 1
+        w1Num = w1Num + 1
+
+    return witnesses
     
 def getWitnessData(urn):
     parser = HTMLParser.HTMLParser()
@@ -155,7 +222,12 @@ def chooseRuleSetsInterface(request):
         # TODO: May have to change this line
         witnesses = '{"witnesses":[' + jsonpickle.encode(jdata['witnesses']) + ']}'
         images = '{"images": [' + jsonpickle.encode(jdata['images']) + ']}'
+        jdata = getRuleSets(userName, urn, jdata)
+        return render_to_response('jsRegularize/chooseRuleSets_interface.html', {"userName" : userName, "urn" : urn, "witnesses" : witnesses, "ruleSetData": jdata, "images": images, "returnUrl": returnUrl}, context_instance=RequestContext(request))
+    else:
+       return HttpResponse(status=500)
 
+def getRuleSets(userName, urn, jdata):
         filteredRuleSets = RuleSet.objects.filter(appliesTo=urn).filter(userId=userName)
 
         jdata = '{ "ruleSets": ['
@@ -217,11 +289,8 @@ def chooseRuleSetsInterface(request):
                 jdata = jdata + ']}'
                 ruleSetNum = ruleSetNum + 1
         jdata = jdata + ']}'
-        print jdata
-        
-        return render_to_response('jsRegularize/chooseRuleSets_interface.html', {"userName" : userName, "urn" : urn, "witnesses" : witnesses, "ruleSetData": jdata, "images": images, "returnUrl": returnUrl}, context_instance=RequestContext(request))
-    else:
-       return HttpResponse(status=500) 
+        #print jdata
+        return jdata
 
 @csrf_exempt
 def postSelectedRuleSets(request):
@@ -387,12 +456,21 @@ def postRecollate(request):
 def sendRecollate(request):
     if request.session.get('recollate'):
         jdata = request.session.pop('recollate')
+        jdata2 = json.loads(jdata)
+        #jdata2 = '{"witnesses": [' + jsonpickle.encode(jdata2['witnesses']) + ']}'
+        jdata3['witnesses'] = []
+        jdata3['witnesses'].extend(jdata2['witnesses'])
+        print jdata3
+        if request.session.get('data'):
+            oldData = request.session.pop('data')
+            request.session['data'] = jdata3
 
     url = 'http://127.0.0.1:8080/collatex-web-0.9.1-RC2/api/collate'
     headers = {'Content-Type': 'application/json', 'Accept': 'application/json'}
 
     send = httplib2.Http()
     response, content = send.request(url, 'POST', jdata, headers)
+
     return HttpResponse(content, mimetype="application/json")
 
 @csrf_exempt
@@ -457,6 +535,8 @@ def getBaseTokens(request):
 
         send = httplib2.Http()
         response, content = send.request(url, 'POST', jdata, headers)
+        print "HEERRRRRRREEEEE"
+        print response
         return HttpResponse(content, mimetype="application/json")
 
 def getTestData():
