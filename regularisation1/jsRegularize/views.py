@@ -24,19 +24,36 @@ def regularization(request):
 
     witData = getWitnessData(urn)
     witnesses = json.loads(witData[0])
-    images = json.loads(witData[1])
+    request.session['data'] = witnesses['witnesses']
+    images = witData[1]
     ruleSets = json.loads(getRuleSets(userName, urn, witData))
-    
-    jdata = '{"urn":' + jsonpickle.encode(urn) + ','
-    jdata += '"userName":' + jsonpickle.encode(userName) + ','
-    jdata += '"returnUrl":' + jsonpickle.encode(returnUrl) + ','
-    jdata += '"witnesses":' + jsonpickle.encode(witnesses['witnesses']) + ','
-    jdata += '"images":' + jsonpickle.encode(images['images']) + ','
-    jdata += '"ruleSets":' + jsonpickle.encode(ruleSets['ruleSets']) + '}'
+    ruleSetName = 'default'
 
-    request.session['data'] = jdata
-    #print jdata
-    return HttpResponseRedirect('/regularization/interface/')
+    urlCollation = 'http://127.0.0.1:8080/collatex-web-0.9.1-RC2/api/collate'
+    headers = {'Content-Type': 'application/json', 'Accept': 'application/json'}
+
+    filteredRuleSet = RuleSet.objects.filter(userId=userName).filter(\
+                                                        appliesTo=urn).filter(name=ruleSetName)
+    if not filteredRuleSet:
+        rs = RuleSet()
+        rs.userId = userName
+        rs.appliesTo = urn
+        rs.name = ruleSetName
+        rs.save()
+        ruleSet = '{}'
+    else:
+        for rs in ruleSets['ruleSets']:
+            if rs['name'] == "default":
+                ruleSet = rs
+
+    witnesses = checkDuplicateWitnesses(witnesses['witnesses'])
+    witnesses = json.dumps({'witnesses': witnesses})
+    ruleSet = json.dumps({'ruleSet': ruleSet})
+        
+    send = httplib2.Http()
+    response, content = send.request(urlCollation, 'POST', witnesses, headers)
+
+    return render_to_response('jsRegularize/collate_interface.html', {"userName" : userName, "urn" : urn, "witnessesTokens" : content, "witnessesLines": witnesses, "ruleSetName": ruleSetName, "ruleSet": ruleSet, "position": 0, "images": images, "returnUrl": returnUrl}, context_instance=RequestContext(request))
 
 def collationInterface(request):
     urlCollation = 'http://127.0.0.1:8080/collatex-web-0.9.1-RC2/api/collate'
