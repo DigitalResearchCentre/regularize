@@ -45,6 +45,7 @@ def collationInterface(request):
     if request.session.get('data'):
         jdata = request.session.pop('data')
         jdata = json.loads(jdata)
+        request.session['data'] = jdata['witnesses']
         userName = jdata['userName']
         urn = jdata['urn']
         ruleSetName = "default"
@@ -301,37 +302,6 @@ def postSelectedRuleSets(request):
             
     return HttpResponse("OK")
 
-def loadRegularizationInterface(request):
-    # RuleSet.objects.all().delete()
-    
-    urlCollation = 'http://127.0.0.1:8080/collatex-web-0.9.1-RC2/api/collate'
-    headers = {'Content-Type': 'application/json', 'Accept': 'application/json'}
-    
-    if request.session.get('selectedRuleSets'):
-        jdata = request.session.pop('selectedRuleSets')
-        jdata = json.loads(jdata)
-        userName = jdata['userName']
-        urn = jdata['urn']
-        ruleSetName = jdata['ruleSetName']
-        returnUrl = jdata['returnUrl']
-        ruleSet = json.dumps({'ruleSet': jdata['ruleSet']})
-        witnesses = json.dumps({'witnesses': jdata['witnesses'][0]})
-        images = json.dumps({'images': jdata['images'][0]})
-
-        filteredRuleSet = RuleSet.objects.filter(userId=userName).filter(\
-                                                        appliesTo=urn).filter(name=ruleSetName)
-        if not filteredRuleSet:
-            rs = RuleSet()
-            rs.userId = userName
-            rs.appliesTo = urn
-            rs.name = ruleSetName
-            rs.save()
-
-        send = httplib2.Http()
-        response, content = send.request(urlCollation, 'POST', witnesses, headers)
-        
-        return render_to_response('jsRegularize/collate_interface.html', {"userName" : userName, "urn" : urn, "witnessesTokens" : content, "witnessesLines": witnesses, "ruleSetName": ruleSetName, "ruleSet": ruleSet, "position": 0, "images": images, "returnUrl": returnUrl}, context_instance=RequestContext(request))
-
 @csrf_exempt
 def postNewRule(request):
     #Modification.objects.all().delete()
@@ -450,74 +420,25 @@ def postRecollate(request):
     if request.is_ajax():
        if request.method == 'POST':
            request.session['recollate'] = request.raw_post_data
-
+           #print request.raw_post_data
+           
     return HttpResponse("OK")
 
 def sendRecollate(request):
     if request.session.get('recollate'):
         jdata = request.session.pop('recollate')
-        jdata2 = json.loads(jdata)
-        #jdata2 = '{"witnesses": [' + jsonpickle.encode(jdata2['witnesses']) + ']}'
-        jdata3['witnesses'] = []
-        jdata3['witnesses'].extend(jdata2['witnesses'])
-        print jdata3
-        if request.session.get('data'):
-            oldData = request.session.pop('data')
-            request.session['data'] = jdata3
-
+        #print jdata
+        #jdata2 = json.loads(jdata)
+        
     url = 'http://127.0.0.1:8080/collatex-web-0.9.1-RC2/api/collate'
     headers = {'Content-Type': 'application/json', 'Accept': 'application/json'}
 
     send = httplib2.Http()
     response, content = send.request(url, 'POST', jdata, headers)
+    #print response
+    #print content
 
     return HttpResponse(content, mimetype="application/json")
-
-@csrf_exempt
-def postEntity(request):
-    if request.is_ajax():
-        if request.method == 'POST':
-            request.session['entity'] = request.raw_post_data
-
-    return HttpResponse("OK")
-
-def sendEntity(request):
-    if request.session.get('entity'):
-        jdata = request.session.pop('entity')
-        jdata = json.loads(jdata)
-
-    urn = jdata['urn']
-    jdata = getWitnessData(urn)
-    allWitnesses = jdata[0]
-    images = jdata[1]
-    jdata = json.loads(jdata[0])
-    #print jdata
-    indexId = 0
-    
-    for data in jdata['witnesses']:
-        indexNew = 0
-        for data2 in jdata['witnesses']:
-            if data['id'] == data2['id'] and indexId != indexNew:
-                del jdata['witnesses'][indexNew]
-            indexNew = indexNew + 1
-        indexId = indexId + 1
-
-    jdata = json.dumps(jdata)
-    request.session['data'] = jdata
-    
-    url = 'http://127.0.0.1:8080/collatex-web-0.9.1-RC2/api/collate'
-    headers = {'Content-Type': 'application/json', 'Accept': 'application/json'}
-
-    try:
-        send = httplib2.Http()
-        response, content = send.request(url, 'POST', jdata, headers)
-        #print content
-        data = '{"allWitnesses" : ' + allWitnesses + ', "allTokens" : ' + content + \
-            ', "allImages": ' + images + '}'
-        #print data
-        return HttpResponse(data, mimetype="application/json")
-    except:
-        return HttpResponse("OK")
 
 def getBaseTokens(request):
     #jdata = getTestData()
@@ -526,17 +447,15 @@ def getBaseTokens(request):
     if request.session.get('data'):
         jdata = request.session.pop('data')
         request.session['data'] = jdata
-        jdata = json.loads(jdata)
-        jdata = json.dumps({'witnesses': jdata['witnesses'][0]})
-        print jdata
+        jdata = checkDuplicateWitnesses(jdata)
+        jdata = json.dumps({'witnesses': jdata})
     
         url = 'http://127.0.0.1:8080/collatex-web-0.9.1-RC2/api/collate'
         headers = {'Content-Type': 'application/json', 'Accept': 'application/json'}
 
         send = httplib2.Http()
         response, content = send.request(url, 'POST', jdata, headers)
-        print "HEERRRRRRREEEEE"
-        print response
+        #print content
         return HttpResponse(content, mimetype="application/json")
 
 def getTestData():

@@ -1412,8 +1412,8 @@ function seeWitnesses()
 function recollate()
 {  
   isRecollate = true;
-  //var newWitnesses = buildWitnesses();
-  var newWitnesses = createNewAllTokens();
+  var newWitnesses = buildWitnesses();
+  //var newWitnesses = createNewAllTokens();
   isRecollate = false;
   newWitnesses = JSON.stringify(newWitnesses);
   
@@ -1451,7 +1451,10 @@ function recollate()
       
       allTokens = data;
       
-      totalPos = allTokens.alignment[0].tokens.length;
+      if(allTokens.alignment[0] != 'undefined')
+      {
+        totalPos = allTokens.alignment[0].tokens.length;
+      }
       
  }});
 }
@@ -3803,13 +3806,18 @@ function returnPage()
   window.location.href = 'http://textualcommunities.usask.ca/' + returnUrl;
 }
 
+function chooseRuleSet()
+{
+  
+}
+
 </script>
 </head>
 
 <body onload="load()">
   <h1>Collation Interface: for <label for="title_label" id="title_label"></label></h1>
   Rule Set Name: <label id="ruleSetNameLabel"></label>
-  <input name="choose_ruleSet" id="choose_ruleSet" type="button" value="Change Rule Set" onclick="chooseRuleSet"><br/>
+  <input name="choose_ruleSet" id="choose_ruleSet" type="button" value="Change Rule Set" onclick="chooseRuleSet()"><br/>
   Witnesses: <label id="chooseTextsLabel"></label>
   <input name="choose_texts" id="choose_text" type="button" value="Select Certain Texts" onclick="chooseTexts()"><br /><br />
   

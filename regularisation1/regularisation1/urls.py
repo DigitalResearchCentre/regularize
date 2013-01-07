@@ -1,8 +1,8 @@
 from django.conf.urls import patterns, include, url
 from jsRegularize.views import regularization, postSelectedWitnesses, chooseRuleSetsInterface
-from jsRegularize.views import postSelectedRuleSets, loadRegularizationInterface
+from jsRegularize.views import postSelectedRuleSets
 from jsRegularize.views import postNewRule, changeRules, postRecollate
-from jsRegularize.views import sendRecollate, getBaseTokens, postEntity, sendEntity
+from jsRegularize.views import sendRecollate, getBaseTokens
 from jsRegularize.views import postNewAlign, changeAligns, deleteRuleSet
 from jsRegularize.views import collationInterface
 
@@ -28,14 +28,11 @@ urlpatterns = patterns('',
     url(r'^regularization/postSelectedWitnesses/$', postSelectedWitnesses),
     url(r'^regularization/chooseRuleSetsInterface/$', chooseRuleSetsInterface),
     url(r'^regularization/postSelectedRuleSets/$', postSelectedRuleSets),
-    url(r'^regularization/loadRegularizationInterface/$', loadRegularizationInterface),
     url(r'^regularization/postNewRule/$', postNewRule),
     url(r'^regularization/changeRules/$', changeRules),
     url(r'^regularization/postRecollate/$', postRecollate),
     url(r'^regularization/sendRecollate/$', sendRecollate),
     url(r'^regularization/getBaseTokens/$', getBaseTokens),
-    url(r'^regularization/postEntity/$', postEntity),
-    url(r'^regularization/sendEntity/$', sendEntity),
     url(r'^regularization/postNewAlign/$', postNewAlign),
     url(r'^regularization/changeAligns/$', changeAligns),
     url(r'^regularization/deleteRuleSet/$', deleteRuleSet),
