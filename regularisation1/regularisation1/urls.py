@@ -1,10 +1,9 @@
 from django.conf.urls import patterns, include, url
-from jsRegularize.views import regularization, postSelectedWitnesses, chooseRuleSetsInterface
+from jsRegularize.views import regularization, chooseRuleSetsInterface
 from jsRegularize.views import postSelectedRuleSets
 from jsRegularize.views import postNewRule, changeRules, postRecollate
 from jsRegularize.views import sendRecollate, getBaseTokens
 from jsRegularize.views import postNewAlign, changeAligns, deleteRuleSet
-from jsRegularize.views import collationInterface
 
 from django.conf import settings
 
@@ -24,8 +23,6 @@ urlpatterns = patterns('',
     # url(r'^admin/', include(admin.site.urls)),
 
     url(r'^regularization/$', regularization),
-    url(r'^regularization/interface/$', collationInterface),
-    url(r'^regularization/postSelectedWitnesses/$', postSelectedWitnesses),
     url(r'^regularization/chooseRuleSetsInterface/$', chooseRuleSetsInterface),
     url(r'^regularization/postSelectedRuleSets/$', postSelectedRuleSets),
     url(r'^regularization/postNewRule/$', postNewRule),

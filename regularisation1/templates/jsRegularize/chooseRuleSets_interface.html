@@ -6,14 +6,6 @@
   var userName = "{{ userName }}";
   var urn = "{{ urn }}";
   var returnUrl = "{{ returnUrl }}";
-  var witnessData = (("{{ witnesses}}")).replace(/&(l|g|quo)t;/g, function(a,b)
-  {
-    return {
-      l : '<',
-      g : '>',
-      quo : '"'
-    }[b];
-  });
   var ruleSetData = (("{{ ruleSetData }}")).replace(/&(l|g|quo)t;/g, function(a,b)
   {
     return {
@@ -22,31 +14,16 @@
       quo : '"'
     }[b];
   });
-  
-  var allImages = (("{{ images }}")).replace(/&(l|g|quo)t;/g, function(a,b)
-  {
-    return {
-      l : '<',
-      g : '>',
-      quo : '"'
-    }[b];
-  });
   var viewSets;
+  var witnessData;
   
   function load()
   { 
-    witnessData = witnessData.replace(/u'/g, '\'');
-    witnessData = witnessData.replace(/'/g, '\"');
-    witnessData = JSON.parse(witnessData);
-    
-    allImages = allImages.replace(/u'/g, '\'');
-    allImages = allImages.replace(/'/g, '\"');
-    allImages = JSON.parse(allImages);
-    
     ruleSetData = ruleSetData.replace(/u'/g, '\'');
     ruleSetData = ruleSetData.replace(/'/g, '\"');
     //console.log(ruleSetData);
     ruleSetData = JSON.parse(ruleSetData);
+    witnessData = {};
     
     viewSets = [];
     
@@ -226,18 +203,7 @@
   }
   
   function sendJSON()
-  {
-    witnessData.userName = userName;
-    witnessData.urn = urn;
-    witnessData.returnUrl = returnUrl;
-    
-    witnessData.images = [];
-    
-    for(var i in allImages.images)
-    {
-      witnessData.images.push(allImages.images[i]);
-    }
-    
+  { 
     $.ajax({
       url: "http://127.0.0.1:8000/regularization/postSelectedRuleSets/",
       dataType: 'json',
@@ -247,7 +213,7 @@
       success: function(data){
       }});
 
-    window.location.href = "http://127.0.0.1:8000/regularization/loadRegularizationInterface/";
+    window.location.href = "http://127.0.0.1:8000/regularization/?urn=" + urn + "&username=" + userName + "&page=" + returnUrl;
   }
 </script>
 </head>
