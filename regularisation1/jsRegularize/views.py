@@ -22,18 +22,64 @@ def regularization(request):
     userName = request.GET.get('username', '')
     returnUrl = request.GET.get('page', '')
 
-    witData = getWitnessData(urn)
-    witnesses = json.loads(witData[0])
-    request.session['data'] = witnesses['witnesses']
-    images = witData[1]
+    # if request.session.get('selectedRuleSet'):
+    #     request.session.pop('selectedRuleSet')
+    # if request.session.get('selectedWitnesses'):
+    #     request.session.pop('selectedWitnesses')
+    # if request.session.get('images'):
+    #     request.session.pop('images')
+    # if request.session.get('data'):
+    #     request.session.pop('data')
+
+    if request.session.get('urn'):
+        urnOld = request.session.pop('urn')
+        if urnOld != urn:
+            print "erase old: " + urnOld + "; new: " + urn
+            if request.session.get('selectedRuleSet'):
+                request.session.pop('selectedRuleSet')
+            if request.session.get('selectedWitnesses'):
+                request.session.pop('selectedWitnesses')
+            if request.session.get('images'):
+                request.session.pop('images')
+            if request.session.get('data'):
+                request.session.pop('data')
+            regularization(request)
 
     if request.session.get('selectedRuleSet'):
         jdata = json.loads(request.session.pop('selectedRuleSet'))
-        print jdata
+        request.session['selectedRuleSet'] = json.dumps(jdata)
         ruleSetName = jdata['ruleSetName']
         ruleSet = jdata['ruleSet']
-        
+        images = request.session.pop('images')
+        request.session['images'] = images
+        if request.session.get('selectedWitnesses'):
+            jdata = json.loads(request.session.pop('selectedWitnesses'))
+            #print jdata
+            witnesses = jdata['witnesses']
+            request.session['selectedWitnesses'] = json.dumps(jdata)
+            allWitnesses = False
+        else:
+            allWitnesses = True
+            witnesses = request.session.pop('data')
+            request.session['data'] = witnesses
+            witnesses = checkDuplicateWitnesses(witnesses)
     else:
+        if request.session.get('selectedWitnesses'):
+            allWitnesses = False
+            witnesses = json.loads(request.session.pop('selectedWitnesses'))
+            witnesses = witnesses['witnesses']
+            request.session['selectedWitnesses'] = json.dumps(witnesses)
+            images = request.session.pop('images')
+            request.session['images'] = images
+        else:
+            allWitnesses = True
+            witData = getWitnessData(urn)
+            witnesses = json.loads(witData[0])
+            witnesses = checkDuplicateWitnesses(witnesses['witnesses'])
+            request.session['data'] = witnesses
+            request.session['images'] = witData[1]
+            images = witData[1]
+            
         ruleSets = json.loads(getRuleSets(userName, urn))
         ruleSetName = 'default'
 
@@ -51,16 +97,16 @@ def regularization(request):
                 if rs['name'] == "default":
                     ruleSet = rs
 
-    witnesses = checkDuplicateWitnesses(witnesses['witnesses'])
     witnesses = json.dumps({'witnesses': witnesses})
     ruleSet = json.dumps({'ruleSet': ruleSet})
+    request.session['urn'] = urn
 
     urlCollation = 'http://127.0.0.1:8080/collatex-web-0.9.1-RC2/api/collate'
     headers = {'Content-Type': 'application/json', 'Accept': 'application/json'}
     send = httplib2.Http()
     response, content = send.request(urlCollation, 'POST', witnesses, headers)
 
-    return render_to_response('jsRegularize/collate_interface.html', {"userName" : userName, "urn" : urn, "witnessesTokens" : content, "witnessesLines": witnesses, "ruleSetName": ruleSetName, "ruleSet": ruleSet, "position": 0, "images": images, "returnUrl": returnUrl}, context_instance=RequestContext(request))
+    return render_to_response('jsRegularize/collate_interface.html', {"userName" : userName, "urn" : urn, "witnessesTokens" : content, "witnessesLines": witnesses, "ruleSetName": ruleSetName, "ruleSet": ruleSet, "position": 0, "images": images, "returnUrl": returnUrl, "isAllWitnesses": allWitnesses}, context_instance=RequestContext(request))
 
 def checkDuplicateWitnesses(witnesses):
     w1Num = 0
@@ -185,6 +231,8 @@ def getWitnessData(urn):
 
     return dataList
 
+#def chooseTextsInterface(request):
+    
 def chooseRuleSetsInterface(request):
     urn = request.GET.get('urn', '')
     userName = request.GET.get('username', '')
@@ -192,6 +240,16 @@ def chooseRuleSetsInterface(request):
     ruleSets = getRuleSets(userName, urn)
     
     return render_to_response('jsRegularize/chooseRuleSets_interface.html', {"userName" : userName, "urn" : urn, "ruleSetData": ruleSets, "returnUrl": returnUrl}, context_instance=RequestContext(request))
+
+def chooseTextsInterface(request):
+    urn = request.GET.get('urn', '')
+    userName = request.GET.get('username', '')
+    returnUrl = request.GET.get('page', '')
+    witnesses = request.session.pop('data')
+    jdata = json.dumps({"witnesses": witnesses})
+    request.session['data'] = witnesses
+    
+    return render_to_response('jsRegularize/chooseTexts_interface.html', {"userName" : userName, "urn" : urn, "returnUrl": returnUrl, "witnesses": jdata}, context_instance=RequestContext(request))
 
 def getRuleSets(userName, urn):
         filteredRuleSets = RuleSet.objects.filter(appliesTo=urn).filter(userId=userName)
@@ -263,6 +321,25 @@ def postSelectedRuleSets(request):
     if request.is_ajax():
         if request.method == 'POST':
             request.session['selectedRuleSet'] = request.raw_post_data
+            ruleSet = json.loads(request.raw_post_data)
+            
+            filteredRuleSet = RuleSet.objects.filter(userId=ruleSet['userName']).filter(\
+                                                        appliesTo=ruleSet['urn']).filter(\
+                                                        name=ruleSet['ruleSetName'])
+            if not filteredRuleSet:
+                rs = RuleSet()
+                rs.userId = ruleSet['userName']
+                rs.appliesTo = ruleSet['urn']
+                rs.name = ruleSet['ruleSetName']
+                rs.save()
+            
+    return HttpResponse("OK")
+
+@csrf_exempt
+def postSelectedWitnesses(request):
+    if request.is_ajax():
+        if request.method == 'POST':
+            request.session['selectedWitnesses'] = request.raw_post_data
             
     return HttpResponse("OK")
 

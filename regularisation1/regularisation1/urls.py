@@ -1,8 +1,8 @@
 from django.conf.urls import patterns, include, url
 from jsRegularize.views import regularization, chooseRuleSetsInterface
-from jsRegularize.views import postSelectedRuleSets
+from jsRegularize.views import postSelectedRuleSets, chooseTextsInterface
 from jsRegularize.views import postNewRule, changeRules, postRecollate
-from jsRegularize.views import sendRecollate, getBaseTokens
+from jsRegularize.views import sendRecollate, getBaseTokens, postSelectedWitnesses
 from jsRegularize.views import postNewAlign, changeAligns, deleteRuleSet
 
 from django.conf import settings
@@ -24,7 +24,9 @@ urlpatterns = patterns('',
 
     url(r'^regularization/$', regularization),
     url(r'^regularization/chooseRuleSetsInterface/$', chooseRuleSetsInterface),
+    url(r'^regularization/chooseTextsInterface/$', chooseTextsInterface),
     url(r'^regularization/postSelectedRuleSets/$', postSelectedRuleSets),
+    url(r'^regularization/postSelectedWitnesses/$', postSelectedWitnesses),
     url(r'^regularization/postNewRule/$', postNewRule),
     url(r'^regularization/changeRules/$', changeRules),
     url(r'^regularization/postRecollate/$', postRecollate),

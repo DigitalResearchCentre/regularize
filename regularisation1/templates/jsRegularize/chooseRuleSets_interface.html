@@ -204,6 +204,8 @@
   
   function sendJSON()
   { 
+    witnessData.userName = userName;
+    witnessData.urn = urn;
     $.ajax({
       url: "http://127.0.0.1:8000/regularization/postSelectedRuleSets/",
       dataType: 'json',

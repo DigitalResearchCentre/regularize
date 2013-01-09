@@ -17,41 +17,17 @@
       quo : '"'
     }[b];
   });
-  
-  var allImages = (("{{ images }}")).replace(/&(l|g|quo)t;/g, function(a,b)
-  {
-    return {
-      l : '<',
-      g : '>',
-      quo : '"'
-    }[b];
-  });
+  var selected;
   
   function load()
   {
+    selected = true;
     selectedIds = [];
     
     witnessData = witnessData.replace(/u'/g, '\'');
     witnessData = witnessData.replace(/'/g, '\"');
     //console.log(witnessData);
     witnessData = JSON.parse(witnessData);
-    
-    allImages = allImages.replace(/u'/g, '\'');
-    allImages = allImages.replace(/'/g, '\"');
-    allImages = JSON.parse(allImages);
-    
-    //console.log(allImages);
-    
-    for(var i in witnessData.witnesses)
-    {
-      for(var j in witnessData.witnesses)
-      {
-        if(witnessData.witnesses[i].id == witnessData.witnesses[j].id && i != j)
-        {
-          witnessData.witnesses.splice(j, 1);
-        }
-      }
-    }
     
     for(var i in witnessData.witnesses)
     {
@@ -79,7 +55,7 @@
   function done()
   {
     
-    var newWitnesses = { witnesses: [], images: [] };
+    var newWitnesses = { witnesses: []};
     
     for(var i in witnessData.witnesses)
     {
@@ -92,14 +68,6 @@
     newWitnesses.urn = urn;
     newWitnesses.userName = userName;
     newWitnesses.returnUrl = returnUrl;
-    
-    for(var i in allImages.images)
-    {
-      if(document.getElementById(allImages.images[i].id).checked == true)
-      {
-        newWitnesses.images.push(allImages.images[i]);
-      }
-    }
      
      $.ajax({
     url: "http://127.0.0.1:8000/regularization/postSelectedWitnesses/",
@@ -110,8 +78,30 @@
     success: function(data){
     }});
   
-    window.location.href = "http://127.0.0.1:8000/regularization/chooseRuleSetsInterface/";  
+    window.location.href = window.location.href = "http://127.0.0.1:8000/regularization/?urn=" + urn + "&username=" + userName + "&page=" + returnUrl; 
   }
+  
+function unselect()
+{
+  if(selected)
+  {
+    for(var i in witnessData.witnesses)
+    {
+      document.getElementById(witnessData.witnesses[i].id).checked = false;
+    }
+    document.getElementById("unselectButton").value = "Select All";
+    selected = false;
+  }
+  else
+  {
+    for(var i in witnessData.witnesses)
+    {
+      document.getElementById(witnessData.witnesses[i].id).checked = true;
+    }
+    document.getElementById("unselectButton").value = "Unselect All";
+    selected = true;
+  }
+}
   
 </script>
 </head>
@@ -120,4 +110,5 @@
 <h1>Choose Texts for Collation</h1>
 <div id="wrapper"></div><br/>
 <input name="done" type="button" value="Done" onclick="done()">
+<input id="unselectButton" name="unselect" type="button" value="Unselect All" onclick="unselect()">
 </body> </html>

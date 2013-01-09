@@ -9,6 +9,7 @@
   var urn = "{{ urn }}";
   var ruleSetName = "{{ ruleSetName }}";
   var returnUrl = "{{ returnUrl }}";
+  var isAllWitnesses = "{{ isAllWitnesses }}"
   var witnessDataTokens = (("{{ witnessesTokens}}")).replace(/&(l|g|quo)t;/g, function(a,b)
   {
     return {
@@ -88,13 +89,6 @@ function load()
   allImages = JSON.parse(allImages);
   //console.log(allImages);
   
-  var temp = urn.split("entity=")[1];
-  var entity = temp.split(":", 1)[0];
-  var line = temp.split("Line=")[1];
-  document.getElementById("title_label").innerHTML = "entity " + entity + ", line " + line;
-  document.getElementById("ruleSetNameLabel").innerHTML = ruleSetName + "  ";
-  document.getElementById("chooseTextsLabel").innerHTML = "all  ";
-  
   document.information.style.visibility = "hidden";
   document.reg_information.style.visibility ="hidden";
   document.edit_reg.style.visibility = "hidden";
@@ -158,8 +152,31 @@ function load()
   origTokens = createNewAllTokens();
   allWitnesses = witnessDataLines;
   console.log(allTokens);
-  
   totalPos = allTokens.alignment[0].tokens.length;
+  
+  var temp = urn.split("entity=")[1];
+  var entity = temp.split(":", 1)[0];
+  var line = temp.split("Line=")[1];
+  document.getElementById("title_label").innerHTML = "entity " + entity + ", line " + line;
+  document.getElementById("ruleSetNameLabel").innerHTML = ruleSetName + "  ";
+  
+  if(isAllWitnesses == "True")
+  {
+    document.getElementById("chooseTextsLabel").innerHTML = "all  ";
+  }
+  else
+  {
+    content = "";
+    
+    for(var i in allTokens.alignment)
+    {
+      content += allTokens.alignment[i].witness + " ";
+    }
+    
+    content += " ";
+    
+    document.getElementById("chooseTextsLabel").innerHTML = content;
+  }
   
   showRegularization(document.regularization.reg_checkbox);
   regOn = false;
@@ -3809,6 +3826,11 @@ function returnPage()
 function chooseRuleSet()
 {
   window.location.href = "http://127.0.0.1:8000/regularization/chooseRuleSetsInterface/?urn=" + urn + "&username=" + userName + "&page=" + returnUrl;
+}
+
+function chooseTexts()
+{
+  window.location.href = "http://127.0.0.1:8000/regularization/chooseTextsInterface/?urn=" + urn + "&username=" + userName + "&page=" + returnUrl;
 }
 
 </script>
