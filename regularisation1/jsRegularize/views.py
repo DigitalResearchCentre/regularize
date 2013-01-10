@@ -490,14 +490,20 @@ def getBaseTokens(request):
         request.session['data'] = jdata
         jdata = checkDuplicateWitnesses(jdata)
         jdata = json.dumps({'witnesses': jdata})
-    
-        url = 'http://127.0.0.1:8080/collatex-web-0.9.1-RC2/api/collate'
-        headers = {'Content-Type': 'application/json', 'Accept': 'application/json'}
 
-        send = httplib2.Http()
-        response, content = send.request(url, 'POST', jdata, headers)
-        #print content
-        return HttpResponse(content, mimetype="application/json")
+    if request.session.get('selectedWitnesses'):
+        jdata = request.session.pop('selectedWitnesses')
+        request.session['selectedWitnesses'] = jdata
+        jdata = checkDuplicateWitnesses(jdata)
+        jdata = json.dumps({'witnesses': jdata})
+    
+    url = 'http://127.0.0.1:8080/collatex-web-0.9.1-RC2/api/collate'
+    headers = {'Content-Type': 'application/json', 'Accept': 'application/json'}
+
+    send = httplib2.Http()
+    response, content = send.request(url, 'POST', jdata, headers)
+    #print content
+    return HttpResponse(content, mimetype="application/json")
 
 def getTestData():
     contentEl = 'Heere bigynneth the Miller; his tale'

@@ -2679,6 +2679,13 @@ function showOriginals(checkBox)
   //);
 }
 
+function toNull()
+{
+  document.regularization.reg_to.value = 'null';
+  addRule();
+  document.regularization.reg_to.value = '';
+}
+
 function showRegularization(checkBox)
 {
   if(checkBox.checked)
@@ -2687,7 +2694,8 @@ function showRegularization(checkBox)
     document.regularization.change.checked = false;
     var regHTML = "<br /><br /><label id='reg_this'>Regularize This:</label>";
     regHTML += "<input type='text' name='reg_this' size='82'/> <br /><label id='reg_to'>To This:</label>";
-    regHTML += "<input type='text' name='reg_to' size='92'/>";
+    regHTML += "<input type='text' name='reg_to' size='79'/>";
+    regHTML += "<input name='regToNull' type='button' value='Or null' onclick='toNull()'>";
     regHTML += "<p>Regularize Choices:";
     regHTML += "<select name='reg_choices'>";
     regHTML += "<option value='this_entity'>All witnesses, this entity</option>";
@@ -2750,13 +2758,13 @@ function showRealign(checkBox)
     document.edit_reg.style.visibility = "hidden";
     document.getElementById("move_realign").checked = true;
     changeKindCheckbox(document.getElementById("move_realign"));
-    alignOn = false;
-    align_onoff();
-    
     currentPosition = 0;
     recollate();
-    applyAlign();
-    regularize();
+    alignOn = false;
+    align_onoff();
+    //recollate();
+    //applyAlign();
+    //regularize();
     
     //document.getElementById("move_realign").checked = true;
   }
@@ -2870,6 +2878,7 @@ function realign(token, isMove, isForward, numPos, position, witnessId)
     if(allTokens.alignment[i].witness == witnessId)
     {
       index = i; 
+      alert("found: " + index);
     }
   }
   
@@ -2903,39 +2912,6 @@ function realign(token, isMove, isForward, numPos, position, witnessId)
             numAdd++;
           }
         }
-        
-//        for(var k in allTokens.alignment)
-//        {
-//          for(var l = 0; l<numPos; l++)
-//          {
-//            allTokens.alignment[k].tokens.push(null);
-//          }
-//        }
-        
-    /**
-     *KEEP THISS!!
-     */
-//        for(var i in allTokens.alignment)
-//        {
-//          if(i == index)
-//          {
-//            for(var k = 0; k < numPos; k++)
-//            {
-//              allTokens.alignment[i].tokens.splice(0, 0, "null");
-//              allTokens.alignment[i].tokens[0] = null;
-//            }
-//          }
-//          else
-//          { 
-//            var newPosition = totalPos + 1;
-//            for(var k = 0; k < numPos; k++)
-//            {
-//              allTokens.alignment[i].tokens.splice(newPosition, 0, null);
-//              newPosition++;
-//            }
-//          }
-//        }
-        
       }
       else
       {
@@ -2973,6 +2949,7 @@ function realign(token, isMove, isForward, numPos, position, witnessId)
     // CREATE PHRASE
     if(isCreate)
     {
+      //alert("isCreate");
       if(token[token.length-1] == " ")
       {
         token.splice(token.length-1, 1);
@@ -2981,36 +2958,44 @@ function realign(token, isMove, isForward, numPos, position, witnessId)
       token = token.split(" ");
       var length = token.length;
       
-      for(var i in allTokens.alignment)
+      var match = true;
+      var forwardNum = currentPosition;
+
+      for (var j = 0; j < length; j++)
       {
-        var match = true;
-        var index = position;
-        for (var j in token)
+        var newToken = getToken(index, forwardNum)
+        alert(allTokens.alignment[index].witness + ":" + newToken + " " + token[j]);
+        if(newToken != 'null')
         {
-          if(getToken(i, index) != token[j])
+          if(newToken != token[j])
           {
             match = false;
           }
-          index++;
         }
-        
-        if(match)
+        else
         {
-          allTokens.alignment[i].tokens[position].t = token.join(" ");
-          var indexInput = totalPos;
-          var indexDelete = position;
-          indexDelete++;
-          
-          for(var j = 0; j < length-1; j++)
-          {
-            allTokens.alignment[i].tokens[indexInput] = null;
-            indexInput++;
-          }
-          
-          for(var j=0; j < length-1; j++)
-          {
-            allTokens.alignment[i].tokens.splice(indexDelete, 1);
-          }
+          j--;
+        }
+        forwardNum++;
+      }
+      
+      if(match)
+      {
+        alert("match");
+        allTokens.alignment[index].tokens[currentPosition].t = token.join(" ");
+        var indexInput = totalPos;
+        var indexDelete = currentPosition;
+        indexDelete++;
+
+        for(var j = 0; j < length-1; j++)
+        {
+          allTokens.alignment[index].tokens[indexInput] = null;
+          indexInput++;
+        }
+
+        for(var j=0; j < length-1; j++)
+        {
+          allTokens.alignment[index].tokens.splice(indexDelete, 1);
         }
       }
     }
@@ -3469,6 +3454,7 @@ function align_onoff()
     // apply all rules and alignments
     regularize();
     applyAlign();
+    regularize();
     loadAlignTable();
   }
 }
@@ -3768,19 +3754,23 @@ function applyAlign()
               }
               else
               {
+                //alert("isCreate");
                 for(var n in allTokens.alignment)
                 {
                   if(allTokens.alignment[n].witness == witnessId)
                   {
+                    //alert("found witnesses");
                     witnessId = n;
                   
                     var numForward = k;
+                    //alert(k);
                     for(var m in tokenArray)
                     {
                       if(allTokens.alignment[witnessId].tokens[numForward] != null)
                       {
                         if(tokenArray[m] != allTokens.alignment[witnessId].tokens[numForward].t)
                         {
+                          //alert("match not found");
                           foundMatch = false;
                         }
                       }
@@ -3793,6 +3783,7 @@ function applyAlign()
 
                     if(foundMatch && !alignApplied)
                     {
+                      //alert("here");
                       alignApplied = true;
                       if(isCustomAlign)
                       {
@@ -3802,6 +3793,7 @@ function applyAlign()
                       {
                         allAlign.alignments[i].isApplied = true;
                       }
+                      //alert(k);
                       realign(token, isMove, isForward, numPos, k, _id);
                     }
                   }
