@@ -353,8 +353,16 @@ def postNewRule(request):
             jdata = json.loads(request.raw_post_data)
             print jdata
 
+            # if jdata['rules'][0]['scope'] == 'this_place':
+            #     filteredRuleSet = RuleSet.objects.filter(userId=jdata['userName']).filter(\
+            #                     appliesTo=jdata['urn']).filter(name=jdata['ruleSetName'])
+            # elif jdata['rules'][0]['scope'] == 'this_entity':
+            #     print "this_entity"
+            # elif jdata['rules'][0]['scope'] == 'this_place':
+            #     print "all_places"
+
             filteredRuleSet = RuleSet.objects.filter(userId=jdata['userName']).filter(\
-                                appliesTo=jdata['urn']).filter(name=jdata['ruleSetName'])
+                             appliesTo=jdata['urn']).filter(name=jdata['ruleSetName'])
 
             if filteredRuleSet and filteredRuleSet.count() == 1:
                 filteredModifications = Modification.objects.filter(userId=jdata['userName']).filter(\

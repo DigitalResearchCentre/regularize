@@ -2479,6 +2479,7 @@ function createRule(scope, reg_this, reg_to, token, id, index)
   contextStruct = {witnesses:[]};
   var goForward;
   var context = reg_this;
+  var appliesTo = urn;
   
   if(currentPosition == totalPos-1)
   {
@@ -2507,13 +2508,21 @@ function createRule(scope, reg_this, reg_to, token, id, index)
       var contextRegTo = context.replace(reg_this, reg_to);
       reg_to = contextRegTo;
   }
+  else if(scope == "this_entity")
+  {
+    appliesTo = urn.split(":Line=")[0];
+  }
+  else
+  {
+    appliesTo = urn.split(":Tale=")[0];
+  }
   
   dateTime = getDateTime();
   
   var action = "regularize(" + context + ", " + reg_to + ")";
   newRule = {
              "_id" : "",
-             "appliesTo" : urn,
+             "appliesTo" : appliesTo,
              "action" : action,
              "modifications" : [{
                "userId": userName,
@@ -2878,7 +2887,7 @@ function realign(token, isMove, isForward, numPos, position, witnessId)
     if(allTokens.alignment[i].witness == witnessId)
     {
       index = i; 
-      alert("found: " + index);
+      //alert("found: " + index);
     }
   }
   
@@ -2964,7 +2973,7 @@ function realign(token, isMove, isForward, numPos, position, witnessId)
       for (var j = 0; j < length; j++)
       {
         var newToken = getToken(index, forwardNum)
-        alert(allTokens.alignment[index].witness + ":" + newToken + " " + token[j]);
+        //alert(allTokens.alignment[index].witness + ":" + newToken + " " + token[j]);
         if(newToken != 'null')
         {
           if(newToken != token[j])
@@ -2981,7 +2990,7 @@ function realign(token, isMove, isForward, numPos, position, witnessId)
       
       if(match)
       {
-        alert("match");
+        //alert("match");
         allTokens.alignment[index].tokens[currentPosition].t = token.join(" ");
         var indexInput = totalPos;
         var indexDelete = currentPosition;
