@@ -2219,12 +2219,13 @@ function insertRegTable(scope, reg_this, reg_to, isDisabled)
 
 function getBaseTokens()
 {
-  var newTokens = { alignment: [] };
+  var newTokens = allTokens;
   $.ajax({
         url: "http://127.0.0.1:8000/regularization/getBaseTokens/",
         dataType: 'json',
         async: false,
         success: function(data){
+          newTokens = { alignment: [] };
           for(var i in data.alignment)
           {
             for(var j in data.alignment[i].tokens)
@@ -2703,7 +2704,7 @@ function showRegularization(checkBox)
     document.regularization.change.checked = false;
     var regHTML = "<br /><br /><label id='reg_this'>Regularize This:</label>";
     regHTML += "<input type='text' name='reg_this' size='82'/> <br /><label id='reg_to'>To This:</label>";
-    regHTML += "<input type='text' name='reg_to' size='79'/>";
+    regHTML += "<input type='text' name='reg_to' size='80'/>";
     regHTML += "<input name='regToNull' type='button' value='Or null' onclick='toNull()'>";
     regHTML += "<p>Regularize Choices:";
     regHTML += "<select name='reg_choices'>";
@@ -3459,7 +3460,7 @@ function align_onoff()
   {
     alignOn = true;
     document.getElementById("align_button").value = "Align. On";
-    allTokens = getBaseTokens();
+    //allTokens = getBaseTokens();
     // apply all rules and alignments
     regularize();
     applyAlign();
