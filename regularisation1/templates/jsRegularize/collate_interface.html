@@ -2247,6 +2247,11 @@ function getBaseTokens()
         }
     });
     
+    for (var i in allAlign.alignments)
+    {
+      allAlign.alignments[i].isApplied = false;
+    }
+    
   console.log(newTokens);
   return newTokens;
 }
@@ -2751,6 +2756,11 @@ function showRealign(checkBox)
     //document.realign_token.style.visibility = "visible";
     document.regularization.reg_checkbox.checked = false;
     document.getElementById("reg_wrapper").innerHTML = "";
+    
+    for (var i in allAlign.alignments)
+    {
+      allAlign.alignments[i].isApplied = false;
+    }
     
     var alignHTML = "Change token alignment: <input type='text' name='token' size='20'/>";
     alignHTML += "<br/> <input type='checkbox' id='move_realign' value='move_realign' onchange='changeKindCheckbox(this)'/> Move token";
